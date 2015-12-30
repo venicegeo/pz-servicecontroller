@@ -17,6 +17,8 @@ limitations under the License. */
 
 import java.util.List;
 
+import model.job.Job;
+
 import org.joda.time.DateTime;
 /**
  * Serves as a data model for Service instances.

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/kafka http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
+ 		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd  
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+	<!-- See also:
+		http://static.springsource.org/spring-integration/reference/htmlsingle/#gateway-proxy
+		http://www.eaipatterns.com/MessagingGateway.html -->
+		
+	<bean id="kafkaSerializer" class="org.apache.kafka.common.serialization.StringSerializer"/>
+	<bean id="kafkaDecoder" class="org.springframework.integration.kafka.serializer.common.StringDecoder"/> 
+	<bean id="kafkaEncoder" class="org.springframework.integration.kafka.serializer.common.StringEncoder"/> 
+	 
+	 
+	<int:gateway id="gateway"	
+		default-request-timeout="5000"
+		default-reply-timeout="5000"
+		default-request-channel="requestChannel"
+		default-reply-channel="replyChannel"
+		service-interface="org.venice.piazza.serviceregistry.service.StringConversionService">
+		<int:method name="convertToUpperCase"/>
+	</int:gateway>
+
+	<!-- See also:
+		http://static.springsource.org/spring-integration/reference/htmlsingle/#service-activator
+		http://www.eaipatterns.com/MessagingAdapter.html -->
+	<int:service-activator id="serviceActivator"
+		input-channel="requestChannel" output-channel="replyChannel"
+		expression="payload.toUpperCase()"/>
+
+	<int:channel id="replyChannel"/>
+	<int:channel id="requestChannel"/>
+	
+	<int:channel id="inputFromKafka">
+	 	<int:queue/>
+	</int:channel>
+	
+  	<int-kafka:zookeeper-connect id="zookeeperConnect" zk-connect="localhost:2181" zk-connection-timeout="6000"
+                        zk-session-timeout="6000"
+                        zk-sync-time="2000" />
+                        
+
+	<int-kafka:consumer-context id="consumerContext"
+                                   consumer-timeout="4000"
+                                   zookeeper-connect="zookeeperConnect">
+           <int-kafka:consumer-configurations>
+               <int-kafka:consumer-configuration group-id="default"
+                       value-decoder="kafkaDecoder"
+                       key-decoder="kafkaDecoder"
+                       max-messages="5000">
+                   <int-kafka:topic id="test1" streams="4"/>
+                   <int-kafka:topic id="test2" streams="4"/>
+               </int-kafka:consumer-configuration>               
+           </int-kafka:consumer-configurations>
+   </int-kafka:consumer-context> 
+   
+   	<int-kafka:inbound-channel-adapter
+    id="kafkaInboundAdapter" kafka-consumer-context-ref="consumerContext"
+    auto-startup="true" channel="inputFromKafka">
+	    <int:poller fixed-delay="10" time-unit="MILLISECONDS"
+	        max-messages-per-poll="5" />
+	</int-kafka:inbound-channel-adapter>
+
+
+   	
+	 <int:channel id="toKafka">
+        <int:queue/>
+    </int:channel>
+
+    <int-kafka:outbound-channel-adapter
+            id="kafkaOutboundChannelAdapter"
+            kafka-producer-context-ref="kafkaProducerContext"
+            channel="toKafka">
+        <int:poller fixed-delay="1000" time-unit="MILLISECONDS" receive-timeout="0" task-executor="taskExecutor"/>
+    </int-kafka:outbound-channel-adapter>
+
+    <task:executor id="taskExecutor" pool-size="5" keep-alive="120" queue-capacity="500"/>
+	
+    <int-kafka:producer-context id="kafkaProducerContext">
+        <int-kafka:producer-configurations>
+			<int-kafka:producer-configuration broker-list="localhost:9092"
+                       key-class-type="java.lang.String"
+                       value-class-type="java.lang.String"
+                       topic="test1"
+                       key-encoder="kafkaEncoder"
+                       value-encoder="kafkaEncoder"/>                                           
+        </int-kafka:producer-configurations>
+    </int-kafka:producer-context>
+       
+
+                      
+   
+    
+
+</beans>

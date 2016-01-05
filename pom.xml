@@ -8,115 +8,25 @@
 	<packaging>jar</packaging>
 
 	<name>pz-serviceregistry</name>
-	<url>http://www.springsource.org/spring-integration</url>
 
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.3.0.RELEASE</version>
+	</parent>
+	
 	<prerequisites>
 		<maven>2.2.1</maven>
 	</prerequisites>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring.version>4.1.3.RELEASE</spring.version>
-		<spring.integration.version>4.2.0.RELEASE</spring.integration.version>
 		<log4j.version>1.2.17</log4j.version>
 		<junit.version>4.11</junit.version>
+		<java.version>1.8</java.version>		
+ 		<start-class>org.venice.piazza.serviceregistry.Application</start-class>		
 	</properties>
 
-	<repositories>
-
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-		
-		<repository>
-			<id>spring-releases</id>
-			<url>https://repo.spring.io/libs-release</url>
-		</repository>		
-		<repository>
-		 	<id>repo.spring.io.snapshot</id>
-		  	<name>Spring Framework Maven Snapshot Repository</name>
-		  	<url>https://repo.spring.io/libs-snapshot</url>
-		</repository>
-	</repositories>
-
-	<build>
-		
-		<plugins>
-			<plugin>
-				<artifactId>maven-eclipse-plugin</artifactId>
-				<version>2.9</version>
-				<configuration>
-					<additionalProjectnatures>
-						<projectnature>org.springframework.ide.eclipse.core.springnature</projectnature>
-					</additionalProjectnatures>
-					<additionalBuildcommands>
-						<buildcommand>org.springframework.ide.eclipse.core.springbuilder</buildcommand>
-					</additionalBuildcommands>
-					<downloadSources>true</downloadSources>
-					<downloadJavadocs>true</downloadJavadocs>
-				</configuration>
-			</plugin>
-	
-		    <plugin>
-		       <groupId>org.apache.maven.plugins</groupId>
-		       <artifactId>maven-jar-plugin</artifactId>
-		       <configuration>
-		       <source>1.8</source>
-					<target>1.8</target>
-		         <archive>
-		           <manifest>
-		             <addClasspath>true</addClasspath>
-		             <mainClass>org.venice.piazza.serviceregistry.Application</mainClass>
-		           </manifest>
-		         </archive>
-		       </configuration>
-		    </plugin>	
-			<plugin>
-            	<groupId>org.apache.maven.plugins</groupId>
-	            <artifactId>maven-shade-plugin</artifactId>
-	            <executions>
-	                <execution>
-	                    <phase>package</phase>
-	                    <goals>
-	                        <goal>shade</goal>
-	                    </goals>
-	                </execution>
-	            </executions>
-	            <configuration>
-	                <finalName>uber-${artifactId}-${version}</finalName>
-	            </configuration>
-       		 </plugin>		    		    		
-		    <plugin>
-		        <groupId>org.springframework.boot</groupId>
-		        <artifactId>spring-boot-maven-plugin</artifactId>
-		    </plugin>
-	  
-		<plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-compiler-plugin</artifactId>
-			<version>2.3.2</version>
-			<configuration>
-				<source>1.8</source>
-				<target>1.8</target>
-			</configuration>
-		</plugin>
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-      </plugin>
-
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.2.1</version>
-				<configuration>
-					<mainClass>org.venice.piazza.serviceregistry.Main</mainClass>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 
 	<dependencies>
 
@@ -129,14 +39,11 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Spring Integration -->
-
 		<dependency>
-			<groupId>org.springframework.integration</groupId>
-			<artifactId>spring-integration-core</artifactId>
-			<version>${spring.integration.version}</version>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-test</artifactId>
+		    <scope>test</scope>
 		</dependency>
-		
 
 		<!-- Logging -->
 
@@ -147,9 +54,13 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		
+		<dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
         </dependency>
 
 		<dependency>
@@ -158,25 +69,22 @@
       		<version>1.3.0.RELEASE</version>
       		<scope>test</scope>
     	</dependency>
-    	<dependency>
-      		<groupId>org.springframework.boot</groupId>
-      		<artifactId>spring-boot-starter-integration</artifactId>
-      		<version>1.3.0.RELEASE</version>
-      		<scope>compile</scope>
-    	</dependency>
 
 		
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-messaging</artifactId>
-			<version>4.2.4.RELEASE</version>
 		</dependency>
 		
 		<dependency>
-			<groupId>org.springframework.integration</groupId>
-			<artifactId>spring-integration-kafka</artifactId>
-			<version>1.3.0.RELEASE</version>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-commons</artifactId>
 		</dependency>
+		
+		<dependency>
+	        <groupId>org.springframework.data</groupId>
+	        <artifactId>spring-data-mongodb</artifactId>
+    	</dependency>
 			
 		<dependency>
 			<groupId>com.github.venicegeo</groupId>
@@ -185,69 +93,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-csv</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-xml</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-yaml</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-hibernate4</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-hibernate5</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jdk7</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jdk8</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-joda</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>2.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.module</groupId>
-			<artifactId>jackson-module-parameter-names</artifactId>
-			<version>2.6.3</version>
+			<groupId>org.mongojack</groupId>
+			<artifactId>mongojack</artifactId>
+			<version>2.1.0</version>
 		</dependency>
 
 		<dependency>
@@ -255,7 +103,31 @@
 			<artifactId>kafka-clients</artifactId>
 			<version>0.9.0.0</version>
 		</dependency>
+		
 
 	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+	
+	<repositories>
+
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+		
+		<repository>
+			<id>spring-releases</id>
+			<url>https://repo.spring.io/libs-release</url>
+		</repository>		
+		
+	</repositories>
+	
 
 </project>

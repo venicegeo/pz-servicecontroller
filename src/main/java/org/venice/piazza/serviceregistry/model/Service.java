@@ -20,6 +20,8 @@ import java.util.List;
 import model.job.Job;
 
 import org.joda.time.DateTime;
+import org.springframework.data.annotation.Id;
+
 /**
  * Serves as a data model for Service instances.
  * 
@@ -28,10 +30,12 @@ import org.joda.time.DateTime;
  *
  **/
 public class Service {
-	
+	@Id
 	private Long id;
+	
 	private String availability;
 	private String classificationType;
+	private Long currentJobId;	
 	private String description;
 	private Boolean enabled;
 	private String name;
@@ -48,6 +52,16 @@ public class Service {
 	private String version;
 	
 	
+	public Service () {
+		
+	}
+	/**
+	 * Constructor of Service with required name
+	 * @param name
+	 */
+	public Service(String name) {
+		this.name = name;
+	}
 	/**
 	 * @return the id
 	 */
@@ -84,6 +98,14 @@ public class Service {
 	public void setClassificationType(String classificationType) {
 		this.classificationType = classificationType;
 	}
+	
+	public Long getCurrentJobId() {
+		return currentJobId;
+	}
+	public void setCurrentJobId(Long currentJobId) {
+		this.currentJobId = currentJobId;
+	}
+
 	/**
 	 * @return the description
 	 */
@@ -251,6 +273,11 @@ public class Service {
 	 */
 	public void setVersion(String version) {
 		this.version = version;
+	}
+	
+	@Override
+	public String toString () {
+		return String.format("Service [id=%s, name=%s]", id, name);
 	}
 
 	

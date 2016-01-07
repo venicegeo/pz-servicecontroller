@@ -1,4 +1,4 @@
-package org.venice.piazza.serviceregistry;
+package org.venice.piazza.servicecontroller;
 
 import java.util.Arrays;
 
@@ -9,7 +9,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-import org.venice.piazza.serviceregistry.data.mongodb.repository.ServiceRepository;
+import org.venice.piazza.servicecontroller.data.mongodb.repository.ServiceRepository;
 
 /* Enable Boot application and MongoRepositories */
 

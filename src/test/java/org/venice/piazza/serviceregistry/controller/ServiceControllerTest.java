@@ -11,13 +11,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.venice.piazza.servicecontroller.controller.ServiceController;
+import org.venice.piazza.servicecontroller.data.mongodb.repository.ServiceRepository;
+import org.venice.piazza.servicecontroller.model.Service;
+import org.venice.piazza.servicecontroller.services.ServiceRegistryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-import org.venice.piazza.serviceregistry.model.Service;
-import org.venice.piazza.serviceregistry.services.ServiceRegistryService;
-import org.venice.piazza.serviceregistry.controller.ServiceController;
-import org.venice.piazza.serviceregistry.data.mongodb.repository.ServiceRepository;
 @EnableMongoRepositories
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath*:spring/application.properties")

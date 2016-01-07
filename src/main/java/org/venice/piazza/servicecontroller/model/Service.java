@@ -1,4 +1,4 @@
-package org.venice.piazza.serviceregistry.model;
+package org.venice.piazza.servicecontroller.model;
 
 /* Copyright 2015, RadiantBlue Technologies, Inc.
 

@@ -1,4 +1,4 @@
-package org.venice.piazza.serviceregistry.data.mongodb.accessors;
+package org.venice.piazza.servicecontroller.data.mongodb.accessors;
 
 
 import java.net.UnknownHostException;
@@ -6,12 +6,11 @@ import java.net.UnknownHostException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.venice.piazza.serviceregistry.model.Service;
-
 import org.mongojack.JacksonDBCollection;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
+import org.venice.piazza.servicecontroller.model.Service;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
@@ -25,7 +24,7 @@ import com.mongodb.MongoClient;
  */
 @Component
 public class MongoAccessor {
-	@Value("${mongo.host}")
+	/*@Value("${mongo.host}")
 	private String DATABASE_HOST;
 	@Value("${mongo.port}")
 	private int DATABASE_PORT;
@@ -58,21 +57,21 @@ public class MongoAccessor {
 	 * 
 	 * @return
 	 */
-	public MongoClient getClient() {
+	/*public MongoClient getClient() {
 		return mongoClient;
-	}
+	}*/
 
 	/**
 	 * Gets a reference to the MongoDB's Service Collection.
 	 * 
 	 * @return
 	 */
-	public JacksonDBCollection<Service, String> getServiceCollection() {
+	/*public JacksonDBCollection<Service, String> getServiceCollection() {
 		// MongoJack does not support the latest Mongo API yet. TODO: Check if
 		// they plan to.
 		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(JOB_COLLECTION_NAME);
 		return JacksonDBCollection.wrap(collection, Service.class, String.class);
-	}
+	}*/
 
 	/**
 	 * Returns a Service instance that matches the specified ID.
@@ -81,12 +80,12 @@ public class MongoAccessor {
 	 *            the ID of the service
 	 * @return The Service with the specified id
 	 */
-	public Service getServiceById(String id) throws ResourceAccessException {
+	/*public Service getServiceById(String id) throws ResourceAccessException {
 		BasicDBObject query = new BasicDBObject("serviceId", id);
 		Service job = getServiceCollection().findOne(query);
 		if (job == null) {
 			throw new ResourceAccessException("The Service could not be found");
 		}
 		return job;
-	}
+	} */
 }

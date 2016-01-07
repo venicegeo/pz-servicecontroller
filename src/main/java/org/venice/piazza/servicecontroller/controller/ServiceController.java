@@ -1,8 +1,8 @@
-package org.venice.piazza.serviceregistry.controller;
+package org.venice.piazza.servicecontroller.controller;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.venice.piazza.serviceregistry.model.Service;
-import org.venice.piazza.serviceregistry.data.mongodb.repository.ServiceRepository;
+import org.venice.piazza.servicecontroller.data.mongodb.repository.ServiceRepository;
+import org.venice.piazza.servicecontroller.model.Service;
 
 import java.util.List;
 
@@ -14,9 +14,9 @@ public class ServiceController {
 
     
 	
-	@RequestMapping("/")
+	@RequestMapping("/servicecontroller/index")
     public String index() {
-        return "Piazza Service Registry";
+        return "Piazza Service Controller";
     }
 	
 	

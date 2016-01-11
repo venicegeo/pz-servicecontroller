@@ -7,9 +7,9 @@ sudo apt-get -y update
 # Install required packages
 sudo apt-get -y install openjdk-8-jdk maven
 
-# Build the Gateway application
-cd /vagrant/servicereg
-mvn clean package
+# Build Service Controller application
+#cd /vagrant/servicereg
+#mvn clean package
 
-# Run the Gateway application
+# Run the Service Controller 
 #java -jar target/piazza-serviceregistry*.jar

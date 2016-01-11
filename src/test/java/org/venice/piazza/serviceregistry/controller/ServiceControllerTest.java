@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.venice.piazza.servicecontroller.controller.ServiceController;
 import org.venice.piazza.servicecontroller.data.mongodb.repository.ServiceRepository;
 import org.venice.piazza.servicecontroller.model.Service;
-import org.venice.piazza.servicecontroller.services.ServiceRegistryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
@@ -25,8 +24,7 @@ public class ServiceControllerTest {
 	
 	List<Service> services;
 	@Autowired
-	private ServiceRegistryService srs;
-	//private ServiceRepository serviceRepo;
+
 
 	@Test
 	public void test() {

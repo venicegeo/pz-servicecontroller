@@ -1,17 +1,24 @@
 package org.venice.piazza.servicecontroller.controller;
 
-import org.springframework.stereotype.Controller;
+// TODO Add License
 
-import org.venice.piazza.servicecontroller.model.Service;
+/**
+ * Purpose of this controller is to handle service requests
+ * @author mlynum
+ * @since 1.0
+ */
 
-
-
-
-
-@Controller
+//@Controller
 public class ServiceController {
 
-    
-
+//	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json")
+//	public @ResponseBody ResponseEntity<?> registerService(@RequestBody ResourceMetadata serviceMetadata) {
+//		
+//	
+//		return new ResponseEntity<>("resourceID:" + service.getId(), HttpStatus.OK);
+//		
+//      
+//		
+//	}
 	
 }

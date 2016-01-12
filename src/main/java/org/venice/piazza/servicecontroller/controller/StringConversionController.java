@@ -1,24 +1,19 @@
 package org.venice.piazza.servicecontroller.controller;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
+import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.support.SessionStatus;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.model.Message;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
 
 @RestController
 /**
- * Service that performs String operations.
+ * Service that performs String operations.  This class is to support testing of the
+ * service controller.
  * 
  * @author mlynum
  */
@@ -27,7 +22,14 @@ import com.wordnik.swagger.annotations.ApiOperation;
 public class StringConversionController {
 
 	
-	 
+	/**
+	 * Rest call to convert a string to upper case
+	 * Access 
+	 * http://localhost:8080/string/toUpper?aString=<a string> 
+	 * 
+	 * @param aString
+	 * @return JSON {result:<the converted string>}
+	 */	 
 	@RequestMapping(value = "/toUpper", method = RequestMethod.POST)
 	@ResponseBody
     public String convertStringtoUpper(@ModelAttribute("aString") String aString) {
@@ -36,14 +38,31 @@ public class StringConversionController {
         return "{\"result\":" + aString.toUpperCase() + "}";
     }
 	
+
+	
+	/**
+	 * Rest call to convert a string in a message to upper or lower case
+	 * Access http://localhost:8080/string/convert
+	 * Accepts JSON: 
+	 * { 
+       "theString":"<a string>",
+       "conversionType":"LOWER" // UPPER or LOWER
+     * }
+	 * @param msg
+	 * @return JSON {result:<the converted string>}
+	 */
 	@RequestMapping(value = "/convert", method = RequestMethod.POST, headers="Accept=application/json")
-	public String convert(@PathVariable String theString, @PathVariable String conversionType) {
+	public @ResponseBody String convert(@RequestBody Message msg) {
+		
 		String result = "Could not Convert, please check message";
-		if (conversionType.equals(Message.UPPER))  {
+		String converstionType = msg.getConversionType();
+		String theString = msg.gettheString();
+		if (converstionType.equals(Message.UPPER))  {
 			System.out.println("Make the String uppercase" + theString);
+			System.out.println("The message" + msg);
 	        result=convertStringtoUpper(theString);
 		} 
-		else if (conversionType.equals(Message.LOWER))  {
+		else if (converstionType.equals(Message.LOWER))  {
 			System.out.println("Make the String lower case" + theString);
 			result=convertStringtoLower(theString);
 	       
@@ -53,7 +72,14 @@ public class StringConversionController {
 
 		
 	}
-	
+	/**
+	 * Rest call to convert a string to upper case
+	 * Access 
+	 * http://localhost:8080/string/toLower?aString=<a string> 
+	 * 
+	 * @param aString
+	 * @return JSON {result:<the converted string>}
+	 */	 
 	@RequestMapping(value = "/toLower", method = RequestMethod.POST)
 	@ResponseBody
     public String convertStringtoLower(@ModelAttribute("aString") String aString) {

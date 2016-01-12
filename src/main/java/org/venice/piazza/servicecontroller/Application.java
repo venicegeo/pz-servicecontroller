@@ -1,20 +1,22 @@
 package org.venice.piazza.servicecontroller;
-
+// TODO add license
 import java.util.Arrays;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-import org.venice.piazza.servicecontroller.data.mongodb.repository.ServiceRepository;
-
-/* Enable Boot application and MongoRepositories */
+/**
+ * Main class for the pz-servicecontroller.  Launches the application
+ * @author mlynum
+ * @since 1.0
+ */
 
 @SpringBootApplication
 @EnableMongoRepositories("org.venice.piazza.serviceregistry.data.mongodb.repository")
+/* Enable Boot application and MongoRepositories */
 public class Application extends SpringBootServletInitializer {
 
 
@@ -30,8 +32,13 @@ public class Application extends SpringBootServletInitializer {
 		
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment
-		if (args.length == 1) {
-			Boolean inspectBool = Boolean.valueOf(args[0]);
+		if (args.length == 2) {
+			
+			
+			String regServiceHost = args[0];
+			//TODO Call this service to obtain information on the location of
+			//TODO Zookeeper, Kafka, MongoDB, UUID Generation, etc.
+			Boolean inspectBool = Boolean.valueOf(args[1]);
 			if (inspectBool.booleanValue() == true) {
 				inspectSprintEnv(ctx);
 			}

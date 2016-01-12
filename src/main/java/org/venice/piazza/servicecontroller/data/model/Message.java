@@ -1,5 +1,9 @@
 package org.venice.piazza.servicecontroller.data.model;
-
+/**
+ * Class for testing purposes.  Supports Messages
+ * @author mlynum
+ *
+ */
 public class Message {
 	
 	public static final String UPPER="UPPER";

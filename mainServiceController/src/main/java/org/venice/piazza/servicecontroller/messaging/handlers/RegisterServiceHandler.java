@@ -27,7 +27,7 @@ public class RegisterServiceHandler implements Handler {
 	public void handle (PiazzaJobType rsJob ) {
 		RegisterServiceJob job = (RegisterServiceJob)rsJob;
 		// Get the ResourceMetadata
-		ResourceMetadata rMetadata = job.metadata;
+		ResourceMetadata rMetadata = job.data;
 		// TODO Now call the UUID generator service
 		// http://localhost:8080/uuid returns a uuid
 		rMetadata.serviceID = "123-345-456";

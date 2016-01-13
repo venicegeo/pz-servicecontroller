@@ -31,7 +31,9 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	public void handle (PiazzaJobType jobRequest ) {
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
 		// Get the ResourceMetadata
+
 		/*model.job.metadata.ResourceMetadata rMetadata = job.data;
+
 		
 		
 		String result = handle(rMetadata); */

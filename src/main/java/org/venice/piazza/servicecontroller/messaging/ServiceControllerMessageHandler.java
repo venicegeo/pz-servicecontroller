@@ -13,6 +13,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -57,6 +58,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private List<String> topics;
 	private final AtomicBoolean closed = new AtomicBoolean(false);
 	private RegisterServiceHandler rsHandler;
+	@Autowired
 	private MongoAccessor accessor;
 
 	/**

@@ -17,7 +17,8 @@ import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
-import model.job.metadata.ResourceMetadata;
+//import model.job.metadata.ResourceMetadata;
+import org.venice.piazza.servicecontroller.model.ResourceMetadata;
 
 /**
  * Class to store service information in MongoDB.  
@@ -85,6 +86,7 @@ public class MongoAccessor {
 		} catch (MongoException ex) {
 			LOGGER.error(ex);
 			LOGGER.error(ex.getMessage());
+			ex.printStackTrace();
 			
 		}
 			

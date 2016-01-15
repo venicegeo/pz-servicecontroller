@@ -24,7 +24,7 @@ public class ServiceControllerTest {
 	
 	List<Service> services;
 	@Autowired
-
+ 
 
 	@Test
 	public void test() {

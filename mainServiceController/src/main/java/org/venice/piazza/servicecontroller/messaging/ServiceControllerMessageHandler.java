@@ -16,7 +16,9 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,8 +60,12 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private List<String> topics;
 	private final AtomicBoolean closed = new AtomicBoolean(false);
 	private RegisterServiceHandler rsHandler;
+	private ExecuteServiceHandler esHandler;
+
 	@Autowired
 	private MongoAccessor accessor;
+	@Autowired
+	private CoreServiceProperties coreServiceProp;
 
 	/**
 	 * Constructor
@@ -68,8 +74,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
 							   UPDATE_SERVICE_JOB_TOPIC_NAME);
-	
-		rsHandler = new RegisterServiceHandler(accessor);
+	    // Initialize the handlers to handle requests from the message queue
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp);
+		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
 	}
 
 	/**

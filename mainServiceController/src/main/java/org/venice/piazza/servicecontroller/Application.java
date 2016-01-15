@@ -5,8 +5,10 @@ import java.util.Arrays;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 /**
  * Main class for the pz-servicecontroller.  Launches the application
@@ -15,6 +17,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
  */
 
 @SpringBootApplication
+@EnableConfigurationProperties
 @EnableMongoRepositories("org.venice.piazza.serviceregistry.data.mongodb.repository")
 /* Enable Boot application and MongoRepositories */
 public class Application extends SpringBootServletInitializer {

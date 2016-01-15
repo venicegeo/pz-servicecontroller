@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.model.ExecuteServiceMessage;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.ServiceControllerMessageHandler;
@@ -26,7 +27,7 @@ import org.venice.piazza.servicecontroller.model.ResourceMetadata;
 
 // TODO Add License
 
-/**
+/** 
  * Purpose of this controller is to handle service requests
  * @author mlynum
  * @since 1.0
@@ -39,14 +40,17 @@ public class ServiceController {
 	private ExecuteServiceHandler esHandler;
 	@Autowired
 	private MongoAccessor accessor;
+	
+	@Autowired
+	private CoreServiceProperties coreServiceProp;
 	private final static Logger LOGGER = Logger.getLogger(ServiceController.class);
 	/**
 	 *  Initialize the handler to handle calls
 	 */
 	@PostConstruct
 	public void initialize() {
-		rsHandler = new RegisterServiceHandler(accessor);
-		esHandler = new ExecuteServiceHandler(accessor);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp);
+		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
 	}
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json")
 //	public @ResponseBody ResponseEntity<?> registerService(@RequestBody ResourceMetadata serviceMetadata) {

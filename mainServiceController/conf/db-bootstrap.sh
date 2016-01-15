@@ -11,8 +11,9 @@ sudo apt-get install -y mongodb-org
 sudo update-rc.d mongod defaults
 
 # Update configuration files
-sudo service mongod stop
-sudo cp ./mongodb.conf /etc/mongodb.conf
+sudo service mongod stop 
+cd /vagrant/servicereg/conf
+sudo cp ./mongodb.conf /etc/mongod.conf
 
 # Restart Mongo
 sudo service mongod start 

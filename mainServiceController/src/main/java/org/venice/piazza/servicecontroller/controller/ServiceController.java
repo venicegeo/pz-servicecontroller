@@ -1,6 +1,5 @@
 package org.venice.piazza.servicecontroller.controller;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -9,7 +8,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -18,12 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.model.ExecuteServiceMessage;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.messaging.ServiceControllerMessageHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 
-//import model.job.metadata.ResourceMetadata;
-import org.venice.piazza.servicecontroller.model.ResourceMetadata;
+import model.job.metadata.ResourceMetadata;
 
 // TODO Add License
 
@@ -82,6 +78,9 @@ public class ServiceController {
 		
 		
 	    String result = esHandler.handle(message);
+	    LOGGER.info("Result is" + result);
+	    //TODO Remove System.out
+	    System.out.println("Result is "+result);
 		return new ResponseEntity<>("completed", HttpStatus.OK);
 		
 

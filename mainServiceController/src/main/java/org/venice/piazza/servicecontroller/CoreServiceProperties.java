@@ -11,6 +11,15 @@ public class CoreServiceProperties {
 	
 	@NotBlank
 	private String uuidservice;
+	private String logservice;
+
+	public String getLogservice() {
+		return logservice;
+	}
+
+	public void setLogservice(String logservice) {
+		this.logservice = logservice;
+	}
 
 	public String getUuidservice() {
 		return uuidservice;

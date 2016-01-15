@@ -20,12 +20,14 @@ import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
+import org.venice.piazza.servicecontroller.util.CoreLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import messaging.job.KafkaClientFactory;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 /**
@@ -66,6 +68,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private MongoAccessor accessor;
 	@Autowired
 	private CoreServiceProperties coreServiceProp;
+	
+	@Autowired
+	private CoreLogger coreLogger;
 
 	/**
 	 * Constructor
@@ -75,7 +80,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
 							   UPDATE_SERVICE_JOB_TOPIC_NAME);
 	    // Initialize the handlers to handle requests from the message queue
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
 	}
 
@@ -118,6 +123,8 @@ public class ServiceControllerMessageHandler implements Runnable {
 						   // Handle Register Job
 						   rsHandler.handle(jobType);
 							
+						} else if (jobType instanceof ExecuteServiceJob) {
+							esHandler.handle(jobType);
 						}
 						
 					} catch (IOException ex) {

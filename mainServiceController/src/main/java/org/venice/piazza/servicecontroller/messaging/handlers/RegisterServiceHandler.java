@@ -20,6 +20,10 @@ import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
 
+
+
+
+
 /**
  * Handler for handling registerService requests.  This handler is used 
  * when register-service kafka topics are received or when clients utilize the 
@@ -94,7 +98,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			}
 		
 			
-		} catch (RestClientException ex) {
+		} catch (Exception ex) {
 			ex.printStackTrace();
 			LOGGER.error(ex.getMessage());
 			// The UUID Gen Service is not accessible so now

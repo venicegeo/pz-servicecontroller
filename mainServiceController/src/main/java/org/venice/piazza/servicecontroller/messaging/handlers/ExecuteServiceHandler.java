@@ -13,11 +13,13 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.util.CoreLogger;
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ExecuteServiceData;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.ExecuteServiceJob;
+import model.job.type.RegisterServiceJob;
 
 
 
@@ -59,6 +61,21 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
      */
 	public void handle (PiazzaJobType jobRequest ) {
 		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
+		if (job != null)  {
+			// Get the ResourceMetadata
+			ExecuteServiceData esData = job.data;
+
+			String result = handle(esData);
+			if (result.length() > 0) {
+				String jobId = job.getJobId();
+				// TODO Use the result, send a message with the resource ID
+				// and jobId
+				
+			}
+			else {
+				LOGGER.error("No result response from the handler, something went wrong");
+			}
+		}
 		
 	}//handle
 	
@@ -91,10 +108,12 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 	    	responseString = template.postForEntity(rMetadata.url, map, String.class);
 	    	LOGGER.info("The Response is " + responseString.toString());
+	    
 	    }
 	    else if (rMetadata.method.toUpperCase().equals("GET")) {
 	    	responseString = template.getForEntity(rMetadata.url, String.class, map);
 	    	LOGGER.info("The Response is " + responseString.toString());
+	    	
 
 	    }
 	 

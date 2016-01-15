@@ -15,6 +15,7 @@ import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.model.UUID;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.PiazzaJobHandler;
+import org.venice.piazza.servicecontroller.util.CoreLogger;
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
@@ -36,15 +37,19 @@ import model.job.type.RegisterServiceJob;
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private MongoAccessor accessor;
+	
+
+	private CoreLogger coreLogger;
 	private RestTemplate template;
 	private CoreServiceProperties coreServiceProp;
 	private final static Logger LOGGER = Logger.getLogger(RegisterServiceHandler.class);
 
 
-	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp) {
+	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger){ 
 		this.accessor = accessor;
 		this.coreServiceProp = coreServiceProp;
 		this.template = new RestTemplate();
+		this.coreLogger = coreLogger;
 	}
 
     /*
@@ -110,6 +115,9 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		String result = accessor.save(rMetadata);
 		LOGGER.info("THe result of the save is " + result);
 		System.out.println("The result is " + result);
+		
+		coreLogger.log(result, CoreLogger.INFO);
+		
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID
 		return result;

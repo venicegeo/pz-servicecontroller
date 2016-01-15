@@ -19,6 +19,7 @@ import org.venice.piazza.servicecontroller.data.model.ExecuteServiceMessage;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
+import org.venice.piazza.servicecontroller.util.CoreLogger;
 
 import model.job.metadata.ResourceMetadata;
 import model.job.metadata.ExecuteServiceData;
@@ -41,13 +42,16 @@ public class ServiceController {
 	
 	@Autowired
 	private CoreServiceProperties coreServiceProp;
+	
+	@Autowired
+	private CoreLogger coreLogger;
 	private final static Logger LOGGER = Logger.getLogger(ServiceController.class);
 	/**
 	 *  Initialize the handler to handle calls
 	 */
 	@PostConstruct
 	public void initialize() {
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
 	}
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
@@ -58,7 +62,7 @@ public class ServiceController {
 	    String result = rsHandler.handle(serviceMetadata);
 	    
 	    System.out.println("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
-	    String responseString = "{\"resourceId:\"" + "\"" + result + "\"}";
+	    String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 	    
 		return responseString;
 

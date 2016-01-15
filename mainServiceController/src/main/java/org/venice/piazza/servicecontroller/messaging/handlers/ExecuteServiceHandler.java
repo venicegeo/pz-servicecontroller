@@ -70,11 +70,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * @return the Response as a String
 	 */
 	public String handle (ExecuteServiceData data) {
-		String result = "";
+		ResponseEntity<String> responseString = null;
 		// Get the id from the data
 		String resourceId = data.getResourceId();
 		ResourceMetadata rMetadata = accessor.getResourceById(resourceId);
-		// Now get the mimeType for the request
+		// Now get the mimeType for the request not using for now..
 		String requestMimeType = rMetadata.requestMimeType;
 		MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
 		
@@ -85,12 +85,21 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	        System.out.println(pair.getKey() + " = " + pair.getValue());
 	        map.add((String)pair.getKey(), pair.getValue());
 	    }
+	    // Determine the method type to execute the service
+	    // Just handling Post and get for now
+	    if (rMetadata.method.toUpperCase().equals("POST")) {
 
-		ResponseEntity<String> responseString = template.postForEntity(rMetadata.url, map, String.class);
-		System.out.println("response is: " + responseString.getBody());
-		LOGGER.info("Resonse is " + responseString.toString());
-		return responseString.toString();
-				
+	    	responseString = template.postForEntity(rMetadata.url, map, String.class);
+	    	LOGGER.info("The Response is " + responseString.toString());
+	    }
+	    else if (rMetadata.method.toUpperCase().equals("GET")) {
+	    	responseString = template.getForEntity(rMetadata.url, String.class, map);
+	    	LOGGER.info("The Response is " + responseString.toString());
+
+	    }
+	 
+	  	return responseString.toString();
+		
 	}
 
 }

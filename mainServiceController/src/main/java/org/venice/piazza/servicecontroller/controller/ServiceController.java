@@ -7,6 +7,7 @@ import javax.annotation.PostConstruct;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,7 +50,7 @@ public class ServiceController {
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
 	}
-	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces="application/json")
+	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String registerService(@RequestBody ResourceMetadata serviceMetadata) {
 
 		LOGGER.info("serviceMetadata received is " + serviceMetadata);

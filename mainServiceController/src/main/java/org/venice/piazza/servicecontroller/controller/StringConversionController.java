@@ -1,6 +1,7 @@
 package org.venice.piazza.servicecontroller.controller;
 
 import org.apache.log4j.Logger;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,9 +31,9 @@ public class StringConversionController {
 	 * @param aString
 	 * @return JSON {result:<the converted string>}
 	 */	 
-	@RequestMapping(value = "/toUpper", method = RequestMethod.POST)
+	@RequestMapping(value = "/toUpper", method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-    public String convertStringtoUpper(@ModelAttribute("aString") String aString) {
+    public String convertStringtoUpper(@ModelAttribute("aString") String aString ) {
         System.out.println("Make the String uppercase" + aString);
  
         return "{\"result\":" + aString.toUpperCase() + "}";

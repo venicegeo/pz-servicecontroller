@@ -12,15 +12,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.controller.ServiceController;
 import org.venice.piazza.servicecontroller.data.model.UUID;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.model.ResourceMetadata;
 import org.venice.piazza.servicecontroller.messaging.handlers.PiazzaJobHandler;
 
 import model.job.PiazzaJobType;
-
+import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
+
+/**
+ * Handler for handling registerService requests.  This handler is used 
+ * when register-service kafka topics are received or when clients utilize the 
+ * ServiceController service.
+ * @author mlynum
+ * @version 1.0
+ *
+ */
 
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	@Autowired
@@ -43,19 +50,24 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
 	public void handle (PiazzaJobType jobRequest ) {
+		
+		
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
-		// Get the ResourceMetadata
+		if (job != null)  {
+			// Get the ResourceMetadata
+			model.job.metadata.ResourceMetadata rMetadata = job.data;
 
-		/*model.job.metadata.ResourceMetadata rMetadata = job.data;
-
-		
-		
-		String result = handle(rMetadata); */
-		/*if (result.length() > 0) {
-			String jobId = job.getJobId();
-			// TODO Use the result, send a message with the resource ID
-			
-		}*/
+			String result = handle(rMetadata);
+			if (result.length() > 0) {
+				String jobId = job.getJobId();
+				// TODO Use the result, send a message with the resource ID
+				// and jobId
+				
+			}
+			else {
+				LOGGER.error("No result response from the handler, something went wrong");
+			}
+		}
 		
 		
 	}//handle
@@ -68,6 +80,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			
 			if (data != null )
 			{
+				LOGGER.info("Response from UUIDgen" + uuid.toString());
+				System.out.println(uuid.toString());
 				if (data.size() > 1) {
 		
 				LOGGER.info("Received more than one ID from the UUIDGen service, " +
@@ -88,10 +102,6 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			rMetadata.resourceId = generateId();
 			
 		}
-		
-		// TODO Now call the UUID generator service
-		// http://localhost:8080/uuid?count="2" returns a two uuid
-		
 	
 		String result = accessor.save(rMetadata);
 		LOGGER.info("THe result of the save is " + result);

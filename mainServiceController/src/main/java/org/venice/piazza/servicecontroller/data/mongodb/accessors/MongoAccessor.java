@@ -17,8 +17,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
-//import model.job.metadata.ResourceMetadata;
-import org.venice.piazza.servicecontroller.model.ResourceMetadata;
+import model.job.metadata.ResourceMetadata;
 
 /**
  * Class to store service information in MongoDB.  

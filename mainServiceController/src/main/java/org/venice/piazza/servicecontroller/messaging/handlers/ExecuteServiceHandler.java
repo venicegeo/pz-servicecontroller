@@ -9,7 +9,10 @@ import org.venice.piazza.servicecontroller.data.model.ExecuteServiceMessage;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import model.job.PiazzaJobType;
+import model.job.metadata.ExecuteServiceData;
 import model.job.type.ExecuteServiceJob;
+
+
 
 /**
  * Handler for handling executeService requests.  This handler is used 
@@ -56,7 +59,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * @param message
 	 * @return
 	 */
-	public String handle (ExecuteServiceMessage message) {
+	public String handle (ExecuteServiceData data) {
 		String result = "";
 		// Get the ID from the message
 		

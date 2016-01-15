@@ -88,6 +88,7 @@
 		<dependency>
 			    <groupId>com.github.venicegeo</groupId>
 			    <artifactId>pz-jobcommon</artifactId>
+			    <scope>compile</scope>
 			    <version>master-SNAPSHOT</version>
 		</dependency>
 
@@ -143,6 +144,9 @@
 		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
+			<snapshots>
+            	<updatePolicy>always</updatePolicy>
+        	</snapshots>
 		</repository>
 		
 		<repository>

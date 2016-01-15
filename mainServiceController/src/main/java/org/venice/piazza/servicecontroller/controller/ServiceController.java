@@ -20,6 +20,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHand
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 
 import model.job.metadata.ResourceMetadata;
+import model.job.metadata.ExecuteServiceData;
 
 // TODO Add License
 
@@ -48,26 +49,28 @@ public class ServiceController {
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
 	}
-	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json")
-//	public @ResponseBody ResponseEntity<?> registerService(@RequestBody ResourceMetadata serviceMetadata) {
+	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces="application/json")
 	public @ResponseBody String registerService(@RequestBody ResourceMetadata serviceMetadata) {
 
 		LOGGER.info("serviceMetadata received is " + serviceMetadata);
 		System.out.println("serviceMetadata received is " + serviceMetadata);
 	    String result = rsHandler.handle(serviceMetadata);
+	    
 	    System.out.println("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
-		return result;
+	    String responseString = "{\"resourceId:\"" + "\"" + result + "\"}";
+	    
+		return responseString;
 
 	}
 	
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
-	public @ResponseBody ResponseEntity<?> executeService(@RequestBody ExecuteServiceMessage message) {
-		LOGGER.info("executeService resourceId=" + message.resourceId);
-		System.out.println("executeService resourceId=" + message.resourceId);
-		LOGGER.info("executeService datainput=" + message.dataInput);
-		System.out.println("executeService dataInput =" + message.dataInput);
+	public @ResponseBody ResponseEntity<?> executeService(@RequestBody ExecuteServiceData data) {
+		LOGGER.info("executeService resourceId=" + data.resourceId);
+		System.out.println("executeService resourceId=" + data.resourceId);
+		LOGGER.info("executeService datainput=" + data.dataInput);
+		System.out.println("executeService dataInput =" + data.dataInput);
 
-		for (Map.Entry<String,String> entry : message.dataInputs.entrySet()) {
+		for (Map.Entry<String,String> entry : data.dataInputs.entrySet()) {
 			  String key = entry.getKey();
 			  String value = entry.getValue();
 			  LOGGER.info("dataInput key:" + key);
@@ -77,10 +80,12 @@ public class ServiceController {
 		}
 		
 		
-	    String result = esHandler.handle(message);
+	    String result = esHandler.handle(data);
 	    LOGGER.info("Result is" + result);
 	    //TODO Remove System.out
 	    System.out.println("Result is "+result);
+	    
+	    // Set the response based on the service retrieved
 		return new ResponseEntity<>("completed", HttpStatus.OK);
 		
 

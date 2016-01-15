@@ -11,8 +11,9 @@ import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 
-
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
@@ -36,7 +37,7 @@ public class MongoAccessor {
 	@Value("${mongo.db.name}")
 	private String DATABASE_NAME;
 	@Value("${mongo.db.collection.name}")
-	private String SERVICE_COLLECTION_NAME;
+	private String RESOURCE_COLLECTION_NAME;
 	private MongoClient mongoClient;
 	
 	private final static Logger LOGGER = Logger.getLogger(MongoAccessor.class);
@@ -74,7 +75,7 @@ public class MongoAccessor {
 	public String save(ResourceMetadata metadata) {
 		String result = "";
 		try {
-			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
 			
 			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
 			        String.class);
@@ -90,6 +91,36 @@ public class MongoAccessor {
 		}
 			
 		return result;
+	}
+	
+
+	/**
+	 * Gets a reference to the MongoDB's Job Collection.
+	 * 
+	 * @return
+	 */
+	public JacksonDBCollection<ResourceMetadata, String> getResourceCollection() {
+		// MongoJack does not support the latest Mongo API yet. TODO: Check if
+		// they plan to.
+		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+		return JacksonDBCollection.wrap(collection, ResourceMetadata.class, String.class);
+	}
+
+	
+	/**
+	 * Returns a Job that matches the specified ID.
+	 * 
+	 * @param jobId
+	 *            Job ID
+	 * @return The Job with the specified ID
+	 */
+	public ResourceMetadata getResourceById(String resourceId) throws ResourceAccessException {
+		BasicDBObject query = new BasicDBObject("_id", resourceId);
+		ResourceMetadata resource = getResourceCollection().findOne(query);
+		if (resource == null) {
+			throw new ResourceAccessException("The resource could not found.");
+		}
+		return resource;
 	}
 
 }

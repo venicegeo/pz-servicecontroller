@@ -1,4 +1,4 @@
-package org.venice.piazza.servicecontroller.model;
+package org.venice.piazza.servicecontroller.data.model;
 
 /* Copyright 2015, RadiantBlue Technologies, Inc.
 

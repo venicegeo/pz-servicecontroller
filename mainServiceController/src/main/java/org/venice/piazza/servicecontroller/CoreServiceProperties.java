@@ -25,13 +25,13 @@ public class CoreServiceProperties {
 	@Value ("${kafka.group}")
 	private String kafkaGroup;
 	@Value ("${kafka.port}")
-	private String kafkaPort;
+	private int kafkaPort;
 	@Value ("${server.port}")
-	private String serverPort;
+	private int serverPort;
 	@Value ("${mongo.host}")
 	private String mongoHost;
 	@Value ("${mongo.port}")
-	private String mongoPort;
+	private int mongoPort;
 	@Value ("${mongo.db.name}")
 	private String mongoDBName;
 	@Value ("${mongo.db.collection.name}")
@@ -61,11 +61,11 @@ public class CoreServiceProperties {
 		this.kafkaGroup = kafkaGroup;
 	}
 
-	public String getServerPort() {
+	public int getServerPort() {
 		return serverPort;
 	}
 
-	public void setServerPort(String serverPort) {
+	public void setServerPort(int serverPort) {
 		this.serverPort = serverPort;
 	}
 
@@ -77,11 +77,11 @@ public class CoreServiceProperties {
 		this.mongoHost = mongoHost;
 	}
 
-	public String getMongoPort() {
+	public int getMongoPort() {
 		return mongoPort;
 	}
 
-	public void setMongoPort(String mongoPort) {
+	public void setMongoPort(int mongoPort) {
 		this.mongoPort = mongoPort;
 	}
 
@@ -101,11 +101,11 @@ public class CoreServiceProperties {
 		this.mongoCollectionName = mongoCollectionName;
 	}
 	
-	public String getKafkaPort() {
+	public int getKafkaPort() {
 		return kafkaPort;
 	}
 
-	public void setKafkaPort(String kafkaPort) {
+	public void setKafkaPort(int kafkaPort) {
 		this.kafkaPort = kafkaPort;
 	}
 

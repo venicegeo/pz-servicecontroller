@@ -34,7 +34,7 @@ import model.request.PiazzaJobRequest;
 /**
  * Purpose of this controller is to register for the Kafka messages and listen for service controller topics.
  * @author mlynum
- *
+ * @version 1.0
  */
 
 
@@ -50,10 +50,8 @@ public class ServiceControllerMessageHandler implements Runnable {
 	
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);
 	
-	@Value("${kafka.host}")
 	private String KAFKA_HOST;
-	private String KAFKA_PORT;
-	@Value("${kafka.group}")
+	private int KAFKA_PORT;
 	private String KAFKA_GROUP;
 	/*
 	  TODO need to determine how statuses will be sent to update the job  (Call back?)
@@ -92,12 +90,17 @@ public class ServiceControllerMessageHandler implements Runnable {
 	public void initialize() {
 		// Initialize the Kafka consumer/producer
 		KAFKA_PORT = coreServiceProperties.getKafkaPort();
-		System.out.println("=================================");
-		System.out.println("The KAFKA Port Properties is " + coreServiceProperties.getKafkaPort());
+		KAFKA_HOST = coreServiceProperties.getKafkaHost();
+		KAFKA_GROUP = coreServiceProperties.getKafkaGroup();
+		LOGGER.info("=================================");
 		LOGGER.info("The KAFKA Port Properties is " + coreServiceProperties.getKafkaPort());
+		LOGGER.info("The KAFKA Host Properties is " + coreServiceProperties.getKafkaHost());
+		LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
+		LOGGER.info("=================================");
 
-		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
-		consumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP);
+		String KAFKA_PORT_STRING = new Integer(KAFKA_PORT).toString();
+		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT_STRING);
+		consumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT_STRING, KAFKA_GROUP);
 		// Start the runner that will relay Job Creation topics.
 		Thread kafkaListenerThread = new Thread(this);
 		

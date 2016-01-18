@@ -23,7 +23,7 @@ import model.job.type.RegisterServiceJob;
 /**
  * Handler for handling registerService requests.  This handler is used 
  * when register-service kafka topics are received or when clients utilize the 
- * ServiceController service.
+ * ServiceController registerService web service.
  * @author mlynum
  * @version 1.0
  *
@@ -72,10 +72,13 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				LOGGER.error("No result response from the handler, something went wrong");
 			}
 		}
-		
-		
 	}//handle
 	
+	/**
+	 * 
+	 * @param rMetadata
+	 * @return resourceID of the registered service
+	 */
 	public String handle (ResourceMetadata rMetadata) {
 		
 		try {
@@ -99,6 +102,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			
 		} catch (Exception ex) {
 			LOGGER.error(ex.getMessage());
+			LOGGER.debug(ex.toString());
 			// The UUID Gen Service is not accessible so now
 			// Make up a random ID	
 			rMetadata.resourceId = generateId();

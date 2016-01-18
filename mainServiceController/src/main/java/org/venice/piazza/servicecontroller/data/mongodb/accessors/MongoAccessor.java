@@ -6,12 +6,14 @@ import java.net.UnknownHostException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
+import org.venice.piazza.servicecontroller.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
@@ -30,28 +32,33 @@ import model.job.metadata.ResourceMetadata;
 // TODO  FUTURE See a way to store service controller internals 
 @Component
 public class MongoAccessor {
-	@Value("${mongo.host}")
 	private String DATABASE_HOST;
-	@Value("${mongo.port}")
 	private int DATABASE_PORT;
-	@Value("${mongo.db.name}")
 	private String DATABASE_NAME;
-	@Value("${mongo.db.collection.name}")
 	private String RESOURCE_COLLECTION_NAME;
 	private MongoClient mongoClient;
 	
-	private final static Logger LOGGER = Logger.getLogger(MongoAccessor.class);
+	@Autowired
+	private CoreServiceProperties coreServiceProperties;
+	
+	private final static Logger LOGGER = LoggerFactory.getLogger(MongoAccessor.class);
 
 	public MongoAccessor() {
 	}
 
 	@PostConstruct
 	private void initialize() {
+		// Initialize the Kafka consumer/producer
+		DATABASE_HOST = coreServiceProperties.getMongoHost();
+		DATABASE_PORT = coreServiceProperties.getMongoPort();
+		DATABASE_NAME = coreServiceProperties.getMongoDBName();
+		RESOURCE_COLLECTION_NAME = coreServiceProperties.getMongoCollectionName();
+		
 		try {
 			mongoClient = new MongoClient(DATABASE_HOST, DATABASE_PORT);
 		} catch (UnknownHostException ex) {
 			LOGGER.error(ex.getMessage());
-			ex.printStackTrace();
+			LOGGER.debug(ex.toString());
 		}
 	}
 
@@ -84,7 +91,7 @@ public class MongoAccessor {
 			result = writeResult.getSavedId();
 			
 		} catch (MongoException ex) {
-			LOGGER.error(ex);
+			LOGGER.debug(ex.toString());
 			LOGGER.error(ex.getMessage());
 			ex.printStackTrace();
 			

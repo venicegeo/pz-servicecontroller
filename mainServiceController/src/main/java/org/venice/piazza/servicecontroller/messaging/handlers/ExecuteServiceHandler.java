@@ -52,6 +52,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		this.accessor = accessor;
 		this.coreServiceProperties = coreServiceProperties;
 		this.template = new RestTemplate();
+		this.coreLogger = coreLogger;
 	
 	}
 
@@ -114,7 +115,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	
 		    	responseString = template.postForEntity(rMetadata.url, map, String.class);
 		    	LOGGER.debug("The Response is " + responseString.toString());	
-		 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+		 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
 		    
 		    }
 		    else if (rMetadata.method.toUpperCase().equals("GET")) {

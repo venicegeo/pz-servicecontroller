@@ -48,6 +48,7 @@ public class CoreLogger {
 	
 	@PostConstruct
 	public void init() {
+		LOGGER.info("CoreLogger initialized");
 		template = new RestTemplate();
 	}
 

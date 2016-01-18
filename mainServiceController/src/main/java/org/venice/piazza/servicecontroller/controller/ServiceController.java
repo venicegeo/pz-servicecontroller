@@ -77,7 +77,7 @@ public class ServiceController {
 	}
 	
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
-	public @ResponseBody ResponseEntity<?> executeService(@RequestBody ExecuteServiceData data) {
+	public @ResponseBody String executeService(@RequestBody ExecuteServiceData data) {
 		LOGGER.debug("executeService resourceId=" + data.resourceId);
 		LOGGER.debug("executeService datainput=" + data.dataInput);
 
@@ -94,7 +94,7 @@ public class ServiceController {
 	    //TODO Remove System.out
 	    
 	    // Set the response based on the service retrieved
-		return new ResponseEntity<>("completed", HttpStatus.OK);
+		return result;
 		
 
 	}

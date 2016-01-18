@@ -12,7 +12,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -46,11 +47,11 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "Register-Service-Job";
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "Update-Service-Job";
 	
-	private final static Logger LOGGER = Logger.getLogger(ServiceControllerMessageHandler.class);
+	
+	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);
 	
 	@Value("${kafka.host}")
 	private String KAFKA_HOST;
-	@Value("${kafka.port}")
 	private String KAFKA_PORT;
 	@Value("${kafka.group}")
 	private String KAFKA_GROUP;
@@ -67,7 +68,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	@Autowired
 	private MongoAccessor accessor;
 	@Autowired
-	private CoreServiceProperties coreServiceProp;
+	private CoreServiceProperties coreServiceProperties;
 	
 	@Autowired
 	private CoreLogger coreLogger;
@@ -80,16 +81,21 @@ public class ServiceControllerMessageHandler implements Runnable {
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
 							   UPDATE_SERVICE_JOB_TOPIC_NAME);
 	    // Initialize the handlers to handle requests from the message queue
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger);
-		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger);
+		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 	}
 
-	/**
+	/**+
 	 * 
 	 */
 	@PostConstruct
 	public void initialize() {
 		// Initialize the Kafka consumer/producer
+		KAFKA_PORT = coreServiceProperties.getKafkaPort();
+		System.out.println("=================================");
+		System.out.println("The KAFKA Port Properties is " + coreServiceProperties.getKafkaPort());
+		LOGGER.info("The KAFKA Port Properties is " + coreServiceProperties.getKafkaPort());
+
 		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
 		consumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP);
 		// Start the runner that will relay Job Creation topics.
@@ -128,8 +134,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 						}
 						
 					} catch (IOException ex) {
-						System.out.println("Error Creating message.");
-						ex.printStackTrace();
+						LOGGER.error(ex.getMessage());
 					}
 				}
 
@@ -137,7 +142,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 			
 			
 		} catch (WakeupException ex) {
-			LOGGER.error(ex);
+			LOGGER.error(ex.getMessage());
 		}
 		
 		

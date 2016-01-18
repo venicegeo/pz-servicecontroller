@@ -1,15 +1,13 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 // TODO add license
 
-
-
 import java.util.List;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.model.UUID;
@@ -20,9 +18,6 @@ import org.venice.piazza.servicecontroller.util.CoreLogger;
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
-
-
-
 
 
 /**
@@ -41,13 +36,13 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 
 	private CoreLogger coreLogger;
 	private RestTemplate template;
-	private CoreServiceProperties coreServiceProp;
-	private final static Logger LOGGER = Logger.getLogger(RegisterServiceHandler.class);
+	private CoreServiceProperties coreServiceProperties;
+	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
 
 
 	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger){ 
 		this.accessor = accessor;
-		this.coreServiceProp = coreServiceProp;
+		this.coreServiceProperties = coreServiceProp;
 		this.template = new RestTemplate();
 		this.coreLogger = coreLogger;
 	}
@@ -60,7 +55,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
      */
 	public void handle (PiazzaJobType jobRequest ) {
 		
-		
+		LOGGER.debug("Registering a service");
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the ResourceMetadata
@@ -84,16 +79,15 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	public String handle (ResourceMetadata rMetadata) {
 		
 		try {
-			ResponseEntity<UUID> uuid = template.postForEntity("http://" + coreServiceProp.getUuidservice(), null, UUID.class);
+			ResponseEntity<UUID> uuid = template.postForEntity("http://" + coreServiceProperties.getUuidservice(), null, UUID.class);
 			List <String> data = uuid.getBody().getData();
 			
 			if (data != null )
 			{
-				LOGGER.info("Response from UUIDgen" + uuid.toString());
-				System.out.println(uuid.toString());
+				LOGGER.debug("Response from UUIDgen" + uuid.toString());
 				if (data.size() > 1) {
 		
-				LOGGER.info("Received more than one ID from the UUIDGen service, " +
+				LOGGER.debug("Received more than one ID from the UUIDGen service, " +
 							"defaulting to first id returned.");
 				}
 				rMetadata.resourceId = data.get(0);
@@ -104,7 +98,6 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		
 			
 		} catch (Exception ex) {
-			ex.printStackTrace();
 			LOGGER.error(ex.getMessage());
 			// The UUID Gen Service is not accessible so now
 			// Make up a random ID	
@@ -113,11 +106,12 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		}
 	
 		String result = accessor.save(rMetadata);
-		LOGGER.info("THe result of the save is " + result);
-		System.out.println("The result is " + result);
-		
-		coreLogger.log(result, CoreLogger.INFO);
-		
+		LOGGER.debug("The result of the save is " + result);
+		if (result.length() > 0) {
+		   coreLogger.log("The service " + rMetadata.name + " was stored with id " + result, CoreLogger.INFO);
+		} else {
+			   coreLogger.log("The service " + rMetadata.name + " was NOT stored", CoreLogger.INFO);
+		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID
 		return result;
@@ -130,8 +124,10 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 */
 	private String generateId() {
 		String id = "";
-		Random rand = new Random();		
-		id= "123-345-456" + rand.nextInt(100) + 2;
+		Random rand = new Random(System.nanoTime());
+		int randomInt = rand.nextInt(1000000000);
+		rand = new Random();		
+		id= "123-345-456" + (new Integer(randomInt).toString()) + rand.nextInt(100) + 2;
 		return id;
 		
 	}

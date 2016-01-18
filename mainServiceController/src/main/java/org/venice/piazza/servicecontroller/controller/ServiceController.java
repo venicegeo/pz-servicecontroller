@@ -4,7 +4,8 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.data.model.ExecuteServiceMessage;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
@@ -45,23 +45,31 @@ public class ServiceController {
 	
 	@Autowired
 	private CoreLogger coreLogger;
-	private final static Logger LOGGER = Logger.getLogger(ServiceController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
+	
+	public ServiceController() {
+		
+	}
 	/**
 	 *  Initialize the handler to handle calls
 	 */
 	@PostConstruct
 	public void initialize() {
+		
+		// Initialize calling server
+		LOGGER.info("initialize: coreServiceDiscovery = " + coreServiceProp.getDiscoveryservice());
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger);
-		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp);
+		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
+		
+	
 	}
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String registerService(@RequestBody ResourceMetadata serviceMetadata) {
 
-		LOGGER.info("serviceMetadata received is " + serviceMetadata);
-		System.out.println("serviceMetadata received is " + serviceMetadata);
+		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
 	    String result = rsHandler.handle(serviceMetadata);
 	    
-	    System.out.println("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
+	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
 	    String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 	    
 		return responseString;
@@ -70,25 +78,20 @@ public class ServiceController {
 	
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
 	public @ResponseBody ResponseEntity<?> executeService(@RequestBody ExecuteServiceData data) {
-		LOGGER.info("executeService resourceId=" + data.resourceId);
-		System.out.println("executeService resourceId=" + data.resourceId);
-		LOGGER.info("executeService datainput=" + data.dataInput);
-		System.out.println("executeService dataInput =" + data.dataInput);
+		LOGGER.debug("executeService resourceId=" + data.resourceId);
+		LOGGER.debug("executeService datainput=" + data.dataInput);
 
 		for (Map.Entry<String,String> entry : data.dataInputs.entrySet()) {
 			  String key = entry.getKey();
 			  String value = entry.getValue();
-			  LOGGER.info("dataInput key:" + key);
-			  LOGGER.info("dataInput value:" + value);
-			  System.out.println("dataInput key:" + key);
-			  System.out.println("dataInput value:" + value);			  
+			  LOGGER.debug("dataInput key:" + key);
+			  LOGGER.debug("dataInput value:" + value);			  
 		}
 		
 		
 	    String result = esHandler.handle(data);
-	    LOGGER.info("Result is" + result);
+	    LOGGER.debug("Result is" + result);
 	    //TODO Remove System.out
-	    System.out.println("Result is "+result);
 	    
 	    // Set the response based on the service retrieved
 		return new ResponseEntity<>("completed", HttpStatus.OK);

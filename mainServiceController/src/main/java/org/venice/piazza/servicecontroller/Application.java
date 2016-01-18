@@ -2,6 +2,7 @@ package org.venice.piazza.servicecontroller;
 // TODO add license
 import java.util.Arrays;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -21,7 +22,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @EnableMongoRepositories("org.venice.piazza.serviceregistry.data.mongodb.repository")
 /* Enable Boot application and MongoRepositories */
 public class Application extends SpringBootServletInitializer {
-
+	
 
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
@@ -30,8 +31,10 @@ public class Application extends SpringBootServletInitializer {
 	}
 
 	public static void main(String[] args) {
+		
 
 		ApplicationContext ctx = SpringApplication.run(Application.class, args);
+		
 		
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment

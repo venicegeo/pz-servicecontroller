@@ -10,7 +10,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	    serviceregdb.vm.provision :shell, path: "db-bootstrap.sh"
 	    serviceregdb.vm.network :private_network, ip:"192.168.42.24"
 	    serviceregdb.vm.network "forwarded_port", guest: 27017, host: 27017
-	    serviceregdb.vm.synced_folder "../", "/vagrant/servicereg"
+	    serviceregdb.vm.synced_folder "./", "/vagrant"
 	    serviceregdb.vm.provider "virtualbox" do |vr|
 	      vr.customize ["modifyvm", :id, "--memory", "512"]
 		  vr.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]

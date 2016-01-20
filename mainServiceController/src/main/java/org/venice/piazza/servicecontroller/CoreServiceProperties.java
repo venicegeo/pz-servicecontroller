@@ -8,7 +8,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-
+/**
+ * Properties for the ServiceController.  Loaded in from application.properties file.  Properties defined in the 
+ * application.properties file will be superseded by values retrieved from the pz-discover service.
+ * @author mlynum
+ * @version 1.0
+ */
 @Configuration
 @EnableConfigurationProperties
 @ConfigurationProperties(locations = "classpath:application.properties", ignoreUnknownFields = false, prefix = "core")

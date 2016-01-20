@@ -8,8 +8,8 @@ sudo apt-get -y update
 sudo apt-get -y install openjdk-8-jdk maven
 
 # Build Service Controller application
-#cd /vagrant/servicereg
-#mvn clean package
+cd /vagrant/servicereg
+mvn clean package
 
 # Run the Service Controller 
-#java -jar target/piazza-serviceregistry*.jar
+java -jar target/piazzaServiceController*.jar

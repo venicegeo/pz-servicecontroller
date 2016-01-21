@@ -149,7 +149,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					HttpHeaders headers = new HttpHeaders();
 					
 					// Set the mimeType of the request
-					MediaType mediaType = new MediaType(rMetadata.requestMimeType);
+					MediaType mediaType = createMediaType(rMetadata.requestMimeType);
 					headers.setContentType(mediaType);
 					LOGGER.debug("Json to be used " + data.dataInput);
 					LOGGER.debug("Mimetype is " + mediaType.getType());
@@ -170,10 +170,10 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				
 				if (rMetadata.method.toUpperCase().equals("POST")) {
 					HttpHeaders headers = new HttpHeaders();
-					MediaType mediaType = new MediaType(rMetadata.requestMimeType);
+					MediaType mediaType = createMediaType(rMetadata.requestMimeType);
 					headers.setContentType(mediaType);
 					LOGGER.debug("Calling URL POST " + rMetadata.url);
-					LOGGER.debug("Mimetype is " + mediaType.getType());
+					LOGGER.debug("Mimetype is " + mediaType.getType() + mediaType.getSubtype());
 					responseString = template.postForEntity(rMetadata.url, null, String.class);
 			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
 
@@ -190,6 +190,36 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		}
 	 
 	  	return responseString.toString();
+		
+	}
+	
+	/**
+	 * This method creates a MediaType based on the mimetype that was 
+	 * provided
+	 * @param mimeType
+	 * @return MediaType
+	 */
+	private MediaType createMediaType(String mimeType) {
+		MediaType mediaType;
+		String type, subtype;
+		StringBuffer sb = new StringBuffer(mimeType);
+		int index = sb.indexOf("/");
+		// If a slash was found then there is a type and subtype
+		if (index != -1) {
+			type = sb.substring(0, index);
+			
+		    subtype = sb.substring(index+1, mimeType.length());
+		    mediaType = new MediaType(type, subtype);
+		    LOGGER.debug("The type is="+type);
+			LOGGER.debug("The subtype="+subtype);
+		}
+		else {
+			// Assume there is just a type for the mime, no subtype
+			mediaType = new MediaType(mimeType);			
+		}
+		
+		return mediaType;
+	
 		
 	}
 

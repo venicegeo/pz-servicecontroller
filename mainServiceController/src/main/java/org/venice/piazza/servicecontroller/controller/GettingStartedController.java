@@ -67,9 +67,14 @@ public class GettingStartedController {
 	@RequestMapping(value = "/string/toUpper", method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
     public String convertStringtoUpper(@ModelAttribute("aString") String aString ) {
-        LOGGER.info("Make the String uppercase" + aString);
+		String result = "a String was not provided.";
+				
+		if (aString != null)
+			result = aString.toUpperCase();
+	
+        LOGGER.info("The result is " + result);
  
-        return "{\"result\":\"" + aString.toUpperCase() + "\"}";
+        return "{\"result\":\"" + result + "\"}";
     }
 	
 
@@ -89,17 +94,19 @@ public class GettingStartedController {
 	public @ResponseBody String convert(@RequestBody Message msg) {
 		
 		String result = "Could not Convert, please check message";
-		String converstionType = msg.getConversionType();
+		String conversionType = msg.getConversionType();
 		String theString = msg.gettheString();
-		if (converstionType.equals(Message.UPPER))  {
-			LOGGER.info("Make the String uppercase" + theString);
-			LOGGER.info("The message" + msg);
-	        result=convertStringtoUpper(theString);
-		} 
-		else if (converstionType.equals(Message.LOWER))  {
-			LOGGER.info("Make the String lower case" + theString);
-			result=convertStringtoLower(theString);
-	       
+		if ((conversionType != null) && (theString != null)) {
+			if (conversionType.equals(Message.UPPER))  {
+				LOGGER.info("Make the String uppercase" + theString);
+				LOGGER.info("The message" + msg);
+		        result=convertStringtoUpper(theString);
+			} 
+			else if (conversionType.equals(Message.LOWER))  {
+				LOGGER.info("Make the String lower case" + theString);
+				result=convertStringtoLower(theString);
+		       
+			}
 		}
 		
 		return result;
@@ -116,10 +123,13 @@ public class GettingStartedController {
 	 */	 
 	@RequestMapping(value = "/string/toLower", method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-    public String convertStringtoLower(@ModelAttribute("aString") String aString) {
-        LOGGER.info("Make the String uppercase" + aString);
- 
-        return "{\"result\":\"" + aString.toLowerCase() + "\"}";
+    public String convertStringtoLower(@ModelAttribute("aString") String aString) {        
+        String result = "aString was not provided";
+        
+        if(aString != null)
+        	result  = aString.toLowerCase();
+        LOGGER.info("The result is " + result);
+        return "{\"result\":\"" + result + "\"}";
 
     }
 	

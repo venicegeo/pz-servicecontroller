@@ -1,0 +1,7 @@
+applications:
+- name: pz-servicecontroller
+  host: pz-servicecontroller
+  memory: 512M
+  instances: 1
+  timeout: 80
+  path: piazzaServiceController-1.0.0.BUILD-SNAPSHOT.jar

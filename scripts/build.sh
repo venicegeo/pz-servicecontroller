@@ -7,7 +7,7 @@ popd > /dev/null
 mvn clean package
 
 # Path to output JAR
-jarfile=$base/../target/piazzaServiceController*.jar
+jarfile=$base/../mainServiceController/target/piazzaServiceController-1.0.0.BUILD-SNAPSHOT.jar
 
 # Gather some data about the repo
 source $base/vars.sh

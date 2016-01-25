@@ -8,4 +8,7 @@ popd > /dev/null
 source $base/vars.sh
 
 # Send a null Job status check
-[ curl -H "Content-Type: application/json" -X POST -d '{ "name":"The toLower Service", "description":"Service to convert string to lower case", "url":"http://localhost:8082/jumpstart/string/toLower", "method":"POST", "params": ["aString"], "requestMimeType":"application/json" }' http://http://pz-servicecontroller.cf.piazzageo.io/servicecontroller/registerService = 200 ]
+[ `curl -H "Content-Type: application/json" -X POST \
+  -w "%{http_code}" -s -o /dev/null \
+  -d '{ "name":"The toLower Service", "description":"Service to convert string to lower case", "url":"http://localhost:8082/jumpstart/string/toLower", "method":"POST", "params": ["aString"], "requestMimeType":"application/json" }' \
+  http://pz-servicecontroller.cf.piazzageo.io/servicecontroller/registerService` = 200 ]

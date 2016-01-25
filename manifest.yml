@@ -4,4 +4,4 @@ applications:
   memory: 512M
   instances: 1
   timeout: 80
-  path: piazzaServiceController-1.0.0.BUILD-SNAPSHOT.jar
+  path: pz-servicecontroller.jar

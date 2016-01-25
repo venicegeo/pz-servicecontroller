@@ -3,7 +3,7 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 // Remove System.out.println
 
 
-import java.util.HashMap;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,9 +18,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ExecuteServiceData;

@@ -13,7 +13,7 @@ import org.mongojack.WriteResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.CoreServiceProperties;
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;

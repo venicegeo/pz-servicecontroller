@@ -4,6 +4,7 @@ import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +27,7 @@ import org.venice.piazza.servicecontroller.data.model.Message;
  */
 
 @RequestMapping("/jumpstart")
+@DependsOn("coreInitDestroy")
 public class GettingStartedController {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(GettingStartedController.class);

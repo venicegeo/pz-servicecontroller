@@ -15,13 +15,13 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Controller;
-import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,6 +39,7 @@ import model.request.PiazzaJobRequest;
 
 
 @Controller
+@DependsOn("coreInitDestroy")
 public class ServiceControllerMessageHandler implements Runnable {
 	// Jobs to listen to
 	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "Delete-Service-Job";

@@ -7,6 +7,7 @@ import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.venice.piazza.servicecontroller.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.metadata.ResourceMetadata;
 import model.job.metadata.ExecuteServiceData;
@@ -33,6 +34,7 @@ import model.job.metadata.ExecuteServiceData;
  */
 
 @RestController
+@DependsOn("coreInitDestroy")
 @RequestMapping("/servicecontroller")
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;

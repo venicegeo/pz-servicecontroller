@@ -1,4 +1,4 @@
-package org.venice.piazza.servicecontroller;
+package org.venice.piazza.servicecontroller.util;
 
 import javax.validation.constraints.NotNull;
 
@@ -6,6 +6,7 @@ import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -41,8 +42,38 @@ public class CoreServiceProperties {
 	private String mongoDBName;
 	@Value ("${mongo.db.collection.name}")
 	private String mongoCollectionName;
+	@Value("${servicecontroller.appname}")
+	private String appname;
+	@Value("${servicecontroller.host}")
+	private String host;
+	@Value("${servicecontroller.port}")
+	private String port;
 	
-	
+
+	public String getAppname() {
+		return appname;
+	}
+
+	public void setAppname(String appname) {
+		this.appname = appname;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public String getPort() {
+		return port;
+	}
+
+	public void setPort(String port) {
+		this.port = port;
+	}
+
 	public String getDiscoveryservice() {
 		return discoveryservice;
 	}
@@ -128,6 +159,11 @@ public class CoreServiceProperties {
 
 	public void setUuidservice(String uuidservice) {
 		this.uuidservice = uuidservice;
+	}
+	
+	@Bean
+	public CoreInitDestroy coreInitDestroy() {
+		return new CoreInitDestroy();
 	}
 
 }

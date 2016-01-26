@@ -50,12 +50,18 @@ public class MongoAccessor {
 
 	@PostConstruct
 	private void initialize() {
-		// Initialize the Kafka consumer/producer
+		// Initialize the MongoDB 
 		DATABASE_HOST = coreServiceProperties.getMongoHost();
 		DATABASE_PORT = coreServiceProperties.getMongoPort();
 		DATABASE_NAME = coreServiceProperties.getMongoDBName();
 		RESOURCE_COLLECTION_NAME = coreServiceProperties.getMongoCollectionName();
-		
+		LOGGER.debug("====================================================");
+		LOGGER.debug("DATABASE_HOST=" + DATABASE_HOST);
+		LOGGER.debug("DATABASE_PORT=" + DATABASE_PORT);
+		LOGGER.debug("DATABASE_NAME=" + DATABASE_NAME);
+		LOGGER.debug("RESOURCE_COLLECTION_NAME=" + RESOURCE_COLLECTION_NAME);
+		LOGGER.debug("====================================================");
+
 		try {
 			mongoClient = new MongoClient(DATABASE_HOST, DATABASE_PORT);
 		} catch (UnknownHostException ex) {

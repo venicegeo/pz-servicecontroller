@@ -103,6 +103,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		} catch (Exception ex) {
 			LOGGER.error(ex.getMessage());
 			LOGGER.debug(ex.toString());
+			LOGGER.debug("UUIDGen Service Used " + coreServiceProperties.getUuidservice());
 			// The UUID Gen Service is not accessible so now
 			// Make up a random ID	
 			rMetadata.resourceId = generateId();

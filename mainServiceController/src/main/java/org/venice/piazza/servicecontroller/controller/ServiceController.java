@@ -34,8 +34,9 @@ import model.job.metadata.ExecuteServiceData;
  */
 
 @RestController
-@DependsOn("coreInitDestroy")
+
 @RequestMapping("/servicecontroller")
+@DependsOn("coreInitDestroy")
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
@@ -59,7 +60,6 @@ public class ServiceController {
 	public void initialize() {
 		
 		// Initialize calling server
-		LOGGER.info("initialize: coreServiceDiscovery = " + coreServiceProp.getDiscoveryservice());
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
 		

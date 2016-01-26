@@ -25,6 +25,9 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.venice.piazza.servicecontroller.data.model.CoreResource;
+import org.venice.piazza.servicecontroller.data.model.DBCoreResource;
+import org.venice.piazza.servicecontroller.data.model.KafkaCoreResource;
 import org.venice.piazza.servicecontroller.data.model.RegisterService;
 
 
@@ -33,7 +36,6 @@ import org.venice.piazza.servicecontroller.data.model.RegisterService;
 public class CoreInitDestroy implements InitializingBean {
 	
 	 final static Logger LOGGER = LoggerFactory.getLogger(CoreInitDestroy.class);
-	 private final static String discoverAPI = "/api/v1/resources"; 
 	 
 	 @Autowired
 	 private CoreServiceProperties coreServiceProperties;
@@ -41,6 +43,7 @@ public class CoreInitDestroy implements InitializingBean {
 	 private String appName;
 	 private String url;
 	 private String host;
+	 private String discoverAPI;
 
 	/**
 	 * Constructor
@@ -72,7 +75,6 @@ public class CoreInitDestroy implements InitializingBean {
 	        	 LOGGER.info("response is = " + response.getStatusCode().toString());
 	         else
 	        	 LOGGER.info("Could not de-register from pz-discover." + appName);
-	         // ResponseEntity<byte[]> result = restTemplate.exchange("http://localhost:7070/spring-rest-provider/krams/person/{id}", HttpMethod.GET, entity, byte[].class, id);
 	     } catch (HttpClientErrorException ex) {
 			HttpStatus status = ex.getStatusCode();
 			if (status == HttpStatus.NOT_FOUND) {
@@ -110,7 +112,7 @@ public class CoreInitDestroy implements InitializingBean {
 	     } catch (HttpClientErrorException ex) {
 			HttpStatus status = ex.getStatusCode();
 			if (status == HttpStatus.NOT_FOUND) {
-				// It wasnt found so now it's time to register with a put
+				// It wasn't found so now it's time to register with a put
 				registerSuccessful = registerService(false);
 			}
 		    
@@ -121,26 +123,31 @@ public class CoreInitDestroy implements InitializingBean {
 		if (!registerSuccessful) {
 			LOGGER.info(appName + " did not successfully register with the discover service, defaulting to application.property settings");
 		}
-		else {
-			// Get the other values and set the properties appropriately
-		}
+		
+		// Try to Get the other values and set the properties appropriately
+		getSupportServiceInfo();
+		
 	 }
 	 
 	 /**
 	  * obtain properties and check to make sure they are set.
 	  */
 	 private void obtainProperties() throws IllegalStateException{
-		 discoverService = coreServiceProperties.getDiscoveryservice();
+		 discoverService = coreServiceProperties.getDiscoverservice();
 		 appName = coreServiceProperties.getAppname();
-		 LOGGER.info("DISCOVER = " + discoverService);
+		 LOGGER.debug("DISCOVER = " + discoverService);
 
-		 LOGGER.info("APPNAME = " + appName);
+		 LOGGER.debug("APPNAME = " + appName);
 		 host = coreServiceProperties.getHost();
-		 LOGGER.info("host = " + host);
+		 LOGGER.debug("host = " + host);
+		 
+		 discoverAPI = coreServiceProperties.getDiscoveryapi();
+		 LOGGER.info("discoveryAPI = " + discoverAPI);
+		 
 		 url = host + ":" + coreServiceProperties.getPort();
 			 
 		 if ((discoverService == null ) && (discoverService.length() < 1)) {
-			 throw new IllegalStateException("Property core.discoveryservice has not been set");
+			 throw new IllegalStateException("Property core.discoverservice has not been set");
 		 }
 			 
 		 if ((appName == null) && (appName.length() < 1)) {
@@ -196,6 +203,190 @@ public class CoreInitDestroy implements InitializingBean {
 			ex.printStackTrace();		    			
 		}
 		 return success;
+		 
+	 }
+	 
+	 private void getSupportServiceInfo () {
+		 
+		 getMongoHost();
+		 getKafkaHost();
+		 getUUIDHost();
+		 getLoggerHost();
+		 
+	 }
+	 
+	 private void getKafkaHost() {
+
+		 RestTemplate template = new RestTemplate();
+		 LOGGER.info("About to find the Kafka URL");
+		 
+		 String kafkaResourceName = coreServiceProperties.getKafka();
+		 
+		 if (kafkaResourceName != null ) {
+		
+				 ResponseEntity<KafkaCoreResource> response = null;
+				 try {	         
+			         
+			         // Send the request as GET
+			         response = template.getForEntity("http://" + discoverService + discoverAPI + kafkaResourceName, KafkaCoreResource.class);
+
+			         HttpStatus status = response.getStatusCode();
+			         
+			         LOGGER.info("response is = " + response.getStatusCode().toString());
+			         if (status == HttpStatus.OK) {
+			        	 KafkaCoreResource cr = response.getBody();
+			        	 
+			        	 // Split out Port and Host
+			        	 StringBuffer sBuffer = new StringBuffer(cr.getHost());
+			        	 if (sBuffer != null ) {
+			        		 int portIndex = sBuffer.indexOf(":");
+			        		 if (portIndex != -1) {
+			        			 coreServiceProperties.setKafkaHost(sBuffer.substring(0, portIndex));
+			        			 coreServiceProperties.setKafkaPort(new Integer(sBuffer.substring(portIndex + 1)).intValue());
+			        			 
+			        			 LOGGER.debug("KafkaHost=" + coreServiceProperties.getKafkaHost());
+			        			 LOGGER.debug("KafkaPort=" + coreServiceProperties.getKafkaPort());
+			        		 } else {
+			        			 coreServiceProperties.setKafkaHost(cr.getHost());
+			        			 LOGGER.debug("KafkaHost=" + coreServiceProperties.getKafkaHost());
+			        		 }
+			        		
+			        	 }
+			        	 
+			         }
+			        	
+			     } catch (HttpClientErrorException ex) {
+					HttpStatus status = ex.getStatusCode();
+					LOGGER.info("Defaulting to default kafka values " + status.toString());
+				    
+					
+				}
+		 } else
+			 LOGGER.info("core.kafka is not set, defaulting to kafka application.properties values");
+		 
+	 }
+	 
+	 private void getMongoHost() {
+
+		 RestTemplate template = new RestTemplate();
+		 LOGGER.info("About to find the MongoDB URL");
+		 
+		 String mongoDBResourceName = coreServiceProperties.getDb();
+		 
+		 if (mongoDBResourceName != null ) {
+		
+				 ResponseEntity<DBCoreResource> response = null;
+				 try {	           
+		
+			         // Send the request as GET
+			         response = template.getForEntity("http://" + discoverService + discoverAPI + mongoDBResourceName, DBCoreResource.class);
+
+			         HttpStatus status = response.getStatusCode();
+			         
+			         LOGGER.info("response is = " + response.getStatusCode().toString());
+			         if (status == HttpStatus.OK) {
+			        	 DBCoreResource cr = response.getBody();
+			        	 
+			        	 // Split out Port and Host
+			        	 StringBuffer sBuffer = new StringBuffer(cr.getHost());
+			        	 if (sBuffer != null ) {
+			        		 int portIndex = sBuffer.indexOf(":");
+			        		 if (portIndex != -1) {
+			        			 coreServiceProperties.setMongoHost(sBuffer.substring(0, portIndex));
+			        			 coreServiceProperties.setMongoPort(new Integer(sBuffer.substring(portIndex + 1)).intValue());
+			        			 LOGGER.debug("MongoHost=" + coreServiceProperties.getMongoHost());
+			        			 LOGGER.debug("MongoPort=" + coreServiceProperties.getMongoPort());
+			        		 } else {
+			        			 coreServiceProperties.setMongoHost(cr.getHost());
+			        			 LOGGER.debug("MongoHost=" + coreServiceProperties.getMongoHost());
+			        		 }
+			        	 }
+			        	 
+			         }
+			        	
+			     } catch (HttpClientErrorException ex) {
+					HttpStatus status = ex.getStatusCode();
+					LOGGER.info("Defaulting to default mongodb values " + status.toString());
+				    
+					
+				}
+		 } else
+			 LOGGER.info("core.db is not set, defaulting to mongodb application.properties values");
+		 
+	 }
+	 
+	 private void getUUIDHost() {
+
+		 RestTemplate template = new RestTemplate();
+		 LOGGER.info("About to find the pz-uuidgen URL");
+		 
+		 String uuidResourceName = coreServiceProperties.getUuid();
+		 
+		 if (uuidResourceName != null ) {
+		
+				 ResponseEntity<CoreResource> response = null;
+				 try {	         
+			         
+			         // Send the request as GET
+			         response = template.getForEntity("http://" + discoverService + discoverAPI + uuidResourceName, CoreResource.class);
+
+			         HttpStatus status = response.getStatusCode();
+			         
+			         LOGGER.info("response is = " + response.getStatusCode().toString());
+			         if (status == HttpStatus.OK) {
+			        	 CoreResource cr = response.getBody();
+			        	 
+			        	 // Split out Port and Host
+			        	 coreServiceProperties.setUuidservice(cr.getAddress());
+			        	 
+			         }
+			        	
+			     } catch (HttpClientErrorException ex) {
+					HttpStatus status = ex.getStatusCode();
+					LOGGER.info("Defaulting to default pz-uuidgen values " + status.toString());
+				    
+					
+				}
+		 } else
+			 LOGGER.info("core.uuid is not set, defaulting to uuidgen application.properties values");
+		 
+	 }
+	 
+	 private void getLoggerHost() {
+
+		 RestTemplate template = new RestTemplate();
+		 obtainProperties();
+		 LOGGER.info("About to find the pz-logger URL");
+		 
+		 String loggerResourceName = coreServiceProperties.getLogger();
+		 
+		 if (loggerResourceName != null ) {
+		
+				 ResponseEntity<CoreResource> response = null;
+				 try {	         
+			         
+			         // Send the request as GET
+			         response = template.getForEntity("http://" + discoverService + discoverAPI + loggerResourceName, CoreResource.class);
+
+			         HttpStatus status = response.getStatusCode();
+			         
+			         LOGGER.info("response is = " + response.getStatusCode().toString());
+			         if (status == HttpStatus.OK) {
+			        	 CoreResource cr = response.getBody();
+			        	 
+			        	 // Split out Port and Host
+			        	 coreServiceProperties.setLogservice(cr.getAddress());
+			        	 
+			         }
+			        	
+			     } catch (HttpClientErrorException ex) {
+					HttpStatus status = ex.getStatusCode();
+					LOGGER.info("Defaulting to default logservice values " + status.toString());
+				    
+					
+				}
+		 } else
+			 LOGGER.info("core.uuid is not set, defaulting to logservice application.properties values");
 		 
 	 }
 	 

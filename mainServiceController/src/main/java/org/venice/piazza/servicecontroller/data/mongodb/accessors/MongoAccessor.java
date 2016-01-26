@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
@@ -31,6 +32,7 @@ import model.job.metadata.ResourceMetadata;
 // TODO  FUTURE See a better way to abstract out MongoDB
 // TODO  FUTURE See a way to store service controller internals 
 @Component
+@DependsOn("coreInitDestroy")
 public class MongoAccessor {
 	private String DATABASE_HOST;
 	private int DATABASE_PORT;

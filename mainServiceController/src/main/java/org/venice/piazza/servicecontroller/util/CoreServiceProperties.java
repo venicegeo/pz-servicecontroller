@@ -23,9 +23,18 @@ public class CoreServiceProperties {
 	@NotBlank
 	private String uuidservice;
 	private String logservice;
-	
 	@NotNull
-	private String discoveryservice;
+	private String discoveryapi;
+	@NotNull
+	private String db;
+	@NotNull
+	private String kafka;
+	@NotNull
+	private String uuid;
+	@NotNull
+	private String logger;
+	@NotNull
+	private String discoverservice;
 	@Value ("${kafka.host}")
 	private String kafkaHost;
 	@Value ("${kafka.group}")
@@ -49,6 +58,47 @@ public class CoreServiceProperties {
 	@Value("${servicecontroller.port}")
 	private String port;
 	
+	
+
+	public String getKafka() {
+		return kafka;
+	}
+
+	public void setKafka(String kafka) {
+		this.kafka = kafka;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String getLogger() {
+		return logger;
+	}
+
+	public void setLogger(String logger) {
+		this.logger = logger;
+	}
+
+	public String getDiscoveryapi() {
+		return discoveryapi;
+	}
+
+	public void setDiscoveryapi(String discoveryapi) {
+		this.discoveryapi = discoveryapi;
+	}
+
+	public String getDb() {
+		return db;
+	}
+
+	public void setDb(String db) {
+		this.db = db;
+	}
 
 	public String getAppname() {
 		return appname;
@@ -74,12 +124,12 @@ public class CoreServiceProperties {
 		this.port = port;
 	}
 
-	public String getDiscoveryservice() {
-		return discoveryservice;
+	public String getDiscoverservice() {
+		return discoverservice;
 	}
 
-	public void setDiscoveryservice(String discoveryservice) {
-		this.discoveryservice = discoveryservice;
+	public void setDiscoverservice(String discoverservice) {
+		this.discoverservice = discoverservice;
 	}	
 	public String getKafkaHost() {
 		return kafkaHost;

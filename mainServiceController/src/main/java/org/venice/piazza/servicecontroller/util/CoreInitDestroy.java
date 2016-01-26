@@ -88,51 +88,58 @@ public class CoreInitDestroy implements InitializingBean {
 
 	 @Override
 	 /** 
-	  * Set the properties by calling the pz-discover service
+	  * Set the properties by calling the pz-discover service if enabled
 	  */
 	 public void afterPropertiesSet() throws Exception {
 		 boolean registerSuccessful = false;
 		 RestTemplate template = new RestTemplate();
-		 obtainProperties();
-		 LOGGER.info("About to call discovery at " + discoverService);
-		
-		 ResponseEntity<String> response = null;
-		 try {	         
-	         // Prepare header
-	         HttpHeaders headers = new HttpHeaders();
-	         HttpEntity<String> entity = new HttpEntity<String>(headers);    
-
-	         // Send the request as GET
-	         response = template.exchange("http://" + discoverService + discoverAPI + "/{app-name}", HttpMethod.GET, entity, String.class, appName);
-	         HttpStatus status = response.getStatusCode();
-	         
-	         LOGGER.info("response is = " + response.getStatusCode().toString());
-	         if (status == HttpStatus.OK)
-	        	 registerSuccessful = registerService(true);
-	     } catch (HttpClientErrorException ex) {
-			HttpStatus status = ex.getStatusCode();
-			if (status == HttpStatus.NOT_FOUND) {
-				// It wasn't found so now it's time to register with a put
-				registerSuccessful = registerService(false);
-			}
-		    
+		 boolean discoverEnabled = useDiscover();
+		 // If the discover service is enabled, continue on, otherwise do nothing
+		 // and just use the defaults that have been set in the properties file
+		 if (discoverEnabled) {
+			 LOGGER.info("About to call discovery at " + discoverService);
 			
-		}
-		// If the registration was unsuccessful, then don't 
-		// bother with trying to get other attributes
-		if (!registerSuccessful) {
-			LOGGER.info(appName + " did not successfully register with the discover service, defaulting to application.property settings");
-		}
+			 ResponseEntity<String> response = null;
+			 try {	         
+		         // Prepare header
+		         HttpHeaders headers = new HttpHeaders();
+		         HttpEntity<String> entity = new HttpEntity<String>(headers);    
+	
+		         // Send the request as GET
+		         response = template.exchange("http://" + discoverService + discoverAPI + "/{app-name}", HttpMethod.GET, entity, String.class, appName);
+		         HttpStatus status = response.getStatusCode();
+		         
+		         LOGGER.info("response is = " + response.getStatusCode().toString());
+		         if (status == HttpStatus.OK)
+		        	 registerSuccessful = registerService(true);
+		     } catch (HttpClientErrorException ex) {
+				HttpStatus status = ex.getStatusCode();
+				if (status == HttpStatus.NOT_FOUND) {
+					// It wasn't found so now it's time to register with a put
+					registerSuccessful = registerService(false);
+				}
+			    
+				
+			}
 		
-		// Try to Get the other values and set the properties appropriately
-		getSupportServiceInfo();
+			// If the registration was unsuccessful, then don't 
+			// bother with trying to get other attributes
+			if (!registerSuccessful) {
+				LOGGER.info(appName + " did not successfully register with the discover service, defaulting to application.property settings");
+			}
+			
+			// Try to Get the other values and set the properties appropriately
+			getSupportServiceInfo();	
+		 } // discoverEnabled
 		
 	 }
 	 
 	 /**
 	  * obtain properties and check to make sure they are set.
 	  */
-	 private void obtainProperties() throws IllegalStateException{
+	 private boolean useDiscover() throws IllegalStateException{
+		 
+		 boolean discoverEnabled = false;
 		 discoverService = coreServiceProperties.getDiscoverservice();
 		 appName = coreServiceProperties.getAppname();
 		 LOGGER.debug("DISCOVER = " + discoverService);
@@ -146,18 +153,18 @@ public class CoreInitDestroy implements InitializingBean {
 		 
 		 url = host + ":" + coreServiceProperties.getPort();
 			 
-		 if ((discoverService == null ) && (discoverService.length() < 1)) {
-			 throw new IllegalStateException("Property core.discoverservice has not been set");
-		 }
+		 if ((discoverService != null) && ((discoverService.trim()).length() > 0)) {
+			 discoverEnabled = true;
+	   	 
+			 if ((appName == null) && (appName.length() < 1)) {
+				 throw new IllegalStateException("Property servicecontroller.appname has not been set");
+			 }
 			 
-		 if ((appName == null) && (appName.length() < 1)) {
-			 throw new IllegalStateException("Property servicecontroller.appname has not been set");
+			 if ((host == null) && (host.length() < 1)) {
+				 throw new IllegalStateException("Property servicecontroller.host and/or serviceController.port has not been set");
+			 }
 		 }
-		 
-		 if ((host == null) && (host.length() < 1)) {
-			 throw new IllegalStateException("Property servicecontroller.host and/or serviceController.port has not been set");
-		 }
-		 
+		 return discoverEnabled;
 		 
 	 }
 	 
@@ -336,8 +343,19 @@ public class CoreInitDestroy implements InitializingBean {
 			         if (status == HttpStatus.OK) {
 			        	 CoreResource cr = response.getBody();
 			        	 
-			        	 // Split out Port and Host
-			        	 coreServiceProperties.setUuidservice(cr.getAddress());
+			        	// TODO need to change, host is currently not being returned
+			        	 LOGGER.debug("Core UUIDGen Service Address=" + cr.getAddress());
+			        	 LOGGER.debug("Core UUIDGen Service Port=" + cr.getPort());
+			        	 LOGGER.debug("Core UUIDGen Service Host=" + cr.getHost());
+			        	 String finalAddress;
+			        	 if (cr.getPort() <= 0)
+			        		 finalAddress = cr.getAddress();
+			        	 else
+			        		 finalAddress = cr.getAddress() + cr.getPort();
+			        	 finalAddress = finalAddress + "/uuid";
+			        	 
+			        	 LOGGER.debug("UUIDGen URL=" + finalAddress);
+			        	 coreServiceProperties.setUuidservice(finalAddress);
 			        	 
 			         }
 			        	
@@ -355,7 +373,6 @@ public class CoreInitDestroy implements InitializingBean {
 	 private void getLoggerHost() {
 
 		 RestTemplate template = new RestTemplate();
-		 obtainProperties();
 		 LOGGER.info("About to find the pz-logger URL");
 		 
 		 String loggerResourceName = coreServiceProperties.getLogger();
@@ -374,8 +391,23 @@ public class CoreInitDestroy implements InitializingBean {
 			         if (status == HttpStatus.OK) {
 			        	 CoreResource cr = response.getBody();
 			        	 
+			        	 // TODO need to change, host is currently not being returned
+			        	 LOGGER.debug("Core Logger Service Address=" + cr.getAddress());
+			        	 LOGGER.debug("Core Logger Service Port=" + cr.getPort());
+			        	 LOGGER.debug("Core Logger Service Host=" + cr.getHost());
+			        	 String finalAddress;
+			        	 
+			        	 if (cr.getPort() <= 0)
+			        		 finalAddress = cr.getAddress();
+			        	 else
+			        		 finalAddress = cr.getAddress() + cr.getPort();
+			        	 
+			        	 finalAddress = finalAddress + "/log";
+			        	 
+			        	 LOGGER.debug("Logger URL=" + finalAddress);
+			        	 
 			        	 // Split out Port and Host
-			        	 coreServiceProperties.setLogservice(cr.getAddress());
+			        	 coreServiceProperties.setLogservice(finalAddress);
 			        	 
 			         }
 			        	

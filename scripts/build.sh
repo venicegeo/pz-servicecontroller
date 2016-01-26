@@ -3,6 +3,10 @@ pushd `dirname $0` > /dev/null
 base=$(pwd -P)
 popd > /dev/null
 
+
+# Copy the cloud foundry properties file 
+cp $base/../mainServiceController/conf/application-cf.properties $base/../mainServiceController/src/main/resources/application.properties
+
 # Build Spring-boot JAR
 mvn clean package
 

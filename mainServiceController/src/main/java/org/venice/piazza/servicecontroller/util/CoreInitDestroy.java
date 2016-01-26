@@ -151,7 +151,19 @@ public class CoreInitDestroy implements InitializingBean {
 		 discoverAPI = coreServiceProperties.getDiscoveryapi();
 		 LOGGER.info("discoveryAPI = " + discoverAPI);
 		 
-		 url = host + ":" + coreServiceProperties.getPort();
+		
+		 url = host;
+		 String port = coreServiceProperties.getPort();
+		 if ((port.trim()).length() > 0) {
+			 try {
+				 int portNum = new Integer(coreServiceProperties.getPort()).intValue(); 
+				 if ( portNum > 0)
+					 url = url + ":" + coreServiceProperties.getPort();
+			 } catch (NumberFormatException ex) {
+				 LOGGER.info("The port number for pz-servicecontroller is an invalid number " + port);
+				 LOGGER.info("Port will be unused");
+			 }
+		 }
 			 
 		 if ((discoverService != null) && ((discoverService.trim()).length() > 0)) {
 			 discoverEnabled = true;

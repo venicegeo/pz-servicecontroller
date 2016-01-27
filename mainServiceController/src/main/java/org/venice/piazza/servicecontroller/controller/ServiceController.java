@@ -79,7 +79,7 @@ public class ServiceController {
 	}
 	
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
-	public @ResponseBody String executeService(@RequestBody ExecuteServiceData data) {
+	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
 		LOGGER.debug("executeService resourceId=" + data.resourceId);
 		LOGGER.debug("executeService datainput=" + data.dataInput);
 
@@ -91,7 +91,7 @@ public class ServiceController {
 		}
 		
 		
-	    String result = esHandler.handle(data);
+	    ResponseEntity<String> result = esHandler.handle(data);
 	    LOGGER.debug("Result is" + result);
 	    //TODO Remove System.out
 	    

@@ -74,16 +74,12 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			// Get the ResourceMetadata
 			ExecuteServiceData esData = job.data;
 
-			String result = handle(esData);
-			if (result.length() > 0) {
-				String jobId = job.getJobId();
-				// TODO Use the result, send a message with the resource ID
-				// and jobId
+			ResponseEntity<String> result = handle(esData);
+
+			// TODO Use the result, send a message with the resource ID
+			// and jobId
 				
-			}
-			else {
-				LOGGER.error("No result response from the handler, something went wrong");
-			}
+		
 		}
 		
 	}//handle
@@ -95,8 +91,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * @param message
 	 * @return the Response as a String
 	 */
-	public String handle (ExecuteServiceData data) {
-		ResponseEntity<String> responseString = null;
+	public ResponseEntity<String> handle (ExecuteServiceData data) {
+		ResponseEntity<String> responseEntity = null;
 		// Get the id from the data
 		String resourceId = data.getResourceId();
 		ResourceMetadata rMetadata = accessor.getResourceById(resourceId);
@@ -126,18 +122,18 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		    // Just handling Post and get for now
 		    if (rMetadata.method.toUpperCase().equals("POST")) {
 		    	LOGGER.debug("The url to be executed is " + rMetadata.url);
-		    	responseString = template.postForEntity(rMetadata.url, map, String.class);
-		    	LOGGER.debug("The Response is " + responseString.toString());	
-		 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+		    	responseEntity = template.postForEntity(rMetadata.url, map, String.class);
+		    	LOGGER.debug("The Response is " + responseEntity.toString());	
+		 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseEntity, CoreLogger.INFO);
 		    
 		    }
 		    else if (rMetadata.method.toUpperCase().equals("GET")) {
 		    	LOGGER.debug("The map of parameters is " + map.size());
 		    	LOGGER.debug("The url to be executed is " + rMetadata.url);
 		    	LOGGER.debug("The built URI is  " + builder.toUriString());
-		    	responseString = template.getForEntity(builder.toUriString(), String.class, map);
-		    	LOGGER.debug("The Response is " + responseString.toString());
-		 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+		    	responseEntity = template.getForEntity(builder.toUriString(), String.class, map);
+		    	LOGGER.debug("The Response is " + responseEntity.toString());
+		 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseEntity, CoreLogger.INFO);
 	
 		    }
 		}
@@ -154,14 +150,15 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					LOGGER.debug("Json to be used " + data.dataInput);
 					LOGGER.debug("Mimetype is " + mediaType.getType());
 					HttpEntity<String> requestEntity = new HttpEntity<String>(data.dataInput,headers);
-					responseString = template.postForEntity(rMetadata.url, requestEntity, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+					responseEntity = template.postForEntity(rMetadata.url, requestEntity, String.class);
+					LOGGER.debug("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseEntity.getBody());
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
 
 				}
 				else if (rMetadata.method.toUpperCase().equals("GET")) {
 					LOGGER.debug("Json to be used " + data.dataInput);
-					responseString = template.getForEntity(rMetadata.url, String.class, data.dataInput);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+					responseEntity = template.getForEntity(rMetadata.url, String.class, data.dataInput);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
 			 	}
 				
 			}
@@ -174,22 +171,23 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					headers.setContentType(mediaType);
 					LOGGER.debug("Calling URL POST " + rMetadata.url);
 					LOGGER.debug("Mimetype is " + mediaType.getType() + mediaType.getSubtype());
-					responseString = template.postForEntity(rMetadata.url, null, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+					responseEntity = template.postForEntity(rMetadata.url, null, String.class);
+					LOGGER.debug("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseEntity.getBody());
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
 
 				}
 				else if (rMetadata.method.toUpperCase().equals("GET")) {
 					LOGGER.debug("Calling URL GET" + rMetadata.url);
-					responseString = template.getForEntity(rMetadata.url, String.class);
+					responseEntity = template.getForEntity(rMetadata.url, String.class);
 							
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
 			 	}
 				
 			}
 			
 		}
 	 
-	  	return responseString.toString();
+	  	return responseEntity;
 		
 	}
 	

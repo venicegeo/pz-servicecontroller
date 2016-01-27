@@ -24,7 +24,7 @@ public class CoreServiceProperties {
 	private String uuidservice;
 	private String logservice;
 	@NotNull
-	private String discoveryapi;
+	private String discoverapi;
 	@NotNull
 	private String db;
 	@NotNull
@@ -84,12 +84,12 @@ public class CoreServiceProperties {
 		this.logger = logger;
 	}
 
-	public String getDiscoveryapi() {
-		return discoveryapi;
+	public String getDiscoverapi() {
+		return discoverapi;
 	}
 
-	public void setDiscoveryapi(String discoveryapi) {
-		this.discoveryapi = discoveryapi;
+	public void setDiscoverapi(String discoverapi) {
+		this.discoverapi = discoverapi;
 	}
 
 	public String getDb() {

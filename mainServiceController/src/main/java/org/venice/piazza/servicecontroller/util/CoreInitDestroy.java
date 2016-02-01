@@ -97,7 +97,7 @@ public class CoreInitDestroy implements InitializingBean {
 		 // If the discover service is enabled, continue on, otherwise do nothing
 		 // and just use the defaults that have been set in the properties file
 		 if (discoverEnabled) {
-			 LOGGER.info("About to call discovery at " + discoverService);
+			 LOGGER.info("About to call discover at " + discoverService);
 			
 			 ResponseEntity<String> response = null;
 			 try {	         
@@ -148,8 +148,8 @@ public class CoreInitDestroy implements InitializingBean {
 		 host = coreServiceProperties.getHost();
 		 LOGGER.debug("host = " + host);
 		 
-		 discoverAPI = coreServiceProperties.getDiscoveryapi();
-		 LOGGER.info("discoveryAPI = " + discoverAPI);
+		 discoverAPI = coreServiceProperties.getDiscoverapi();
+		 LOGGER.info("discoverAPI = " + discoverAPI);
 		 
 		
 		 url = host;

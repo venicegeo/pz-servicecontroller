@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -93,6 +94,8 @@ public class CoreLogger {
 		}	catch (ResourceAccessException rae) {
 			LOGGER.error(rae.getMessage());
 			LOGGER.error("Could not connect to the logging service");		
+		} catch (HttpClientErrorException hce) {
+			LOGGER.error("Logger service is not available.  Logger URL is " + coreServiceProp.getLogservice());
 		}
 			
 			

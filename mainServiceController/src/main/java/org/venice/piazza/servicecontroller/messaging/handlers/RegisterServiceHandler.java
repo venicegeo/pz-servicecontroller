@@ -93,10 +93,10 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				LOGGER.debug("Received more than one ID from the UUIDGen service, " +
 							"defaulting to first id returned.");
 				}
-				rMetadata.resourceId = data.get(0);
+				rMetadata.id = data.get(0);
 			} else {
 				// No data came from the UUIDGen, generate own ID
-				rMetadata.resourceId = generateId();
+				rMetadata.id = generateId();
 			}
 		
 			
@@ -105,7 +105,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			LOGGER.debug(ex.toString());
 			// The UUID Gen Service is not accessible so now
 			// Make up a random ID	
-			rMetadata.resourceId = generateId();
+			rMetadata.id = generateId();
 			
 		}
 	

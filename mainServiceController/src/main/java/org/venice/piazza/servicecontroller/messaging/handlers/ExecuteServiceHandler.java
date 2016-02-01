@@ -137,7 +137,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		    	LOGGER.debug("The built URI is  " + builder.toUriString());
 		    	responseString = template.getForEntity(builder.toUriString(), String.class, map);
 		    	LOGGER.debug("The Response is " + responseString.toString());
-		 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+		 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseString, CoreLogger.INFO);
 	
 		    }
 		}
@@ -155,13 +155,13 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					LOGGER.debug("Mimetype is " + mediaType.getType());
 					HttpEntity<String> requestEntity = new HttpEntity<String>(data.dataInput,headers);
 					responseString = template.postForEntity(rMetadata.url, requestEntity, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseString, CoreLogger.INFO);
 
 				}
 				else if (rMetadata.method.toUpperCase().equals("GET")) {
 					LOGGER.debug("Json to be used " + data.dataInput);
 					responseString = template.getForEntity(rMetadata.url, String.class, data.dataInput);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseString, CoreLogger.INFO);
 			 	}
 				
 			}
@@ -175,14 +175,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					LOGGER.debug("Calling URL POST " + rMetadata.url);
 					LOGGER.debug("Mimetype is " + mediaType.getType() + mediaType.getSubtype());
 					responseString = template.postForEntity(rMetadata.url, null, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseString, CoreLogger.INFO);
 
 				}
 				else if (rMetadata.method.toUpperCase().equals("GET")) {
 					LOGGER.debug("Calling URL GET" + rMetadata.url);
 					responseString = template.getForEntity(rMetadata.url, String.class);
 							
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.resourceId + " was executed with the following result " + responseString, CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseString, CoreLogger.INFO);
 			 	}
 				
 			}

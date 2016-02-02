@@ -2,20 +2,35 @@ package org.venice.piazza.servicecontroller.messaging;
 // TODO Add license
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
+
+import messaging.job.JobMessageFactory;
+import messaging.job.KafkaClientFactory;
+import model.job.Job;
+import model.job.JobProgress;
+import model.job.PiazzaJobType;
+import model.job.type.ExecuteServiceJob;
+import model.job.type.RegisterServiceJob;
+import model.request.PiazzaJobRequest;
+import model.status.StatusUpdate;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -23,14 +38,8 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import messaging.job.KafkaClientFactory;
-import model.job.Job;
-import model.job.PiazzaJobType;
-import model.job.type.ExecuteServiceJob;
-import model.job.type.RegisterServiceJob;
-import model.request.PiazzaJobRequest;
 /**
  * Purpose of this controller is to register for the Kafka messages and listen for service controller topics.
  * @author mlynum
@@ -112,8 +121,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 
 	@Override
 	public void run() {
+		ObjectMapper mapper = new ObjectMapper();
 		try {
-			
+			Job job = null;
 			while (!closed.get()) {
 				ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
 				// Handle new Messages on this topic.
@@ -121,31 +131,56 @@ public class ServiceControllerMessageHandler implements Runnable {
 					LOGGER.info("Relaying Message " + consumerRecord.topic() + " with key "
 							+ consumerRecord.key());
 					// Wrap the JobRequest in the Job object
+					String handleUpdate = StatusUpdate.STATUS_SUCCESS;
+					ResponseEntity<List<String>> handleResult = null;
 					try {
-						ObjectMapper mapper = new ObjectMapper();
 						PiazzaJobRequest jobRequest = mapper.readValue(consumerRecord.value(), PiazzaJobRequest.class);
 												
-						Job job = org.venice.piazza.servicecontroller.data.model.JobFactory.fromJobRequest(jobRequest, consumerRecord.key());
+						job = org.venice.piazza.servicecontroller.data.model.JobFactory.fromJobRequest(jobRequest, consumerRecord.key());
 						
 						PiazzaJobType jobType = job.jobType;
 						// See what type of job was sent
+						
+						
 						if (jobType instanceof RegisterServiceJob) {
 						   // Handle Register Job
-						   rsHandler.handle(jobType);
+						   handleResult = rsHandler.handle(jobType);
 							
 						} else if (jobType instanceof ExecuteServiceJob) {
-							esHandler.handle(jobType);
+							// Only want to put finished result on statusupdate queue
+							/*JobProgress jobProgress = new JobProgress(0);
+							StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_RUNNING, jobProgress);
+							producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate));*/
+							handleResult = esHandler.handle(jobType);
+							
+						} 
+						if (handleResult == null) {
+							handleUpdate = StatusUpdate.STATUS_ERROR;
+						}
+						else if (handleResult.getStatusCode() != HttpStatus.OK) {
+							handleUpdate =  StatusUpdate.STATUS_FAIL;
 						}
 						
 					} catch (IOException ex) {
 						LOGGER.error(ex.getMessage());
+						handleUpdate = StatusUpdate.STATUS_ERROR;
 					}
+					if (handleResult == null) {
+						handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
+					}
+					if (job != null) {
+						ProducerRecord<String,String> prodRecord =
+								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+										mapper.writeValueAsString(handleResult));
+						producer.send(prodRecord);
+					}
+					
 				}
 
 			}
 			
 			
-		} catch (WakeupException ex) {
+		} catch (WakeupException | JsonProcessingException ex) {
 			LOGGER.error(ex.getMessage());
 		}
 		

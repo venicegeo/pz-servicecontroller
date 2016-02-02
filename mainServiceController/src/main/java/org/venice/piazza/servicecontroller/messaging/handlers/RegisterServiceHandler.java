@@ -1,23 +1,24 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 // TODO add license
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.model.UUID;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.messaging.handlers.PiazzaJobHandler;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import org.venice.piazza.servicecontroller.data.model.UUID;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.util.CoreLogger;
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 
 /**
@@ -53,7 +54,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-	public void handle (PiazzaJobType jobRequest ) {
+	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
 		LOGGER.debug("Registering a service");
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
@@ -66,11 +67,24 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				String jobId = job.getJobId();
 				// TODO Use the result, send a message with the resource ID
 				// and jobId
+				ArrayList<String> resultList = new ArrayList<String>();
+				resultList.add(jobId);
+				resultList.add(rMetadata.id);
+				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
+				return handleResult;
 				
 			}
 			else {
 				LOGGER.error("No result response from the handler, something went wrong");
+				ArrayList<String> errorList = new ArrayList<String>();
+				errorList.add("RegisterServiceHandler handle didn't work");
+				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
+				
+				return errorResult;
 			}
+		}
+		else {
+			return null;
 		}
 	}//handle
 	

@@ -22,6 +22,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHand
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -71,6 +72,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 	
 	@Autowired
 	private CoreLogger coreLogger;
+	
+	@Autowired
+	private CoreUUIDGen coreUuidGen;
 
 	/**
 	 * Constructor
@@ -80,7 +84,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
 							   UPDATE_SERVICE_JOB_TOPIC_NAME);
 	    // Initialize the handlers to handle requests from the message queue
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 	}
 

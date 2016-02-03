@@ -21,6 +21,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHand
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import model.job.metadata.ResourceMetadata;
 import model.job.metadata.ExecuteServiceData;
@@ -48,6 +49,9 @@ public class ServiceController {
 	
 	@Autowired
 	private CoreLogger coreLogger;
+	
+	@Autowired
+	private CoreUUIDGen coreUuidGen;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
 	
 	public ServiceController() {
@@ -60,7 +64,7 @@ public class ServiceController {
 	public void initialize() {
 		
 		// Initialize calling server
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
 		
 	

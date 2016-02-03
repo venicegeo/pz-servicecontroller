@@ -118,8 +118,6 @@
 
 	</dependencies>
 	<build>
-	
-	
 		<extensions>
 			<extension>
 				<groupId>org.kuali.maven.wagons</groupId>

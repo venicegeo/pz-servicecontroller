@@ -354,20 +354,22 @@ public class CoreInitDestroy implements InitializingBean {
 			         LOGGER.info("response is = " + response.getStatusCode().toString());
 			         if (status == HttpStatus.OK) {
 			        	 CoreResource cr = response.getBody();
-			        	 
-			        	// TODO need to change, host is currently not being returned
+                          
 			        	 LOGGER.debug("Core UUIDGen Service Address=" + cr.getAddress());
 			        	 LOGGER.debug("Core UUIDGen Service Port=" + cr.getPort());
 			        	 LOGGER.debug("Core UUIDGen Service Host=" + cr.getHost());
-			        	 String finalAddress;
-			        	 if (cr.getPort() <= 0)
-			        		 finalAddress = cr.getAddress();
-			        	 else
-			        		 finalAddress = cr.getAddress() + cr.getPort();
-			        	 finalAddress = finalAddress + "/uuid";
+			        	 if ((cr.getHost() != null ) & (cr.getHost().length() > 0)) {
 			        	 
-			        	 LOGGER.debug("UUIDGen URL=" + finalAddress);
-			        	 coreServiceProperties.setUuidservice(finalAddress);
+				        	 String finalAddress;
+				        	 if (cr.getPort() <= 0)
+				        		 finalAddress = cr.getHost();
+				        	 else
+				        		 finalAddress = cr.getHost() + cr.getPort();
+				        	 				        					        	
+				        	 
+				        	 LOGGER.debug("UUIDGen URL=" + finalAddress);
+				        	 coreServiceProperties.setUuidservicehost(finalAddress);
+			        	 }
 			        	 
 			         }
 			        	
@@ -403,23 +405,23 @@ public class CoreInitDestroy implements InitializingBean {
 			         if (status == HttpStatus.OK) {
 			        	 CoreResource cr = response.getBody();
 			        	 
-			        	 // TODO need to change, host is currently not being returned
 			        	 LOGGER.debug("Core Logger Service Address=" + cr.getAddress());
 			        	 LOGGER.debug("Core Logger Service Port=" + cr.getPort());
 			        	 LOGGER.debug("Core Logger Service Host=" + cr.getHost());
-			        	 String finalAddress;
-			        	 
-			        	 if (cr.getPort() <= 0)
-			        		 finalAddress = cr.getAddress();
-			        	 else
-			        		 finalAddress = cr.getAddress() + cr.getPort();
-			        	 
-			        	 finalAddress = finalAddress + "/log";
-			        	 
-			        	 LOGGER.debug("Logger URL=" + finalAddress);
-			        	 
-			        	 // Split out Port and Host
-			        	 coreServiceProperties.setLogservice(finalAddress);
+			        	 // If a host was provide back from the pz-discovery service
+			        	 //then use it!
+			        	 if ((cr.getHost() != null ) & (cr.getHost().length() > 0)) {
+			        		 String finalAddress;
+				        	 if (cr.getPort() <= 0)
+				        		 finalAddress = cr.getHost();
+				        	 else
+				        		 finalAddress = cr.getHost() + cr.getPort();
+				        					        	 
+				        	 LOGGER.debug("Logger URL=" + finalAddress);
+				        	 
+				        	 // Split out Port and Host
+				        	 coreServiceProperties.setLogservicehost(finalAddress);
+			        	 }
 			        	 
 			         }
 			        	

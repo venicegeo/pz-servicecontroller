@@ -18,6 +18,7 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
@@ -96,7 +97,8 @@ public class MongoAccessor {
 			        String.class);
 			
 			WriteResult<ResourceMetadata, String> writeResult = coll.insert(metadata);
-			result = writeResult.getSavedId();
+			// Return the id that was used
+			return metadata.id;
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());

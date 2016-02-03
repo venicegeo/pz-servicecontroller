@@ -1,5 +1,6 @@
 package org.venice.piazza.servicecontroller.util;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -51,21 +52,22 @@ import model.resource.UUID;
 		}
 		/**
 		 * Only gets one UUID
-		 * @return UUID
+		 * @return UUID - Piazza unique identifier
 		 */
 		public String getUUID() {
 			
-			return getUUID(1);
+			List <String> resultList =  getUUID(1);
+			return resultList.get(0);
 		}
 
 		/**
 		 * Calls the UUIDgen service to get a unique identifier.  if the service
 		 * cannot be reached then a UUID is generated.
-		 * @return UUID generated
+		 * @return List of UUIDs
 		 */
-		public String getUUID(int count) {
+		public List <String> getUUID(int count) {
 			
-			String uuidString = "";
+			List <String> uuidList = new ArrayList<String>();
 			
 			try {
 				
@@ -83,10 +85,12 @@ import model.resource.UUID;
 					LOGGER.debug("Received more than one ID from the UUIDGen service, " +
 								"defaulting to first id returned.");
 					}
-					uuidString = data.get(0);
+					uuidList = data;
 				} else {
 					// No data came from the UUIDGen, generate own ID
-					uuidString = generateId();
+					String uuidString = generateId();
+					uuidList.add(uuidString);
+					LOGGER.debug("Final UUIDString is " + uuidList.get(0));
 				}
 			    
 				
@@ -96,11 +100,13 @@ import model.resource.UUID;
 				LOGGER.debug("UUIDGen Service Used " + uuidServiceHost);
 				// The UUID Gen Service is not accessible so now
 				// Make up a random ID	
-				uuidString = generateId();
+				String uuidString = generateId();
+				uuidList.add(uuidString);
+				LOGGER.debug("Final UUIDString is " + uuidList.get(0));
 				
 			}
-			LOGGER.debug("Final UUIDString is " + uuidString);
-			return uuidString;
+			
+			return uuidList;
 			
 			
 		}

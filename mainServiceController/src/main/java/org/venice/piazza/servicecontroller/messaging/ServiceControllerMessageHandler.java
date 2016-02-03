@@ -54,7 +54,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "Delete-Service-Job";
 	private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "Execute-Service-Job";
 	private static final String READ_SERVICE_JOB_TOPIC_NAME = "Read-Service-Job";
-	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "Register-Service-Job";
+	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "Update-Service-Job";
 	
 	
@@ -88,9 +88,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
 							   UPDATE_SERVICE_JOB_TOPIC_NAME);
-	    // Initialize the handlers to handle requests from the message queue
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger);
-		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
+	   
 	}
 
 	/**+
@@ -106,6 +104,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 		LOGGER.info("The KAFKA Port Properties is " + coreServiceProperties.getKafkaPort());
 		LOGGER.info("The KAFKA Host Properties is " + coreServiceProperties.getKafkaHost());
 		LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
+		 // Initialize the handlers to handle requests from the message queue
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger);
+		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 		LOGGER.info("=================================");
 
 		String KAFKA_PORT_STRING = new Integer(KAFKA_PORT).toString();
@@ -134,16 +135,18 @@ public class ServiceControllerMessageHandler implements Runnable {
 					String handleUpdate = StatusUpdate.STATUS_SUCCESS;
 					ResponseEntity<List<String>> handleResult = null;
 					try {
-						PiazzaJobRequest jobRequest = mapper.readValue(consumerRecord.value(), PiazzaJobRequest.class);
+						job = mapper.readValue(consumerRecord.value(), Job.class);
 												
-						job = org.venice.piazza.servicecontroller.data.model.JobFactory.fromJobRequest(jobRequest, consumerRecord.key());
 						
 						PiazzaJobType jobType = job.jobType;
+						
 						// See what type of job was sent
 						
 						
 						if (jobType instanceof RegisterServiceJob) {
 						   // Handle Register Job
+						   RegisterServiceJob rsJob = (RegisterServiceJob)jobType;
+						   rsJob.jobId = job.jobId;
 						   handleResult = rsHandler.handle(jobType);
 							
 						} else if (jobType instanceof ExecuteServiceJob) {
@@ -169,9 +172,13 @@ public class ServiceControllerMessageHandler implements Runnable {
 						handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
 					}
 					if (job != null) {
+						String serviceControlString = mapper.writeValueAsString(handleResult);
+						StatusUpdate su = new StatusUpdate();
+						su.setStatus(serviceControlString);
+						su.setProgress(new JobProgress(100));
 						ProducerRecord<String,String> prodRecord =
 								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
-										mapper.writeValueAsString(handleResult));
+										mapper.writeValueAsString(su));
 						producer.send(prodRecord);
 					}
 					

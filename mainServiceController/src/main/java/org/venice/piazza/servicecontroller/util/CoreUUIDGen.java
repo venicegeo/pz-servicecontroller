@@ -16,7 +16,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.model.UUID;
+
+import model.resource.UUID;
+
 
 
 	// Add License header

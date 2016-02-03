@@ -12,6 +12,11 @@ import java.util.Map;
 
 import javax.annotation.PreDestroy;
 
+import model.resource.CoreResource;
+import model.resource.DBCoreResource;
+import model.resource.KafkaCoreResource;
+import model.resource.RegisterService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -25,13 +30,6 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.model.CoreResource;
-import org.venice.piazza.servicecontroller.data.model.DBCoreResource;
-import org.venice.piazza.servicecontroller.data.model.KafkaCoreResource;
-import org.venice.piazza.servicecontroller.data.model.RegisterService;
-
-
-
 
 public class CoreInitDestroy implements InitializingBean {
 	

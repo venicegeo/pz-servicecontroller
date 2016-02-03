@@ -62,7 +62,11 @@ public class CoreLogger {
 		appname = coreServiceProperties.getAppname();
 	}
 
-	
+	/**
+	 * method for logging messages to Pz-Logger
+	 * @param logMessage -  the message you want to log
+	 * @param severity - the severity of the log
+	 */
 	public void log(String logMessage, String severity) {
 		ResponseEntity<String> response = null;
 		if ((logMessage != null) && (logMessage.length() > 0)) {

@@ -41,7 +41,8 @@ public class CoreCorsInterceptor extends HandlerInterceptorAdapter {
             LOGGER.warn("Attempted access from non-allowed origin: {}", origin);
             // Include an origin to provide a clear browser error
             response.setHeader(ORIGIN_NAME, origin);
-            return true; // Let it proceed anyway
+
+            return true;
         }
     }
 

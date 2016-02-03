@@ -199,9 +199,7 @@ public class CoreInitDestroy implements InitializingBean {
 			 LOGGER.info("URL IS=" + url + "|");
 			 map.put("address", url);
 			 headers.setContentType(MediaType.APPLICATION_JSON);
-			 RegisterService rs = new RegisterService();
-			 rs.setName(appName);
-			 rs.setData(map);
+			 RegisterService rs = new RegisterService(appName, map);			
 		
 			 HttpEntity<RegisterService> entity = new HttpEntity<RegisterService>(rs,headers);
 			
@@ -359,10 +357,11 @@ public class CoreInitDestroy implements InitializingBean {
 			        	 if ((cr.getHost() != null ) & (cr.getHost().length() > 0)) {
 			        	 
 				        	 String finalAddress;
-				        	 if (cr.getPort() <= 0)
+				        	 if ((cr.getPort() != null) && (cr.getPort().length() > 1)) {
+				                 // TODO actually check to see if it is a number				        		
+					             finalAddress = cr.getHost() + cr.getPort();
+				        	 } else
 				        		 finalAddress = cr.getHost();
-				        	 else
-				        		 finalAddress = cr.getHost() + cr.getPort();
 				        	 				        					        	
 				        	 
 				        	 LOGGER.debug("UUIDGen URL=" + finalAddress);
@@ -410,10 +409,11 @@ public class CoreInitDestroy implements InitializingBean {
 			        	 //then use it!
 			        	 if ((cr.getHost() != null ) & (cr.getHost().length() > 0)) {
 			        		 String finalAddress;
-				        	 if (cr.getPort() <= 0)
+			        		 if ((cr.getPort() != null) && (cr.getPort().length() > 1)) {
+				                 // TODO actually check to see if it is a number				        		
+					             finalAddress = cr.getHost() + cr.getPort();
+				        	 } else
 				        		 finalAddress = cr.getHost();
-				        	 else
-				        		 finalAddress = cr.getHost() + cr.getPort();
 				        					        	 
 				        	 LOGGER.debug("Logger URL=" + finalAddress);
 				        	 

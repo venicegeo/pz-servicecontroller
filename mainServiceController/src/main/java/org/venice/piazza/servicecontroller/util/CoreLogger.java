@@ -25,7 +25,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.request.LogRequest;
-
 // Add License header
 /**
  * CoreLogger is a class that logs using the Piazza Core Logger service.

@@ -22,7 +22,11 @@ public class CoreServiceProperties {
 	
 	@NotBlank
 	private String uuidservice;
+	private String uuidservicehost;
 	private String logservice;
+	private String logservicehost;
+	private String appname;
+	
 	@NotNull
 	private String discoverapi;
 	@NotNull
@@ -51,14 +55,28 @@ public class CoreServiceProperties {
 	private String mongoDBName;
 	@Value ("${mongo.db.collection.name}")
 	private String mongoCollectionName;
-	@Value("${servicecontroller.appname}")
-	private String appname;
 	@Value("${servicecontroller.host}")
 	private String host;
 	@Value("${servicecontroller.port}")
 	private String port;
 	
 	
+
+	public String getUuidservicehost() {
+		return uuidservicehost;
+	}
+
+	public void setUuidservicehost(String uuidservicehost) {
+		this.uuidservicehost = uuidservicehost;
+	}
+
+	public String getLogservicehost() {
+		return logservicehost;
+	}
+
+	public void setLogservicehost(String logservicehost) {
+		this.logservicehost = logservicehost;
+	}
 
 	public String getKafka() {
 		return kafka;

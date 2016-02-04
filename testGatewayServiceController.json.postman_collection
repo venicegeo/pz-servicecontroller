@@ -1,0 +1,114 @@
+{
+	"id": "bb309592-643b-5c80-da93-369c5b2ab712",
+	"name": "testGatewayServiceController",
+	"description": "Integration testing of registering gdaldem service and executing it via the Gateway",
+	"order": [
+		"4d9febcc-2f02-ffbb-1148-634b30fbc92b",
+		"0867ceac-d837-2a7d-ab32-472ccc010202",
+		"73090cff-6f38-1da3-6ca3-483188f1d16a",
+		"cfd89e1c-d136-d4b3-9078-1e148c571fa8"
+	],
+	"folders": [],
+	"timestamp": 1454615033618,
+	"owner": "271049",
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "0867ceac-d837-2a7d-ab32-472ccc010202",
+			"url": "http://localhost:8085/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"get\",         \"jobId\": \"de98d7f0-7c51-4350-a56d-da2a93dde63a\"     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8085/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "bb309592-643b-5c80-da93-369c5b2ab712"
+		},
+		{
+			"id": "4d9febcc-2f02-ffbb-1148-634b30fbc92b",
+			"url": "http://localhost:8085/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"register-service\",         \"data\" :               {          \"name\":\"gdaldem\",            \"description\":\"Gdaldem Service - Localhost\",            \"url\":\"http://pzsvc-gdaldem.cf.piazzageo.io/gdaldem\",            \"method\":\"POST\",            \"params\": [],            \"requestMimeType\":\"application/json\",          \"responseMimeType\":\"application/json\"           }     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8085/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "bb309592-643b-5c80-da93-369c5b2ab712"
+		},
+		{
+			"id": "73090cff-6f38-1da3-6ca3-483188f1d16a",
+			"url": "http://localhost:8085/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"execute-service\",         \"data\" : {         \"resourceId\" : \"123-345-456598302286612\"  ,       \"dataInputs\" : { }  ,    \"dataInput\":\"{\\\"source\\\" :{\\\"bucket\\\":\\\"venicegeo-sample-data\\\",\\\"key\\\": \\\"raster/elevation.tif\\\"},\\\"function\\\":\\\"hillshade\\\", \\\"destination\\\" : { \\\"bucket\\\":\\\"venicegeo-sample-data\\\", \\\"key\\\": \\\"temp/parrot.tif\\\"}}\" }   } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8085/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "bb309592-643b-5c80-da93-369c5b2ab712"
+		},
+		{
+			"id": "cfd89e1c-d136-d4b3-9078-1e148c571fa8",
+			"url": "http://localhost:8085/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"get\",         \"jobId\": \"3ef6dc5a-0371-478e-ae91-7d175d1c79ee\"     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8085/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "bb309592-643b-5c80-da93-369c5b2ab712"
+		}
+	]
+}

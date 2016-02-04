@@ -16,7 +16,6 @@ import model.job.JobProgress;
 import model.job.PiazzaJobType;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
-import model.request.PiazzaJobRequest;
 import model.status.StatusUpdate;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -32,6 +31,8 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
@@ -52,7 +53,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ServiceControllerMessageHandler implements Runnable {
 	// Jobs to listen to
 	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "Delete-Service-Job";
-	private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "Execute-Service-Job";
+	private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "execute-service";
 	private static final String READ_SERVICE_JOB_TOPIC_NAME = "Read-Service-Job";
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "Update-Service-Job";
@@ -166,6 +167,14 @@ public class ServiceControllerMessageHandler implements Runnable {
 						
 					} catch (IOException ex) {
 						LOGGER.error(ex.getMessage());
+						handleUpdate = StatusUpdate.STATUS_ERROR;
+					}
+					catch (ResourceAccessException rex) {
+						LOGGER.error(rex.getMessage());
+						handleUpdate = StatusUpdate.STATUS_ERROR;
+					}
+					catch (HttpClientErrorException hex) {
+						LOGGER.error(hex.getMessage());
 						handleUpdate = StatusUpdate.STATUS_ERROR;
 					}
 					if (handleResult == null) {

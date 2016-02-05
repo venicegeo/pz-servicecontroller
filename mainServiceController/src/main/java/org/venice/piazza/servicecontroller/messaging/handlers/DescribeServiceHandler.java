@@ -9,6 +9,8 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -34,10 +36,11 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 		this.coreLogger = coreLogger;
 	
 	}
-	
-	public void handle (PiazzaJobType jobRequest ) {
+	//TODO needs to be implemented
+	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
 		
+		return null;
 		
 	}
 	

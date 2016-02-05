@@ -11,16 +11,19 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import model.job.metadata.ResourceMetadata;
 import model.job.metadata.ExecuteServiceData;
@@ -40,6 +43,8 @@ import model.job.metadata.ExecuteServiceData;
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
+	private DescribeServiceHandler dsHandler;
+	
 	@Autowired
 	private MongoAccessor accessor;
 	
@@ -48,6 +53,9 @@ public class ServiceController {
 	
 	@Autowired
 	private CoreLogger coreLogger;
+	
+	@Autowired
+	private CoreUUIDGen coreUuidGen;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
 	
 	public ServiceController() {
@@ -60,9 +68,9 @@ public class ServiceController {
 	public void initialize() {
 		
 		// Initialize calling server
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
-		
+		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, coreLogger);
 	
 	}
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
@@ -92,6 +100,21 @@ public class ServiceController {
 		
 		
 	    ResponseEntity<String> result = esHandler.handle(data);
+	    LOGGER.debug("Result is" + result);
+	    //TODO Remove System.out
+	    
+	    // Set the response based on the service retrieved
+		return result;
+		
+
+	}
+	
+	@RequestMapping(value = "/describeService", method = RequestMethod.GET, headers="Accept=application/json")
+	public ResponseEntity<String> describeService(@ModelAttribute("resourceId") String resourceId) {
+		LOGGER.debug("describeService resourceId=" + resourceId);
+	
+			
+	    ResponseEntity<String> result = dsHandler.handle(resourceId);
 	    LOGGER.debug("Result is" + result);
 	    //TODO Remove System.out
 	    

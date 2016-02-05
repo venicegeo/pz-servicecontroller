@@ -18,8 +18,10 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+import com.mongodb.MongoTimeoutException;
 
 import model.job.metadata.ResourceMetadata;
 
@@ -96,7 +98,8 @@ public class MongoAccessor {
 			        String.class);
 			
 			WriteResult<ResourceMetadata, String> writeResult = coll.insert(metadata);
-			result = writeResult.getSavedId();
+			// Return the id that was used
+			return metadata.id;
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
@@ -130,11 +133,19 @@ public class MongoAccessor {
 	 * @return The Job with the specified ID
 	 */
 	public ResourceMetadata getResourceById(String resourceId) throws ResourceAccessException {
-		BasicDBObject query = new BasicDBObject("_id", resourceId);
-		ResourceMetadata resource = getResourceCollection().findOne(query);
-		if (resource == null) {
-			throw new ResourceAccessException("The resource could not found.");
+	
+		
+		BasicDBObject query = new BasicDBObject("id", resourceId);
+		ResourceMetadata resource;
+
+		try {
+			if ((resource = getResourceCollection().findOne(query)) == null) {
+				throw new ResourceAccessException("ResourceMetadata not found.");
+			}			
+		} catch( MongoTimeoutException mte) {
+			throw new ResourceAccessException("MongoDB instance not available.");
 		}
+
 		return resource;
 	}
 

@@ -12,6 +12,11 @@ import java.util.Map;
 
 import javax.annotation.PreDestroy;
 
+import model.resource.CoreResource;
+import model.resource.DBCoreResource;
+import model.resource.KafkaCoreResource;
+import model.resource.RegisterService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -25,13 +30,6 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.model.CoreResource;
-import org.venice.piazza.servicecontroller.data.model.DBCoreResource;
-import org.venice.piazza.servicecontroller.data.model.KafkaCoreResource;
-import org.venice.piazza.servicecontroller.data.model.RegisterService;
-
-
-
 
 public class CoreInitDestroy implements InitializingBean {
 	
@@ -201,9 +199,7 @@ public class CoreInitDestroy implements InitializingBean {
 			 LOGGER.info("URL IS=" + url + "|");
 			 map.put("address", url);
 			 headers.setContentType(MediaType.APPLICATION_JSON);
-			 RegisterService rs = new RegisterService();
-			 rs.setName(appName);
-			 rs.setData(map);
+			 RegisterService rs = new RegisterService(appName, map);			
 		
 			 HttpEntity<RegisterService> entity = new HttpEntity<RegisterService>(rs,headers);
 			
@@ -354,20 +350,23 @@ public class CoreInitDestroy implements InitializingBean {
 			         LOGGER.info("response is = " + response.getStatusCode().toString());
 			         if (status == HttpStatus.OK) {
 			        	 CoreResource cr = response.getBody();
-			        	 
-			        	// TODO need to change, host is currently not being returned
+                          
 			        	 LOGGER.debug("Core UUIDGen Service Address=" + cr.getAddress());
 			        	 LOGGER.debug("Core UUIDGen Service Port=" + cr.getPort());
 			        	 LOGGER.debug("Core UUIDGen Service Host=" + cr.getHost());
-			        	 String finalAddress;
-			        	 if (cr.getPort() <= 0)
-			        		 finalAddress = cr.getAddress();
-			        	 else
-			        		 finalAddress = cr.getAddress() + cr.getPort();
-			        	 finalAddress = finalAddress + "/uuid";
+			        	 if ((cr.getHost() != null ) & (cr.getHost().length() > 0)) {
 			        	 
-			        	 LOGGER.debug("UUIDGen URL=" + finalAddress);
-			        	 coreServiceProperties.setUuidservice(finalAddress);
+				        	 String finalAddress;
+				        	 if ((cr.getPort() != null) && (cr.getPort().length() > 1)) {
+				                 // TODO actually check to see if it is a number				        		
+					             finalAddress = cr.getHost() + cr.getPort();
+				        	 } else
+				        		 finalAddress = cr.getHost();
+				        	 				        					        	
+				        	 
+				        	 LOGGER.debug("UUIDGen URL=" + finalAddress);
+				        	 coreServiceProperties.setUuidservicehost(finalAddress);
+			        	 }
 			        	 
 			         }
 			        	
@@ -403,23 +402,24 @@ public class CoreInitDestroy implements InitializingBean {
 			         if (status == HttpStatus.OK) {
 			        	 CoreResource cr = response.getBody();
 			        	 
-			        	 // TODO need to change, host is currently not being returned
 			        	 LOGGER.debug("Core Logger Service Address=" + cr.getAddress());
 			        	 LOGGER.debug("Core Logger Service Port=" + cr.getPort());
 			        	 LOGGER.debug("Core Logger Service Host=" + cr.getHost());
-			        	 String finalAddress;
-			        	 
-			        	 if (cr.getPort() <= 0)
-			        		 finalAddress = cr.getAddress();
-			        	 else
-			        		 finalAddress = cr.getAddress() + cr.getPort();
-			        	 
-			        	 finalAddress = finalAddress + "/log";
-			        	 
-			        	 LOGGER.debug("Logger URL=" + finalAddress);
-			        	 
-			        	 // Split out Port and Host
-			        	 coreServiceProperties.setLogservice(finalAddress);
+			        	 // If a host was provide back from the pz-discovery service
+			        	 //then use it!
+			        	 if ((cr.getHost() != null ) & (cr.getHost().length() > 0)) {
+			        		 String finalAddress;
+			        		 if ((cr.getPort() != null) && (cr.getPort().length() > 1)) {
+				                 // TODO actually check to see if it is a number				        		
+					             finalAddress = cr.getHost() + cr.getPort();
+				        	 } else
+				        		 finalAddress = cr.getHost();
+				        					        	 
+				        	 LOGGER.debug("Logger URL=" + finalAddress);
+				        	 
+				        	 // Split out Port and Host
+				        	 coreServiceProperties.setLogservicehost(finalAddress);
+			        	 }
 			        	 
 			         }
 			        	

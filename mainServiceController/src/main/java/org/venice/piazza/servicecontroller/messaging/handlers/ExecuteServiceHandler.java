@@ -4,9 +4,16 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import model.job.PiazzaJobType;
+import model.job.metadata.ExecuteServiceData;
+import model.job.metadata.ResourceMetadata;
+import model.job.type.ExecuteServiceJob;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,11 +28,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
-import model.job.PiazzaJobType;
-import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.ExecuteServiceJob;
 
 
 
@@ -66,7 +68,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-	public void handle (PiazzaJobType jobRequest ) {
+	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
 		
 		LOGGER.debug("Executing a service");
@@ -74,12 +76,20 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			// Get the ResourceMetadata
 			ExecuteServiceData esData = job.data;
 
-			ResponseEntity<String> result = handle(esData);
+			ResponseEntity<String> handleResult = handle(esData);
+			ArrayList<String> resultList = new ArrayList<String>();
+			resultList.add(handleResult.getBody());
+			ResponseEntity<List<String>> result = new ResponseEntity<List<String>>(resultList,handleResult.getStatusCode());
+			
 
 			// TODO Use the result, send a message with the resource ID
 			// and jobId
+			return result;
 				
 		
+		}
+		else {
+			return null;
 		}
 		
 	}//handle
@@ -122,7 +132,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		    // Just handling Post and get for now
 
 		    // If there is no Json or body coming with this the just execute
-		    if (data.dataInput.length() <= 0) {
+		    if (data.dataInput != null && data.dataInput.length() <= 0) {
 			    if (rMetadata.method.toUpperCase().equals("POST")) {
 			    	LOGGER.debug("The url to be executed is " + rMetadata.url);
 			    	responseEntity = template.postForEntity(rMetadata.url, map, String.class);

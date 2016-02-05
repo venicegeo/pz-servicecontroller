@@ -1,6 +1,10 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
+import java.util.List;
+
 // TODO Add License
 import model.job.PiazzaJobType;
+
+import org.springframework.http.ResponseEntity;
 
 /**
  * Interface for pz-servicecontroller message handlers
@@ -10,7 +14,7 @@ import model.job.PiazzaJobType;
  */
 public interface PiazzaJobHandler {
 	
-	public void handle (PiazzaJobType jobRequest );
+	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest );
 	
 
 }

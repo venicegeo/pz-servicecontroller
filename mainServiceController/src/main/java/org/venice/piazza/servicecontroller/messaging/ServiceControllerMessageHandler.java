@@ -16,6 +16,7 @@ import model.job.JobProgress;
 import model.job.PiazzaJobType;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
+import model.job.type.UpdateServiceJob;
 import model.status.StatusUpdate;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -36,6 +37,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
@@ -57,7 +59,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "execute-service";
 	private static final String READ_SERVICE_JOB_TOPIC_NAME = "Read-Service-Job";
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
-	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "Update-Service-Job";
+	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "update-service";
 	
 	
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);
@@ -74,6 +76,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private final AtomicBoolean closed = new AtomicBoolean(false);
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
+	private UpdateServiceHandler usHandler;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -111,6 +114,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
 		 // Initialize the handlers to handle requests from the message queue
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
+		usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 		LOGGER.info("=================================");
 
@@ -162,6 +166,13 @@ public class ServiceControllerMessageHandler implements Runnable {
 							handleResult = esHandler.handle(jobType);
 							
 						} 
+						else if (jobType instanceof UpdateServiceJob) {
+							   // Handle Register Job
+							UpdateServiceJob usJob = (UpdateServiceJob)jobType;
+						  
+						   handleResult = usHandler.handle(jobType);
+							
+						}
 						if (handleResult == null) {
 							handleUpdate = StatusUpdate.STATUS_ERROR;
 						}

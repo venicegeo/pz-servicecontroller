@@ -14,6 +14,7 @@ import messaging.job.KafkaClientFactory;
 import model.job.Job;
 import model.job.JobProgress;
 import model.job.PiazzaJobType;
+import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
 import model.job.type.UpdateServiceJob;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
@@ -57,7 +59,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	// Jobs to listen to
 	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "Delete-Service-Job";
 	private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "execute-service";
-	private static final String READ_SERVICE_JOB_TOPIC_NAME = "Read-Service-Job";
+	private static final String READ_SERVICE_JOB_TOPIC_NAME = "read-service";
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "update-service";
 	
@@ -77,6 +79,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
 	private UpdateServiceHandler usHandler;
+	private DescribeServiceHandler dsHandler;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -116,6 +119,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
+		dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
 		LOGGER.info("=================================");
 
 		String KAFKA_PORT_STRING = new Integer(KAFKA_PORT).toString();
@@ -171,6 +175,13 @@ public class ServiceControllerMessageHandler implements Runnable {
 							UpdateServiceJob usJob = (UpdateServiceJob)jobType;
 						  
 						   handleResult = usHandler.handle(jobType);
+							
+						}
+						else if (jobType instanceof DescribeServiceMetadataJob) {
+							   // Handle Register Job
+							DescribeServiceMetadataJob usJob = (DescribeServiceMetadataJob)jobType;
+						  
+						   handleResult = dsHandler.handle(jobType);
 							
 						}
 						if (handleResult == null) {

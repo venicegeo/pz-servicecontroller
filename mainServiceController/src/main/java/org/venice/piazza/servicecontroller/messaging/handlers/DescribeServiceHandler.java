@@ -1,4 +1,16 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author mlynum
+ * @version 1.0
+ */
+import model.job.PiazzaJobType;
+import model.job.metadata.ResourceMetadata;
+import model.job.type.DescribeServiceMetadataJob;
+
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,17 +20,6 @@ import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-/**
- * @author mlynum
- * @version 1.0
- */
-import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
 
 public class DescribeServiceHandler implements PiazzaJobHandler { 
 	
@@ -39,8 +40,13 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 	//TODO needs to be implemented
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
-		
-		return null;
+		LOGGER.debug("Describing a service");
+		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob)jobRequest;
+        ArrayList<String> retVal = new ArrayList<String>();
+        ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
+        retVal.add(handleResourceReturn.getBody());
+        
+		return new ResponseEntity<List<String>>(retVal,handleResourceReturn.getStatusCode());
 		
 	}
 	

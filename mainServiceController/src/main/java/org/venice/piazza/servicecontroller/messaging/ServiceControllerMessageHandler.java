@@ -14,6 +14,7 @@ import messaging.job.KafkaClientFactory;
 import model.job.Job;
 import model.job.JobProgress;
 import model.job.PiazzaJobType;
+import model.job.type.DeleteServiceJob;
 import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
@@ -57,7 +59,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @DependsOn("coreInitDestroy")
 public class ServiceControllerMessageHandler implements Runnable {
 	// Jobs to listen to
-	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "Delete-Service-Job";
+	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "delete-service";
 	private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "execute-service";
 	private static final String READ_SERVICE_JOB_TOPIC_NAME = "read-service";
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
@@ -80,6 +82,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private ExecuteServiceHandler esHandler;
 	private UpdateServiceHandler usHandler;
 	private DescribeServiceHandler dsHandler;
+	private DeleteServiceHandler dlHandler;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -118,6 +121,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		 // Initialize the handlers to handle requests from the message queue
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
+		dlHandler = new DeleteServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
 		LOGGER.info("=================================");
@@ -175,6 +179,13 @@ public class ServiceControllerMessageHandler implements Runnable {
 							UpdateServiceJob usJob = (UpdateServiceJob)jobType;
 						  
 						   handleResult = usHandler.handle(jobType);
+							
+						}
+						else if (jobType instanceof DeleteServiceJob) {
+							   // Handle Register Job
+							DeleteServiceJob usJob = (DeleteServiceJob)jobType;
+						  
+						   handleResult = dlHandler.handle(jobType);
 							
 						}
 						else if (jobType instanceof DescribeServiceMetadataJob) {

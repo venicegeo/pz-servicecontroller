@@ -9,6 +9,7 @@ import javax.annotation.PreDestroy;
 import model.job.metadata.ResourceMetadata;
 
 import org.mongojack.DBQuery;
+import org.mongojack.DBUpdate;
 import org.mongojack.DBQuery.Query;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
@@ -114,6 +115,34 @@ public class MongoAccessor {
 		return result;
 	}
 	
+	
+	/**
+	 * deleteservice 
+	 */
+	public String delete(String resourceId) {
+		String result = "";
+		try {
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+			
+			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
+			        String.class);
+			
+			
+			
+			WriteResult<ResourceMetadata, String> writeResult =
+					coll.updateById(resourceId,DBUpdate.set("availability", "OUT OF SERVICE"));
+			// Return the id that was used
+			return writeResult.getField("id").toString();
+			
+		} catch (MongoException ex) {
+			LOGGER.debug(ex.toString());
+			LOGGER.error(ex.getMessage());
+			ex.printStackTrace();
+			
+		}
+			
+		return result;
+	}
 
 	
 	/**

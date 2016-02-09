@@ -4,11 +4,13 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
+import model.job.metadata.ExecuteServiceData;
+import model.job.metadata.ResourceMetadata;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -21,12 +23,10 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
-
-import model.job.metadata.ResourceMetadata;
-import model.job.metadata.ExecuteServiceData;
 
 // TODO Add License
 
@@ -44,6 +44,7 @@ public class ServiceController {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
 	private DescribeServiceHandler dsHandler;
+	private UpdateServiceHandler usHandler;
 	
 	@Autowired
 	private MongoAccessor accessor;
@@ -69,6 +70,7 @@ public class ServiceController {
 		
 		// Initialize calling server
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
+		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, coreLogger);
 	
@@ -78,6 +80,19 @@ public class ServiceController {
 
 		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
 	    String result = rsHandler.handle(serviceMetadata);
+	    
+	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
+	    String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
+	    
+		return responseString;
+
+	}
+	
+	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody String updateService(@RequestBody ResourceMetadata serviceMetadata) {
+
+		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
+	    String result = usHandler.handle(serviceMetadata);
 	    
 	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
 	    String responseString = "{\"resourceId\":" + "\"" + result + "\"}";

@@ -132,7 +132,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		    // Just handling Post and get for now
 
 		    // If there is no Json or body coming with this the just execute
-		    if (data.dataInput != null && data.dataInput.length() <= 0) {
+		    if (data.dataInput == null || data.dataInput.length() <= 0) {
 			    if (rMetadata.method.toUpperCase().equals("POST")) {
 			    	LOGGER.debug("The url to be executed is " + rMetadata.url);
 			    	responseEntity = template.postForEntity(rMetadata.url, map, String.class);

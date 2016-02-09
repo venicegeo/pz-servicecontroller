@@ -6,10 +6,14 @@ import java.net.UnknownHostException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import model.job.metadata.ResourceMetadata;
+
+import org.mongojack.DBQuery;
+import org.mongojack.DBQuery.Query;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -18,12 +22,9 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
-
-import model.job.metadata.ResourceMetadata;
 
 /**
  * Class to store service information in MongoDB.  
@@ -85,6 +86,35 @@ public class MongoAccessor {
 	public MongoClient getClient() {
 		return mongoClient;
 	}
+	
+	/**
+	 * updateservice information
+	 */
+	public String update(ResourceMetadata metadata) {
+		String result = "";
+		try {
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+			
+			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
+			        String.class);
+			
+			Query query = DBQuery.is("id",metadata.id);
+			
+			WriteResult<ResourceMetadata, String> writeResult = coll.update(query,metadata);
+			// Return the id that was used
+			return metadata.id;
+			
+		} catch (MongoException ex) {
+			LOGGER.debug(ex.toString());
+			LOGGER.error(ex.getMessage());
+			ex.printStackTrace();
+			
+		}
+			
+		return result;
+	}
+	
+
 	
 	/**
 	 * Store the new service information

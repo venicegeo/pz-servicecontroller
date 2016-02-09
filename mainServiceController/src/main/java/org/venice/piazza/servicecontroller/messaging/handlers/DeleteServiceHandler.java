@@ -7,7 +7,6 @@ import java.util.List;
 
 import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
-import model.job.type.UpdateServiceJob;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,9 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -90,9 +92,16 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	public String handle (String resourceId) {
 
         coreLogger.log("about to delete a registered service.", CoreLogger.INFO);
-
+     
+        ObjectMapper mapper = new ObjectMapper();
 		
-		String result = accessor.delete(resourceId);
+		String result= "";
+		try {
+			result = mapper.writeValueAsString(accessor.delete(resourceId));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		LOGGER.debug("The result of the delete is " + result);
 		if (result.length() > 0) {
 		   coreLogger.log("The service with id " + resourceId + " was deleted " + result, CoreLogger.INFO);

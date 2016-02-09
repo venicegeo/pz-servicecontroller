@@ -131,11 +131,19 @@ public class MongoAccessor {
 			        String.class);
 			
 			
-			
+			Query query = DBQuery.is("id",resourceId);
 			WriteResult<ResourceMetadata, String> writeResult =
-					coll.updateById(resourceId,DBUpdate.set("availability", "OUT OF SERVICE"));
+					coll.update(query,DBUpdate.set("availability", "OUT OF SERVICE"));
+			int recordsChanged = writeResult.getN();
 			// Return the id that was used
-			return writeResult.getField("id").toString();
+			if (recordsChanged == 1) {
+				result = " resource " + resourceId + " deleted ";
+			}
+			else {
+				result = " resource " + resourceId + " NOT deleted ";
+			}
+			
+			return result;
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());

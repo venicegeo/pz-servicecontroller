@@ -160,13 +160,13 @@ public class ServiceControllerMessageHandler implements Runnable {
 						   RegisterServiceJob rsJob = (RegisterServiceJob)jobType;
 						   rsJob.jobId = job.jobId;
 						   handleResult = rsHandler.handle(jobType);
-						   handleResult = checkResult(handleResult, handleUpdate);
+						   handleResult = checkResult(handleResult);
 						   sendRegisterStatus(job, handleUpdate, handleResult);
 							
 						} else if (jobType instanceof ExecuteServiceJob) {
 						
 							handleResult = esHandler.handle(jobType);
-							handleResult = checkResult(handleResult, handleUpdate);
+							handleResult = checkResult(handleResult);
 							sendExecuteStatus(job, handleUpdate, handleResult);
 						} 
 						else if (jobType instanceof UpdateServiceJob) {
@@ -174,7 +174,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 							UpdateServiceJob usJob = (UpdateServiceJob)jobType;
 						  
 						     handleResult = usHandler.handle(jobType);
-						     handleResult = checkResult(handleResult, handleUpdate);
+						     handleResult = checkResult(handleResult);
 							 sendUpdateStatus(job, handleUpdate, handleResult);
 
 						}
@@ -197,10 +197,20 @@ public class ServiceControllerMessageHandler implements Runnable {
 					if (handleResult.getStatusCode() != HttpStatus.OK) {
 						handleUpdate =  StatusUpdate.STATUS_FAIL;
 					}
-					
+				    
+					// If nothing else was handled then just send an update to the job
+					// first check to made sure the result is not null
 					if (job != null) {
-					    
-						
+						handleResult = checkResult(handleResult);
+
+						String serviceControlString = mapper.writeValueAsString(handleResult);
+						StatusUpdate su = new StatusUpdate();
+						su.setStatus(serviceControlString);
+						ProducerRecord<String,String> prodRecord =
+								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+										mapper.writeValueAsString(su));
+						producer.send(prodRecord);
+
 						
 					}
 					
@@ -210,6 +220,8 @@ public class ServiceControllerMessageHandler implements Runnable {
 			
 			
 		} catch (WakeupException ex) {
+			LOGGER.error(ex.getMessage());
+		} catch (JsonProcessingException ex) {
 			LOGGER.error(ex.getMessage());
 		}
 		
@@ -221,8 +233,8 @@ public class ServiceControllerMessageHandler implements Runnable {
      * @param handleResult
      * @return handleResult - Created if the result is not valid
      */
-	private ResponseEntity<List<String>> checkResult(ResponseEntity<List<String>> handleResult, String status) {
-		if ((handleResult == null)  && (status == StatusUpdate.STATUS_SUCCESS)){
+	private ResponseEntity<List<String>> checkResult(ResponseEntity<List<String>> handleResult) {
+		if (handleResult == null) {
 			handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
 			
 		}

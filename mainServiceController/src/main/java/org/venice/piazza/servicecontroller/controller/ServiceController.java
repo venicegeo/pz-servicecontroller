@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
@@ -45,6 +46,7 @@ public class ServiceController {
 	private ExecuteServiceHandler esHandler;
 	private DescribeServiceHandler dsHandler;
 	private UpdateServiceHandler usHandler;
+	private ListServiceHandler lsHandler;
 	
 	@Autowired
 	private MongoAccessor accessor;
@@ -73,6 +75,7 @@ public class ServiceController {
 		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, coreLogger);
+		lsHandler = new ListServiceHandler(accessor, coreServiceProp, coreLogger);
 	
 	}
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
@@ -130,6 +133,21 @@ public class ServiceController {
 	
 			
 	    ResponseEntity<String> result = dsHandler.handle(resourceId);
+	    LOGGER.debug("Result is" + result);
+	    //TODO Remove System.out
+	    
+	    // Set the response based on the service retrieved
+		return result;
+		
+
+	}
+	
+	@RequestMapping(value = "/listService", method = RequestMethod.GET, headers="Accept=application/json")
+	public ResponseEntity<String> listService() {
+		
+	
+			
+	    ResponseEntity<String> result = lsHandler.handle();
 	    LOGGER.debug("Result is" + result);
 	    //TODO Remove System.out
 	    

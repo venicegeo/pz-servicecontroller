@@ -11,11 +11,14 @@ import javax.annotation.PostConstruct;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
+import model.data.DataResource;
+import model.data.type.TextResource;
 import model.job.Job;
-import model.job.JobProgress;
 import model.job.PiazzaJobType;
 import model.job.type.ExecuteServiceJob;
+import model.job.type.IngestJob;
 import model.job.type.RegisterServiceJob;
+import model.request.PiazzaJobRequest;
 import model.job.type.UpdateServiceJob;
 import model.status.StatusUpdate;
 
@@ -197,12 +200,38 @@ public class ServiceControllerMessageHandler implements Runnable {
 					}
 					if (job != null) {
 						String serviceControlString = mapper.writeValueAsString(handleResult);
-						StatusUpdate su = new StatusUpdate();
-						su.setStatus(serviceControlString);
-						su.setProgress(new JobProgress(100));
+					    
+						
+						// Now produce a new record
+						PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
+						// TODO readc from properties file
+						pjr.apiKey = "pz-sc-ingest-test";
+						IngestJob ingestJob = new IngestJob();						
+						DataResource data = new DataResource();
+						//TODO  MML UUIDGen
+						data.dataId = "oijedoijoij";
+						TextResource tr = new TextResource();
+						tr.content = serviceControlString;
+						data.resourceType = tr;
+						ingestJob.data=data;
+						
+						pjr.jobType  = ingestJob;
+						
+						// TODO Generate 123-456 with UUIDGen
+						ProducerRecord<String,String> newProdRecord =
+						JobMessageFactory.getRequestJobMessage(pjr, "123-456-90am");	
+						
+						producer.send(newProdRecord);
+						
+						StatusUpdate su = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+						su.setResult(data.dataId);
+						
+						
 						ProducerRecord<String,String> prodRecord =
 								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
 										mapper.writeValueAsString(su));
+						
+						
 						producer.send(prodRecord);
 					}
 					

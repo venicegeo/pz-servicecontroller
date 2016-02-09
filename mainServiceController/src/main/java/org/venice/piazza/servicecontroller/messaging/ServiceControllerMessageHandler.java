@@ -212,7 +212,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 						data.dataId = "oijedoijoij";
 						TextResource tr = new TextResource();
 						tr.content = serviceControlString;
-						data.resourceType = tr;
+						data.dataType = tr;
 						ingestJob.data=data;
 						
 						pjr.jobType  = ingestJob;
@@ -250,6 +250,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 
 	
 }
+
 
 
 

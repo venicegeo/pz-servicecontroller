@@ -204,8 +204,12 @@ public class ServiceControllerMessageHandler implements Runnable {
 						handleResult = checkResult(handleResult);
 
 						String serviceControlString = mapper.writeValueAsString(handleResult);
+
 						StatusUpdate su = new StatusUpdate();
 						su.setStatus(serviceControlString);
+
+					    
+						
 						ProducerRecord<String,String> prodRecord =
 								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
 										mapper.writeValueAsString(su));
@@ -323,6 +327,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 
 	
 }
+
 
 
 

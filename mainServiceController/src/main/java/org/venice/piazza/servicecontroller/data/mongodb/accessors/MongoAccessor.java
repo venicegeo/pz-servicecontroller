@@ -2,15 +2,18 @@ package org.venice.piazza.servicecontroller.data.mongodb.accessors;
 // TODO add License
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import model.job.metadata.ResourceMetadata;
 
+import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
-import org.mongojack.DBUpdate;
 import org.mongojack.DBQuery.Query;
+import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.slf4j.Logger;
@@ -159,6 +162,36 @@ public class MongoAccessor {
 			WriteResult<ResourceMetadata, String> writeResult = coll.insert(metadata);
 			// Return the id that was used
 			return metadata.id;
+			
+		} catch (MongoException ex) {
+			LOGGER.debug(ex.toString());
+			LOGGER.error(ex.getMessage());
+			ex.printStackTrace();
+			
+		}
+			
+		return result;
+	}
+	
+	/**
+	 * List services
+	 */
+	public List<ResourceMetadata> list() {
+		ArrayList<ResourceMetadata> result = new ArrayList<ResourceMetadata>();
+		try {
+			
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+			
+			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
+			        String.class);
+			
+			DBCursor<ResourceMetadata> metadataCursor = 
+					coll.find(DBQuery.notEquals("availability", "OUT OF SERVICE"));
+			while (metadataCursor.hasNext()) {
+				result.add(metadataCursor.next());
+			}
+			// Return the id that was used
+			return result;
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());

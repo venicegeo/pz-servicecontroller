@@ -64,6 +64,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private static final String READ_SERVICE_JOB_TOPIC_NAME = "read-service";
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "update-service";
+	private static final String List_SERVICE_JOB_TOPIC_NAME = "list-service";
 	
 	
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);

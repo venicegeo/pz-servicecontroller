@@ -57,12 +57,12 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	
 			List<ResourceMetadata> rmList = accessor.list();
 			ObjectMapper mapper = new ObjectMapper();
-			String result = mapper.writeValueAsString(rMetadata);
+			String result = mapper.writeValueAsString(rmList);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (Exception ex) {
 			
 			LOGGER.error(ex.getMessage());
-			responseEntity = new ResponseEntity<String>("Could not retrieve resourceId " + resourceId, HttpStatus.NOT_FOUND);
+			responseEntity = new ResponseEntity<String>("Could not retrieve list of service metadata " , HttpStatus.NOT_FOUND);
 			
 		}
 	

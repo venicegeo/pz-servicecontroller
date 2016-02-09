@@ -17,6 +17,7 @@ import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
 import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ExecuteServiceJob;
+import model.job.type.ListServicesJob;
 import model.job.type.RegisterServiceJob;
 import model.job.type.UpdateServiceJob;
 import model.status.StatusUpdate;
@@ -40,6 +41,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
@@ -84,6 +86,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private UpdateServiceHandler usHandler;
 	private DescribeServiceHandler dsHandler;
 	private DeleteServiceHandler dlHandler;
+	private ListServiceHandler lsHandler;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -102,7 +105,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	public ServiceControllerMessageHandler() {
 		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
-							   UPDATE_SERVICE_JOB_TOPIC_NAME);
+							   UPDATE_SERVICE_JOB_TOPIC_NAME,List_SERVICE_JOB_TOPIC_NAME);
 
 	}
 
@@ -125,6 +128,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		dlHandler = new DeleteServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
+		lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);
 		LOGGER.info("=================================");
 
 		String KAFKA_PORT_STRING = new Integer(KAFKA_PORT).toString();
@@ -194,6 +198,13 @@ public class ServiceControllerMessageHandler implements Runnable {
 							DescribeServiceMetadataJob usJob = (DescribeServiceMetadataJob)jobType;
 						  
 						   handleResult = dsHandler.handle(jobType);
+							
+						}
+						else if (jobType instanceof ListServicesJob) {
+							   // Handle Register Job
+							ListServicesJob lsJob = (ListServicesJob)jobType;
+						  
+						   handleResult = lsHandler.handle(jobType);
 							
 						}
 						if (handleResult == null) {

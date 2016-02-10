@@ -14,8 +14,6 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
-// TODO add license
-// Remove System.out.println
 
 
 

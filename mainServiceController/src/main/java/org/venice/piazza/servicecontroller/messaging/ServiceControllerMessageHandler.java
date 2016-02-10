@@ -14,7 +14,6 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging;
-// TODO Add license
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -46,7 +46,6 @@ import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
-// TODO Add License
 
 /** 
  * Purpose of this controller is to handle service requests

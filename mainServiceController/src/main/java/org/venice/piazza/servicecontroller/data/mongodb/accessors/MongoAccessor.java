@@ -14,7 +14,6 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.data.mongodb.accessors;
-// TODO add License
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;

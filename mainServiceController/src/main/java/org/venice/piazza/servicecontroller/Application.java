@@ -14,7 +14,6 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller;
-// TODO add license
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;

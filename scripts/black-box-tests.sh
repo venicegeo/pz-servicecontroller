@@ -5,6 +5,7 @@ base=$(pwd -P)
 popd > /dev/null
 
 # Gather some data about the repo
+#
 source $base/vars.sh
 
 #Run the test

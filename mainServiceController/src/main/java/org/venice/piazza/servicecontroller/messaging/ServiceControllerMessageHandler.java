@@ -1,6 +1,5 @@
 package org.venice.piazza.servicecontroller.messaging;
 // TODO Add license
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,14 +10,18 @@ import javax.annotation.PostConstruct;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
+import model.data.DataResource;
+import model.data.type.TextResource;
 import model.job.Job;
-import model.job.JobProgress;
 import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
 import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ExecuteServiceJob;
+
 import model.job.type.ListServicesJob;
+import model.job.type.IngestJob;
 import model.job.type.RegisterServiceJob;
+import model.request.PiazzaJobRequest;
 import model.job.type.UpdateServiceJob;
 import model.status.StatusUpdate;
 
@@ -170,35 +173,32 @@ public class ServiceControllerMessageHandler implements Runnable {
 						   RegisterServiceJob rsJob = (RegisterServiceJob)jobType;
 						   rsJob.jobId = job.jobId;
 						   handleResult = rsHandler.handle(jobType);
+						   handleResult = checkResult(handleResult);
+						   sendRegisterStatus(job, handleUpdate, handleResult);
 							
 						} else if (jobType instanceof ExecuteServiceJob) {
-							// Only want to put finished result on statusupdate queue
-							/*JobProgress jobProgress = new JobProgress(0);
-							StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_RUNNING, jobProgress);
-							producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate));*/
+						
 							handleResult = esHandler.handle(jobType);
-							
+							handleResult = checkResult(handleResult);
+							sendExecuteStatus(job, handleUpdate, handleResult);
 						} 
 						else if (jobType instanceof UpdateServiceJob) {
 							   // Handle Register Job
 							UpdateServiceJob usJob = (UpdateServiceJob)jobType;
-						  
-						   handleResult = usHandler.handle(jobType);
+							handleResult = usHandler.handle(jobType);
+							handleResult = checkResult(handleResult);
+							sendUpdateStatus(job, handleUpdate, handleResult);
 							
 						}
 						else if (jobType instanceof DeleteServiceJob) {
 							   // Handle Register Job
 							DeleteServiceJob usJob = (DeleteServiceJob)jobType;
-						  
-						   handleResult = dlHandler.handle(jobType);
-							
+						    handleResult = dlHandler.handle(jobType);		
 						}
 						else if (jobType instanceof DescribeServiceMetadataJob) {
 							   // Handle Register Job
 							DescribeServiceMetadataJob usJob = (DescribeServiceMetadataJob)jobType;
-						  
-						   handleResult = dsHandler.handle(jobType);
-							
+						    handleResult = dsHandler.handle(jobType);
 						}
 						else if (jobType instanceof ListServicesJob) {
 							   // Handle Register Job
@@ -214,6 +214,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 							handleUpdate =  StatusUpdate.STATUS_FAIL;
 						}
 						
+						
 					} catch (IOException ex) {
 						LOGGER.error(ex.getMessage());
 						handleUpdate = StatusUpdate.STATUS_ERROR;
@@ -226,18 +227,30 @@ public class ServiceControllerMessageHandler implements Runnable {
 						LOGGER.error(hex.getMessage());
 						handleUpdate = StatusUpdate.STATUS_ERROR;
 					}
-					if (handleResult == null) {
-						handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
+					
+				
+					if (handleResult.getStatusCode() != HttpStatus.OK) {
+						handleUpdate =  StatusUpdate.STATUS_FAIL;
 					}
+				    
+					// If nothing else was handled then just send an update to the job
+					// first check to made sure the result is not null
 					if (job != null) {
+						handleResult = checkResult(handleResult);
+
 						String serviceControlString = mapper.writeValueAsString(handleResult);
+
 						StatusUpdate su = new StatusUpdate();
 						su.setStatus(serviceControlString);
-						su.setProgress(new JobProgress(100));
+
+					    
+						
 						ProducerRecord<String,String> prodRecord =
 								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
 										mapper.writeValueAsString(su));
 						producer.send(prodRecord);
+
+						
 					}
 					
 				}
@@ -245,16 +258,108 @@ public class ServiceControllerMessageHandler implements Runnable {
 			}
 			
 			
-		} catch (WakeupException | JsonProcessingException ex) {
+		} catch (WakeupException ex) {
+			LOGGER.error(ex.getMessage());
+		} catch (JsonProcessingException ex) {
 			LOGGER.error(ex.getMessage());
 		}
 		
 		
 	}
-    
+    /**
+     * Check to see if there is a valid handleResult that was created.  If not,
+     * then create a message with No Content
+     * @param handleResult
+     * @return handleResult - Created if the result is not valid
+     */
+	private ResponseEntity<List<String>> checkResult(ResponseEntity<List<String>> handleResult) {
+		if (handleResult == null) {
+			handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
+			
+		}
+		
+		
+			
+		
+		return handleResult;
+	}
+	
+	/** 
+	 * Sends an update for registering a job
+	 * 
+	 */
+	private void sendRegisterStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		String serviceControlString = mapper.writeValueAsString(handleResult);
+		StatusUpdate su = new StatusUpdate();
+		su.setStatus(serviceControlString);
+		ProducerRecord<String,String> prodRecord =
+				new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+						mapper.writeValueAsString(su));
+		producer.send(prodRecord);
+	}
+	
+	/** 
+	 * Sends an update for registering a job
+	 * 
+	 */
+	private void sendUpdateStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		String serviceControlString = mapper.writeValueAsString(handleResult);
+		StatusUpdate su = new StatusUpdate();
+		su.setStatus(serviceControlString);
+		ProducerRecord<String,String> prodRecord =
+				new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+						mapper.writeValueAsString(su));
+		producer.send(prodRecord);
+	}
+	
+	/**
+	 * Send an execute job status and the resource that was used
+	 * @param job
+	 * @param status
+	 * @param handleResult
+	 * @throws JsonProcessingException
+	 */
+	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		String serviceControlString = mapper.writeValueAsString(handleResult);
+		// Now produce a new record
+		PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
+		// TODO read from properties file
+		pjr.apiKey = "pz-sc-ingest-test";
+		IngestJob ingestJob = new IngestJob();						
+		DataResource data = new DataResource();
+		//TODO  MML UUIDGen
+		data.dataId = "oijedoijoij";
+		TextResource tr = new TextResource();
+		tr.content = serviceControlString;
+		data.dataType = tr;
+		ingestJob.data=data;
+		
+		pjr.jobType  = ingestJob;
+		
+		// TODO Generate 123-456 with UUIDGen
+		ProducerRecord<String,String> newProdRecord =
+		JobMessageFactory.getRequestJobMessage(pjr, "123-456-90am");	
+		
+		producer.send(newProdRecord);
+		
+		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+		
+	
+		statusUpdate.setResult(data.dataId);
+		
+		
+		ProducerRecord<String,String> prodRecord =
+				new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+						mapper.writeValueAsString(statusUpdate));
+		
+		
+		producer.send(prodRecord);
+	}
+
 
 	
 }
-
-
 

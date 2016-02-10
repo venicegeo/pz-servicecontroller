@@ -6,9 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.RegisterServiceJob;
-import model.job.type.UpdateServiceJob;
+import model.job.type.DeleteServiceJob;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +16,9 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -29,14 +30,14 @@ import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
  *
  */
 
-public class UpdateServiceHandler implements PiazzaJobHandler {
+public class DeleteServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
 	private CoreLogger coreLogger;
 	private CoreUUIDGen coreUuidGen;
-	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DeleteServiceHandler.class);
 
 
-	public UpdateServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger, CoreUUIDGen coreUuidGen){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
 		this.coreUuidGen = coreUuidGen;
@@ -52,19 +53,19 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
 		LOGGER.debug("Updating a service");
-		UpdateServiceJob job = (UpdateServiceJob)jobRequest;
+		DeleteServiceJob job = (DeleteServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the ResourceMetadata
-			model.job.metadata.ResourceMetadata rMetadata = job.data;
+			String resourceId = job.serviceID;
 
-			String result = handle(rMetadata);
+			String result = handle(resourceId);
 			if (result.length() > 0) {
 				String jobId = job.getJobId();
 				// TODO Use the result, send a message with the resource ID
 				// and jobId
 				ArrayList<String> resultList = new ArrayList<String>();
 				resultList.add(jobId);
-				resultList.add(rMetadata.id);
+				resultList.add(resourceId);
 				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
 				return handleResult;
 				
@@ -72,7 +73,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 			else {
 				LOGGER.error("No result response from the handler, something went wrong");
 				ArrayList<String> errorList = new ArrayList<String>();
-				errorList.add("UpdateServiceHandler handle didn't work");
+				errorList.add("DeleteServiceHandler handle didn't work");
 				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
 				
 				return errorResult;
@@ -88,17 +89,24 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	 * @param rMetadata
 	 * @return resourceID of the registered service
 	 */
-	public String handle (ResourceMetadata rMetadata) {
+	public String handle (String resourceId) {
 
-        coreLogger.log("about to update a registered service.", CoreLogger.INFO);
-
+        coreLogger.log("about to delete a registered service.", CoreLogger.INFO);
+     
+        ObjectMapper mapper = new ObjectMapper();
 		
-		String result = accessor.update(rMetadata);
-		LOGGER.debug("The result of the update is " + result);
+		String result= "";
+		try {
+			result = mapper.writeValueAsString(accessor.delete(resourceId));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		LOGGER.debug("The result of the delete is " + result);
 		if (result.length() > 0) {
-		   coreLogger.log("The service " + rMetadata.name + " was updated with id " + result, CoreLogger.INFO);
+		   coreLogger.log("The service with id " + resourceId + " was deleted " + result, CoreLogger.INFO);
 		} else {
-			   coreLogger.log("The service " + rMetadata.name + " was NOT updated", CoreLogger.INFO);
+			   coreLogger.log("The service with id " + resourceId + " was NOT deleted", CoreLogger.INFO);
 		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

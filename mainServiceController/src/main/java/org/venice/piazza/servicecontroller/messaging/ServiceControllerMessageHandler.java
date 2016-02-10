@@ -1,6 +1,5 @@
 package org.venice.piazza.servicecontroller.messaging;
 // TODO Add license
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +14,11 @@ import model.data.DataResource;
 import model.data.type.TextResource;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.type.DeleteServiceJob;
+import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ExecuteServiceJob;
+
+import model.job.type.ListServicesJob;
 import model.job.type.IngestJob;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
@@ -38,7 +41,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreLogger;
@@ -58,11 +64,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @DependsOn("coreInitDestroy")
 public class ServiceControllerMessageHandler implements Runnable {
 	// Jobs to listen to
-	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "Delete-Service-Job";
+	private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "delete-service";
 	private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "execute-service";
-	private static final String READ_SERVICE_JOB_TOPIC_NAME = "Read-Service-Job";
+	private static final String READ_SERVICE_JOB_TOPIC_NAME = "read-service";
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "update-service";
+	private static final String List_SERVICE_JOB_TOPIC_NAME = "list-service";
 	
 	
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);
@@ -80,6 +87,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
 	private UpdateServiceHandler usHandler;
+	private DescribeServiceHandler dsHandler;
+	private DeleteServiceHandler dlHandler;
+	private ListServiceHandler lsHandler;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -98,7 +108,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	public ServiceControllerMessageHandler() {
 		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
-							   UPDATE_SERVICE_JOB_TOPIC_NAME);
+							   UPDATE_SERVICE_JOB_TOPIC_NAME,List_SERVICE_JOB_TOPIC_NAME);
 
 	}
 
@@ -118,7 +128,10 @@ public class ServiceControllerMessageHandler implements Runnable {
 		 // Initialize the handlers to handle requests from the message queue
 		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
+		dlHandler = new DeleteServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
+		dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
+		lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);
 		LOGGER.info("=================================");
 
 		String KAFKA_PORT_STRING = new Integer(KAFKA_PORT).toString();
@@ -172,11 +185,33 @@ public class ServiceControllerMessageHandler implements Runnable {
 						else if (jobType instanceof UpdateServiceJob) {
 							   // Handle Register Job
 							UpdateServiceJob usJob = (UpdateServiceJob)jobType;
+							handleResult = usHandler.handle(jobType);
+							handleResult = checkResult(handleResult);
+							sendUpdateStatus(job, handleUpdate, handleResult);
+							
+						}
+						else if (jobType instanceof DeleteServiceJob) {
+							   // Handle Register Job
+							DeleteServiceJob usJob = (DeleteServiceJob)jobType;
+						    handleResult = dlHandler.handle(jobType);		
+						}
+						else if (jobType instanceof DescribeServiceMetadataJob) {
+							   // Handle Register Job
+							DescribeServiceMetadataJob usJob = (DescribeServiceMetadataJob)jobType;
+						    handleResult = dsHandler.handle(jobType);
+						}
+						else if (jobType instanceof ListServicesJob) {
+							   // Handle Register Job
+							ListServicesJob lsJob = (ListServicesJob)jobType;
 						  
-						     handleResult = usHandler.handle(jobType);
-						     handleResult = checkResult(handleResult);
-							 sendUpdateStatus(job, handleUpdate, handleResult);
-
+						   handleResult = lsHandler.handle(jobType);
+							
+						}
+						if (handleResult == null) {
+							handleUpdate = StatusUpdate.STATUS_ERROR;
+						}
+						else if (handleResult.getStatusCode() != HttpStatus.OK) {
+							handleUpdate =  StatusUpdate.STATUS_FAIL;
 						}
 						
 						
@@ -327,7 +362,4 @@ public class ServiceControllerMessageHandler implements Runnable {
 
 	
 }
-
-
-
 

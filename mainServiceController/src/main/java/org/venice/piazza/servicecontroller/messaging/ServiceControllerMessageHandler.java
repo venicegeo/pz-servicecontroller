@@ -28,6 +28,7 @@ import model.data.DataResource;
 import model.data.type.TextResource;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.result.TextResult;
 import model.job.type.DeleteServiceJob;
 import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ExecuteServiceJob;
@@ -198,7 +199,6 @@ public class ServiceControllerMessageHandler implements Runnable {
 						} 
 						else if (jobType instanceof UpdateServiceJob) {
 							   // Handle Register Job
-							UpdateServiceJob usJob = (UpdateServiceJob)jobType;
 							handleResult = usHandler.handle(jobType);
 							handleResult = checkResult(handleResult);
 							sendUpdateStatus(job, handleUpdate, handleResult);
@@ -206,18 +206,14 @@ public class ServiceControllerMessageHandler implements Runnable {
 						}
 						else if (jobType instanceof DeleteServiceJob) {
 							   // Handle Register Job
-							DeleteServiceJob usJob = (DeleteServiceJob)jobType;
 						    handleResult = dlHandler.handle(jobType);		
 						}
 						else if (jobType instanceof DescribeServiceMetadataJob) {
 							   // Handle Register Job
-							DescribeServiceMetadataJob usJob = (DescribeServiceMetadataJob)jobType;
 						    handleResult = dsHandler.handle(jobType);
 						}
 						else if (jobType instanceof ListServicesJob) {
-							   // Handle Register Job
-							ListServicesJob lsJob = (ListServicesJob)jobType;
-						  
+							   // Handle Register Job						  
 						   handleResult = lsHandler.handle(jobType);
 							
 						}
@@ -361,8 +357,10 @@ public class ServiceControllerMessageHandler implements Runnable {
 		
 		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 		
-	
-		statusUpdate.setResult(data.dataId);
+	    // Create a text result and update status
+		TextResult textResult = new TextResult();
+		textResult.setText(data.dataId);
+		statusUpdate.setResult(textResult);
 		
 		
 		ProducerRecord<String,String> prodRecord =

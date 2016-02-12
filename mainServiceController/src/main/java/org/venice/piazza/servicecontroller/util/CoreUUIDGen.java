@@ -83,42 +83,49 @@ import model.resource.UUID;
 		public List <String> getUUID(int count) {
 			
 			List <String> uuidList = new ArrayList<String>();
+			if (uuidServiceHost != null) {
 			
-			try {
+				try {
+					
+					MultiValueMap<String, Integer> map = new LinkedMultiValueMap<String, Integer>();
+					   map.add("count", new Integer(count));
+					LOGGER.debug("Calling UUIDGen Service" + uuidServiceHost + uuidService);
+					ResponseEntity<UUID> uuid = template.postForEntity("http://" + uuidServiceHost + uuidService, map, UUID.class);
+					List <String> data = uuid.getBody().getData();
+					
+					if (data != null )
+					{
+						LOGGER.debug("Response from UUIDgen" + uuid.toString());
+						if (data.size() > 1) {
 				
-				MultiValueMap<String, Integer> map = new LinkedMultiValueMap<String, Integer>();
-				   map.add("count", new Integer(count));
-				LOGGER.debug("Calling UUIDGen Service" + uuidServiceHost + uuidService);
-				ResponseEntity<UUID> uuid = template.postForEntity("http://" + uuidServiceHost + uuidService, map, UUID.class);
-				List <String> data = uuid.getBody().getData();
-				
-				if (data != null )
-				{
-					LOGGER.debug("Response from UUIDgen" + uuid.toString());
-					if (data.size() > 1) {
-			
-					LOGGER.debug("Received more than one ID from the UUIDGen service, " +
-								"defaulting to first id returned.");
+						LOGGER.debug("Received more than one ID from the UUIDGen service, " +
+									"defaulting to first id returned.");
+						}
+						uuidList = data;
+					} else {
+						// No data came from the UUIDGen, generate own ID
+						String uuidString = generateId();
+						uuidList.add(uuidString);
+						LOGGER.debug("Final UUIDString is " + uuidList.get(0));
 					}
-					uuidList = data;
-				} else {
-					// No data came from the UUIDGen, generate own ID
+				    
+					
+				} catch (Exception ex) {
+					LOGGER.error(ex.getMessage());
+					LOGGER.debug(ex.toString());
+					LOGGER.debug("UUIDGen Service Used " + uuidServiceHost);
+					// The UUID Gen Service is not accessible so now
+					// Make up a random ID	
 					String uuidString = generateId();
 					uuidList.add(uuidString);
 					LOGGER.debug("Final UUIDString is " + uuidList.get(0));
+					
 				}
-			    
-				
-			} catch (Exception ex) {
-				LOGGER.error(ex.getMessage());
-				LOGGER.debug(ex.toString());
-				LOGGER.debug("UUIDGen Service Used " + uuidServiceHost);
-				// The UUID Gen Service is not accessible so now
-				// Make up a random ID	
+			} else
+			{
 				String uuidString = generateId();
 				uuidList.add(uuidString);
 				LOGGER.debug("Final UUIDString is " + uuidList.get(0));
-				
 			}
 			
 			return uuidList;

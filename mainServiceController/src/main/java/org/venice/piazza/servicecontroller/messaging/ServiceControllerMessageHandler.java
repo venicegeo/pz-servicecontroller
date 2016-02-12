@@ -28,7 +28,7 @@ import model.data.DataResource;
 import model.data.type.TextResource;
 import model.job.Job;
 import model.job.PiazzaJobType;
-import model.job.result.TextResult;
+import model.job.result.type.TextResult;
 import model.job.type.DeleteServiceJob;
 import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ExecuteServiceJob;
@@ -185,10 +185,10 @@ public class ServiceControllerMessageHandler implements Runnable {
 						
 						if (jobType instanceof RegisterServiceJob) {
 						   // Handle Register Job
-						   RegisterServiceJob rsJob = (RegisterServiceJob)jobType;
-						   rsJob.jobId = job.jobId;
+						   LOGGER.debug("Job ID:" + job.getJobId());
 						   handleResult = rsHandler.handle(jobType);
 						   handleResult = checkResult(handleResult);
+						   LOGGER.debug("Job ID:" + job.getJobId());
 						   sendRegisterStatus(job, handleUpdate, handleResult);
 							
 						} else if (jobType instanceof ExecuteServiceJob) {
@@ -302,10 +302,17 @@ public class ServiceControllerMessageHandler implements Runnable {
 		ObjectMapper mapper = new ObjectMapper();
 		String serviceControlString = mapper.writeValueAsString(handleResult);
 		StatusUpdate su = new StatusUpdate();
-		su.setStatus(serviceControlString);
-		ProducerRecord<String,String> prodRecord =
-				new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
-						mapper.writeValueAsString(su));
+	
+		su.setStatus(StatusUpdate.STATUS_SUCCESS);
+		
+		
+		// Create a text result and update status
+		TextResult textResult = new TextResult();
+			textResult.setText(serviceControlString);
+		su.setResult(textResult);
+		LOGGER.debug("THe STATUS is " + su.getStatus());
+		ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+		
 		producer.send(prodRecord);
 	}
 	

@@ -238,22 +238,23 @@ public class ServiceControllerMessageHandler implements Runnable {
 						handleUpdate = StatusUpdate.STATUS_ERROR;
 					}
 					
-				
-					if (handleResult.getStatusCode() != HttpStatus.OK) {
+				    // If the status is not ok and the job is not equal to null
+					// then send an update to the job manager that there was some failure
+					if ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))
 						handleUpdate =  StatusUpdate.STATUS_FAIL;
-					}
+					
 				    
-					// If nothing else was handled then just send an update to the job
-					// first check to made sure the result is not null
-					if (job != null) {
 						handleResult = checkResult(handleResult);
 
 						String serviceControlString = mapper.writeValueAsString(handleResult);
 
 						StatusUpdate su = new StatusUpdate();
-						su.setStatus(serviceControlString);
+						su.setStatus(handleUpdate);
+						// Create a text result and update status
+						TextResult textResult = new TextResult();
+						textResult.setText(serviceControlString);
+						su.setResult(textResult);
 
-					    
 						
 						ProducerRecord<String,String> prodRecord =
 								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
@@ -263,7 +264,6 @@ public class ServiceControllerMessageHandler implements Runnable {
 						
 					}
 					
-				}
 
 			}
 			
@@ -299,21 +299,28 @@ public class ServiceControllerMessageHandler implements Runnable {
 	 * 
 	 */
 	private void sendRegisterStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
-		ObjectMapper mapper = new ObjectMapper();
-		String serviceControlString = mapper.writeValueAsString(handleResult);
-		StatusUpdate su = new StatusUpdate();
-	
-		su.setStatus(StatusUpdate.STATUS_SUCCESS);
 		
+		if (handleResult.getStatusCode() == HttpStatus.OK) {
+			ObjectMapper mapper = new ObjectMapper();
+			String serviceControlString = mapper.writeValueAsString(handleResult);
+			StatusUpdate su = new StatusUpdate();
 		
-		// Create a text result and update status
-		TextResult textResult = new TextResult();
-			textResult.setText(serviceControlString);
-		su.setResult(textResult);
-		LOGGER.debug("THe STATUS is " + su.getStatus());
-		ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
-		
-		producer.send(prodRecord);
+			su.setStatus(StatusUpdate.STATUS_SUCCESS);
+			
+			
+			// Create a text result and update status
+			List <String>stringList = handleResult.getBody();
+			
+			TextResult textResult = new TextResult();
+				textResult.setText(stringList.get(0));
+			su.setResult(textResult);
+			LOGGER.debug("THe STATUS is " + su.getStatus());
+			LOGGER.debug("THe RESULT is " + su.getResult());
+
+			ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+			
+			producer.send(prodRecord);
+		}
 	}
 	
 	/** 

@@ -76,13 +76,21 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 
 			String result = handle(rMetadata);
 			if (result.length() > 0) {
-				String jobId = job.getJobId();
+				//String jobId = job.getJobId();
 				// TODO Use the result, send a message with the resource ID
 				// and jobId
+				//ArrayList<String> resultList = new ArrayList<String>();
+				//resultList.add(jobId);
+				//resultList.add(rMetadata.id);
+				
+				
+				//ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
+				
+				String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 				ArrayList<String> resultList = new ArrayList<String>();
-				resultList.add(jobId);
-				resultList.add(rMetadata.id);
+				resultList.add(responseString);
 				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
+
 				return handleResult;
 				
 			}

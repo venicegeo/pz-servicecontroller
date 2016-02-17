@@ -9,4 +9,4 @@ source $base/vars.sh
 
 #Run the test
 newman -c $base/tests/pz-register-test.json
-
+newman -c $base/tests/testServiceControllerRestServicesSeq.json.postman_collection

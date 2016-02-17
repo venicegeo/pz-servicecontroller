@@ -173,6 +173,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 							+ consumerRecord.key());
 					// Wrap the JobRequest in the Job object
 					String handleUpdate = StatusUpdate.STATUS_SUCCESS;
+					String handleTextUpdate = "";
 					ResponseEntity<List<String>> handleResult = null;
 					try {
 						job = mapper.readValue(consumerRecord.value(), Job.class);
@@ -228,19 +229,39 @@ public class ServiceControllerMessageHandler implements Runnable {
 					} catch (IOException ex) {
 						LOGGER.error(ex.getMessage());
 						handleUpdate = StatusUpdate.STATUS_ERROR;
+						handleTextUpdate = ex.getMessage();
 					}
 					catch (ResourceAccessException rex) {
 						LOGGER.error(rex.getMessage());
+						handleTextUpdate = rex.getMessage();
 						handleUpdate = StatusUpdate.STATUS_ERROR;
 					}
 					catch (HttpClientErrorException hex) {
 						LOGGER.error(hex.getMessage());
 						handleUpdate = StatusUpdate.STATUS_ERROR;
+						handleTextUpdate = hex.getMessage();
 					}
 					
-				    // If the status is not ok and the job is not equal to null
+				    // if there was no result set then 
+					// use the default error messages set.
+					if (handleResult == null) {
+						
+						StatusUpdate su = new StatusUpdate();
+						su.setStatus(handleUpdate);
+						// Create a text result and update status
+						TextResult textResult = new TextResult();
+						textResult.setText(handleTextUpdate);
+						su.setResult(textResult);
+
+						
+						ProducerRecord<String,String> prodRecord =
+								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+										mapper.writeValueAsString(su));
+						producer.send(prodRecord);
+					}
+					// If the status is not ok and the job is not equal to null
 					// then send an update to the job manager that there was some failure
-					if ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))
+					else if ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))
 						handleUpdate =  StatusUpdate.STATUS_FAIL;
 					
 				    

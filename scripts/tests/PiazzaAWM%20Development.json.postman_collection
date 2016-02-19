@@ -1,0 +1,208 @@
+{
+	"id": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce",
+	"name": "Piazza Development",
+	"description": "",
+	"order": [
+		"622ffc7d-8c4f-2968-aa17-e018dab7ad76",
+		"559b0dd3-c305-b6c1-d0f9-b34564ba1e0b",
+		"3744de23-b43e-e957-07c6-8f417948d459",
+		"40d9deb9-f287-2bac-45d3-59174517b59b",
+		"f805f081-8409-6b3a-eda8-fd4b6800a414",
+		"3acb525d-b6f5-1abc-3feb-3abeac073f94",
+		"ba46adb3-10f7-f7e7-93ec-72cd8531c971"
+	],
+	"folders": [],
+	"timestamp": 1452013960158,
+	"owner": "300577",
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "3744de23-b43e-e957-07c6-8f417948d459",
+			"headers": "",
+			"url": "http://pz-gateway.cf.piazzageo.io/job",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "body",
+					"value": "{ \t\"apiKey\": \"my-api-key-38n987\", \t\"jobType\": { \t\t\"type\": \"ingest\", \t\t\"host\": true, \t\t\"data\" : { \t\t\t\"dataType\": { \t\t\t\t\"type\": \"shapefile\" \t\t\t}, \t\t\t\"metadata\": { \t\t\t\t\"name\": \"My Test Shapefile\", \t\t\t\t\"description\": \"This is a test.\", \t\t\t\t\"classType\": \"unclassified\" \t\t\t} \t\t} \t} }",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "file",
+					"value": null,
+					"type": "file",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1455830021280,
+			"name": "Ingest Shelters",
+			"description": "",
+			"collectionId": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce",
+			"responses": []
+		},
+		{
+			"id": "3acb525d-b6f5-1abc-3feb-3abeac073f94",
+			"headers": "",
+			"url": "http://pz-gateway.cf.piazzageo.io/job",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "body",
+					"value": "{ \t\"apiKey\": \"my-api-key-38n987\", \t\"jobType\": { \t\t\"type\": \"access\", \t\t\"dataId\": \"4ef9b64d-4817-420b-bec7-0d099a4b10ae\", \t\t\"deploymentType\": \"geoserver\" \t} }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1455830055910,
+			"name": "Access GeoServer",
+			"description": "",
+			"collectionId": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce",
+			"responses": []
+		},
+		{
+			"id": "40d9deb9-f287-2bac-45d3-59174517b59b",
+			"headers": "",
+			"url": "http://pz-gateway.cf.piazzageo.io/job",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "body",
+					"value": "{ \t\"apiKey\": \"my-api-key-38n987\", \t\"jobType\": { \t\t\"type\": \"ingest\", \t\t\"host\": \"true\", \t\t\"data\" : { \t\t\t\"dataType\": { \t\t\t\t\"type\": \"wfs\", \t\t\t\t\"url\": \"http://geoserver.dev:8080/geoserver/wfs\", \t\t\t\t\"featureType\": \"piazza:shelters\", \t\t\t\t\"version\": \"1.0.0\" \t\t\t}, \t\t\t\"metadata\": { \t\t\t\t\"name\": \"My Test Shapefile\", \t\t\t\t\"description\": \"This is a test.\", \t\t\t\t\"classType\": \"unclassified\" \t\t\t} \t\t} \t} }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1455830031464,
+			"name": "Ingest WFS",
+			"description": "",
+			"collectionId": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce"
+		},
+		{
+			"id": "559b0dd3-c305-b6c1-d0f9-b34564ba1e0b",
+			"headers": "",
+			"url": "http://pz-gateway.cf.piazzageo.io/job",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "body",
+					"value": "{ \t\"apiKey\": \"my-api-key-38n987\", \t\"jobType\": { \t\t\"type\": \"ingest\", \t\t\"host\": \"true\", \t\t\"data\" : { \t\t\t\"dataType\": { \t\t\t\t\"type\": \"text\", \t\t\t\t\"mimeType\": \"application/text\", \t\t\t\t\"content\": \"This text itself is the raw data to be ingested. In reality, it could be some GML, or GeoJSON, or whatever.\" \t\t\t}, \t\t\t\"metadata\": { \t\t\t\t\"name\": \"Testing some Text Input\", \t\t\t\t\"description\": \"This is a test.\", \t\t\t\t\"classType\": \"unclassified\" \t\t\t} \t\t} \t} }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1455830013136,
+			"name": "Ingest Text",
+			"description": "",
+			"collectionId": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce",
+			"responses": []
+		},
+		{
+			"id": "622ffc7d-8c4f-2968-aa17-e018dab7ad76",
+			"headers": "",
+			"url": "http://pz-gateway.cf.piazzageo.io/job",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "body",
+					"value": "{ \t\"apiKey\": \"my-api-key-38n987\", \t\"jobType\": { \t\t\"type\": \"get\", \t\t\"jobId\": \"7e823cb0-a550-4b6e-8ae9-451889119abb\" \t} }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1455829994007,
+			"name": "Get Job",
+			"description": "",
+			"collectionId": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce",
+			"responses": []
+		},
+		{
+			"id": "ba46adb3-10f7-f7e7-93ec-72cd8531c971",
+			"headers": "",
+			"url": "http://pz-gateway.cf.piazzageo.io/job",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "body",
+					"value": "{ \t\"apiKey\": \"my-api-key-38n987\", \t\"jobType\": { \t\t\"type\": \"abort\", \t\t\"jobId\": \"8504ceff-2af6-405b-bd8a-6804e7759676\" \t} }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1455830063230,
+			"name": "Abort Job",
+			"description": "",
+			"collectionId": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce",
+			"responses": []
+		},
+		{
+			"id": "f805f081-8409-6b3a-eda8-fd4b6800a414",
+			"headers": "",
+			"url": "http://pz-gateway.cf.piazzageo.io/job",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "body",
+					"value": "{ \t\"apiKey\": \"my-api-key-dfaoji\", \t\"jobType\": { \t\t\"type\": \"get-resource\", \t\t\"resourceId\": \"46f73ecd-f444-4213-87a6-2397ab1537a7\" \t} }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1455830042681,
+			"name": "Get Resource Data",
+			"description": "",
+			"collectionId": "565a8ac4-7bfe-ca1f-e3d3-73dcda6396ce",
+			"responses": []
+		}
+	]
+}

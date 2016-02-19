@@ -28,6 +28,8 @@ import model.data.DataResource;
 import model.data.type.TextResource;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.result.type.DataResult;
+import model.job.result.type.ErrorResult;
 import model.job.result.type.TextResult;
 import model.job.type.DeleteServiceJob;
 import model.job.type.DescribeServiceMetadataJob;
@@ -173,6 +175,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 							+ consumerRecord.key());
 					// Wrap the JobRequest in the Job object
 					String handleUpdate = StatusUpdate.STATUS_SUCCESS;
+					String handleTextUpdate = "";
 					ResponseEntity<List<String>> handleResult = null;
 					try {
 						job = mapper.readValue(consumerRecord.value(), Job.class);
@@ -217,54 +220,73 @@ public class ServiceControllerMessageHandler implements Runnable {
 						   handleResult = lsHandler.handle(jobType);
 							
 						}
-						if (handleResult == null) {
-							handleUpdate = StatusUpdate.STATUS_ERROR;
-						}
-						else if (handleResult.getStatusCode() != HttpStatus.OK) {
-							handleUpdate =  StatusUpdate.STATUS_FAIL;
-						}
+						
 						
 						
 					} catch (IOException ex) {
 						LOGGER.error(ex.getMessage());
 						handleUpdate = StatusUpdate.STATUS_ERROR;
+						handleTextUpdate = ex.getMessage();
 					}
 					catch (ResourceAccessException rex) {
 						LOGGER.error(rex.getMessage());
+						handleTextUpdate = rex.getMessage();
 						handleUpdate = StatusUpdate.STATUS_ERROR;
 					}
 					catch (HttpClientErrorException hex) {
 						LOGGER.error(hex.getMessage());
 						handleUpdate = StatusUpdate.STATUS_ERROR;
+						handleTextUpdate = hex.getMessage();
 					}
 					
-				    // If the status is not ok and the job is not equal to null
-					// then send an update to the job manager that there was some failure
-					if ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))
-						handleUpdate =  StatusUpdate.STATUS_FAIL;
-					
-				    
-						handleResult = checkResult(handleResult);
-
-						String serviceControlString = mapper.writeValueAsString(handleResult);
-
+				    // if there was no result set then 
+					// use the default error messages set.
+					if (handleResult == null) {
+						
 						StatusUpdate su = new StatusUpdate();
 						su.setStatus(handleUpdate);
 						// Create a text result and update status
-						TextResult textResult = new TextResult();
-						textResult.setText(serviceControlString);
-						su.setResult(textResult);
+						ErrorResult errorResult = new ErrorResult();
+						errorResult.setMessage(handleTextUpdate);
+						
+						su.setResult(errorResult);
 
 						
 						ProducerRecord<String,String> prodRecord =
 								new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
 										mapper.writeValueAsString(su));
 						producer.send(prodRecord);
+					}
+					// If the status is not ok and the job is not equal to null
+					// then send an update to the job manager that there was some failure
+					else {
+						boolean eResult = ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))?false:false;
+					    if (eResult) {
+							handleUpdate =  StatusUpdate.STATUS_FAIL;
+						
+					    
+							handleResult = checkResult(handleResult);
+	
+							String serviceControlString = mapper.writeValueAsString(handleResult);
+	
+							StatusUpdate su = new StatusUpdate();
+							su.setStatus(handleUpdate);
+							// Create a text result and update status
+							ErrorResult errorResult = new ErrorResult();
+							errorResult.setMessage(serviceControlString);
+							su.setResult(errorResult);
+	
+							
+							ProducerRecord<String,String> prodRecord =
+									new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+											mapper.writeValueAsString(su));
+							producer.send(prodRecord);
+					    }
 
 						
 					}
 					
-
+				}
 			}
 			
 			
@@ -299,27 +321,30 @@ public class ServiceControllerMessageHandler implements Runnable {
 	 * 
 	 */
 	private void sendRegisterStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
-		
-		if (handleResult.getStatusCode() == HttpStatus.OK) {
-			ObjectMapper mapper = new ObjectMapper();
-			String serviceControlString = mapper.writeValueAsString(handleResult);
-			StatusUpdate su = new StatusUpdate();
-		
-			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			
-			
+		if (handleResult != null) {
 			// Create a text result and update status
+			StatusUpdate su = new StatusUpdate();
+			
+			su.setStatus(StatusUpdate.STATUS_SUCCESS);
 			List <String>stringList = handleResult.getBody();
 			
 			TextResult textResult = new TextResult();
 				textResult.setText(stringList.get(0));
 			su.setResult(textResult);
-			LOGGER.debug("THe STATUS is " + su.getStatus());
-			LOGGER.debug("THe RESULT is " + su.getResult());
-
-			ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
-			
-			producer.send(prodRecord);
+			if (handleResult.getStatusCode() == HttpStatus.OK) {
+				
+				LOGGER.debug("THe STATUS is " + su.getStatus());
+				LOGGER.debug("THe RESULT is " + su.getResult());
+	
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				
+				producer.send(prodRecord);
+			}
+			else {
+				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
+				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+			}
 		}
 	}
 	
@@ -329,7 +354,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	 */
 	private void sendUpdateStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
-		String serviceControlString = mapper.writeValueAsString(handleResult);
+		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
 		StatusUpdate su = new StatusUpdate();
 		su.setStatus(serviceControlString);
 		ProducerRecord<String,String> prodRecord =
@@ -347,7 +372,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	 */
 	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
-		String serviceControlString = mapper.writeValueAsString(handleResult);
+		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
 		// Now produce a new record
 		PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
 		// TODO read from properties file
@@ -355,33 +380,31 @@ public class ServiceControllerMessageHandler implements Runnable {
 		IngestJob ingestJob = new IngestJob();						
 		DataResource data = new DataResource();
 		//TODO  MML UUIDGen
-		data.dataId = "oijedoijoij";
+		data.dataId = coreUuidGen.getUUID();
 		TextResource tr = new TextResource();
 		tr.content = serviceControlString;
 		data.dataType = tr;
 		ingestJob.data=data;
+		ingestJob.host = true;
 		
 		pjr.jobType  = ingestJob;
 		
 		// TODO Generate 123-456 with UUIDGen
 		ProducerRecord<String,String> newProdRecord =
-		JobMessageFactory.getRequestJobMessage(pjr, "123-456-90am");	
+		JobMessageFactory.getRequestJobMessage(pjr, coreUuidGen.getUUID());	
 		
 		producer.send(newProdRecord);
 		
 		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 		
 	    // Create a text result and update status
-		TextResult textResult = new TextResult();
-		textResult.setText(data.dataId);
+		DataResult textResult = new DataResult(data.dataId);
+
 		statusUpdate.setResult(textResult);
 		
-		
-		ProducerRecord<String,String> prodRecord =
-				new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
-						mapper.writeValueAsString(statusUpdate));
-		
-		
+
+		ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+
 		producer.send(prodRecord);
 	}
 

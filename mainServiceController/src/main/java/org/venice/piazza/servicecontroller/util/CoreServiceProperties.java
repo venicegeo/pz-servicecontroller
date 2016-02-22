@@ -39,6 +39,7 @@ public class CoreServiceProperties {
 	
 	@NotBlank
 	private String uuidservice;
+	@Value("${pz.uuid.url}")
 	private String uuidservicehost;
 	private String logservice;
 	private String logservicehost;

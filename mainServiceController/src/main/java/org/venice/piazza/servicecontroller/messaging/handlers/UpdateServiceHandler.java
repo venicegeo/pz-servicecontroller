@@ -24,6 +24,7 @@ import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
 import model.job.type.UpdateServiceJob;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 
 /**
@@ -46,14 +46,14 @@ import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 public class UpdateServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
-	private CoreUUIDGen coreUuidGen;
+	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
 
-	public UpdateServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public UpdateServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
-		this.coreUuidGen = coreUuidGen;
+		this.uuidFactory = uuidFactory;
 	
 	}
 

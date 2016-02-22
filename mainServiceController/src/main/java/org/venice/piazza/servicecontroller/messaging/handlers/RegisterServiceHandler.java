@@ -24,6 +24,7 @@ import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,6 @@ import org.springframework.http.ResponseEntity;
 
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 
 /**
@@ -49,14 +49,14 @@ import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
-	private CoreUUIDGen coreUuidGen;
+	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
 
 
-	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
-		this.coreUuidGen = coreUuidGen;
+		this.uuidFactory = uuidFactory;
 	
 	}
 
@@ -118,7 +118,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 
         coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
 
-		rMetadata.id = coreUuidGen.getUUID();
+		rMetadata.id = uuidFactory.getUUID();
 		String result = accessor.save(rMetadata);
 		LOGGER.debug("The result of the save is " + result);
 		// Check to see if metadta for the name was provided

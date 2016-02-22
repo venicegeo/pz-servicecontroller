@@ -44,8 +44,8 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 /** 
  * Purpose of this controller is to handle service requests
@@ -75,7 +75,7 @@ public class ServiceController {
 	private PiazzaLogger logger;
 	
 	@Autowired
-	private CoreUUIDGen coreUuidGen;
+	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
 	
 	public ServiceController() {
@@ -88,11 +88,11 @@ public class ServiceController {
 	public void initialize() {
 		
 		// Initialize calling server
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, logger, coreUuidGen);
-		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, logger, coreUuidGen);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
+		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
-		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, logger, coreUuidGen);
+		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		
 	

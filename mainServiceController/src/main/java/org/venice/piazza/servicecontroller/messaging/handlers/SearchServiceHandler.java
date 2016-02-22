@@ -1,20 +1,13 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
-import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.RegisterServiceJob;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 /**
  * Handler for handling search requests.  Searches the databse for 
@@ -29,14 +22,14 @@ public class SearchServiceHandler { //implements PiazzaJobHandler {
 	
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
-	private CoreUUIDGen coreUuidGen;
+	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SearchServiceHandler.class);
 
 
-	public SearchServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public SearchServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
-		this.coreUuidGen = coreUuidGen;
+		this.uuidFactory = uuidFactory;
 	
 	}
 	/*

@@ -42,6 +42,7 @@ import model.request.PiazzaJobRequest;
 import model.job.type.UpdateServiceJob;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -66,7 +67,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -116,7 +116,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private PiazzaLogger coreLogger;
 	
 	@Autowired
-	private CoreUUIDGen coreUuidGen;
+	private UUIDFactory uuidFactory;
 
 	/**
 	 * Constructor
@@ -142,9 +142,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 		LOGGER.info("The KAFKA Host Properties is " + coreServiceProperties.getKafkaHost());
 		LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
 		 // Initialize the handlers to handle requests from the message queue
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
-		usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
-		dlHandler = new DeleteServiceHandler(accessor, coreServiceProperties, coreLogger, coreUuidGen);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);
+		usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);
+		dlHandler = new DeleteServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);
@@ -379,7 +379,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		IngestJob ingestJob = new IngestJob();						
 		DataResource data = new DataResource();
 		//TODO  MML UUIDGen
-		data.dataId = coreUuidGen.getUUID();
+		data.dataId = uuidFactory.getUUID();
 		TextResource tr = new TextResource();
 		tr.content = serviceControlString;
 		data.dataType = tr;
@@ -390,7 +390,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		
 		// TODO Generate 123-456 with UUIDGen
 		ProducerRecord<String,String> newProdRecord =
-		JobMessageFactory.getRequestJobMessage(pjr, coreUuidGen.getUUID());	
+		JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());	
 		
 		producer.send(newProdRecord);
 		

@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
@@ -105,15 +104,15 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	 */
 	public String handle (ResourceMetadata rMetadata) {
 
-        coreLogger.log("about to update a registered service.", CoreLogger.INFO);
+        coreLogger.log("about to update a registered service.", PiazzaLogger.INFO);
 
 		
 		String result = accessor.update(rMetadata);
 		LOGGER.debug("The result of the update is " + result);
 		if (result.length() > 0) {
-		   coreLogger.log("The service " + rMetadata.name + " was updated with id " + result, CoreLogger.INFO);
+		   coreLogger.log("The service " + rMetadata.name + " was updated with id " + result, PiazzaLogger.INFO);
 		} else {
-			   coreLogger.log("The service " + rMetadata.name + " was NOT updated", CoreLogger.INFO);
+			   coreLogger.log("The service " + rMetadata.name + " was NOT updated", PiazzaLogger.INFO);
 		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

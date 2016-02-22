@@ -40,7 +40,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 
@@ -151,7 +150,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			    	LOGGER.debug("The url to be executed is " + rMetadata.url);
 			    	responseEntity = template.postForEntity(rMetadata.url, map, String.class);
 			    	LOGGER.debug("The Response is " + responseEntity.toString());	
-			 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseEntity, CoreLogger.INFO);
+			 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseEntity, PiazzaLogger.INFO);
 			    
 			    }
 			    else if (rMetadata.method.toUpperCase().equals("GET")) {
@@ -160,7 +159,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			    	LOGGER.debug("The built URI is  " + builder.toUriString());
 			    	responseEntity = template.getForEntity(builder.toUriString(), String.class, map);
 			    	LOGGER.debug("The Response is " + responseEntity.toString());
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity, CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity, PiazzaLogger.INFO);
 		
 			    }
 			} 
@@ -172,7 +171,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					LOGGER.debug("The url to be executed is " + rMetadata.url);
 			    	responseEntity = template.postForEntity(rMetadata.url, requestEntity, String.class);
 			    	LOGGER.debug("The Response is " + responseEntity.toString());	
-			 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseEntity, CoreLogger.INFO);
+			 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseEntity, PiazzaLogger.INFO);
 
 				}
 			}
@@ -197,7 +196,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				
 					responseEntity = template.postForEntity(rMetadata.url, requestEntity, String.class);
 					LOGGER.debug("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody());
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
 
 
 				}
@@ -206,7 +205,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 					String uri = rMetadata.url + "?" + data.dataInput;
 					responseEntity = template.getForEntity(uri, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
 
 			 	}
 				
@@ -223,14 +222,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 					responseEntity = template.postForEntity(rMetadata.url, null, String.class);
 					LOGGER.debug("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody());
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
 
 
 				}
 				else if (rMetadata.method.toUpperCase().equals("GET")) {
 					LOGGER.debug("Calling URL GET" + rMetadata.url);
 					responseEntity = template.getForEntity(rMetadata.url, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), CoreLogger.INFO);
+			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
 
 			 	}
 				

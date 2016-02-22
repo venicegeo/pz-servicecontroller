@@ -33,7 +33,6 @@ import org.springframework.http.ResponseEntity;
 
 
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
@@ -122,11 +121,14 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		rMetadata.id = coreUuidGen.getUUID();
 		String result = accessor.save(rMetadata);
 		LOGGER.debug("The result of the save is " + result);
-		if (result.length() > 0) {
-		   //coreLogger.log("The service " + rMetadata.name + " was stored with id " + result, CoreLogger.INFO);
-		} else {
-		//	   coreLogger.log("The service " + rMetadata.name + " was NOT stored", CoreLogger.INFO);
-		}
+		// Check to see if metadta for the name was provided
+		// if so, then log
+		if (rMetadata.name != null)
+			if (result.length() > 0) {
+			    coreLogger.log("The service " + rMetadata.name + " was stored with id " + result, PiazzaLogger.INFO);
+			} else {
+			    coreLogger.log("The service " + rMetadata.name + " was NOT stored", PiazzaLogger.INFO);
+			}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID
 		return result;

@@ -65,7 +65,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHand
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 

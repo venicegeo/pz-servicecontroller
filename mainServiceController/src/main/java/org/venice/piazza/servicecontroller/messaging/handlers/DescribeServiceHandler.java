@@ -24,6 +24,7 @@ import java.util.List;
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.DescribeServiceMetadataJob;
+import util.PiazzaLogger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +42,11 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DescribeServiceHandler.class);
 	
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
+	private PiazzaLogger coreLogger;
 	private CoreServiceProperties coreServiceProperties;	
 	private RestTemplate template;
 	
-	public DescribeServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, CoreLogger coreLogger) {
+	public DescribeServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
 		this.accessor = accessor;
 		this.coreServiceProperties = coreServiceProperties;
 		this.template = new RestTemplate();

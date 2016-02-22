@@ -42,10 +42,10 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHand
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
+
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
-
+import util.PiazzaLogger;
 
 /** 
  * Purpose of this controller is to handle service requests
@@ -72,7 +72,7 @@ public class ServiceController {
 	private CoreServiceProperties coreServiceProp;
 	
 	@Autowired
-	private CoreLogger coreLogger;
+	private PiazzaLogger logger;
 	
 	@Autowired
 	private CoreUUIDGen coreUuidGen;
@@ -88,12 +88,12 @@ public class ServiceController {
 	public void initialize() {
 		
 		// Initialize calling server
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
-		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
-		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
-		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, coreLogger);
-		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
-		lsHandler = new ListServiceHandler(accessor, coreServiceProp, coreLogger);
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, logger, coreUuidGen);
+		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, logger, coreUuidGen);
+		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
+		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
+		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, logger, coreUuidGen);
+		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		
 	
 	}
@@ -189,5 +189,23 @@ public class ServiceController {
 		
 
 	}
+	
+//	@RequestMapping(value = "/search", method = RequestMethod.POST, headers="Accept=application/json")
+//	public ResponseEntity<String> search(@RequestBody SearchQuery data) {
+//		
+//		
+//	
+//			
+//	    ResponseEntity<String> result = lsHandler.handle();
+//	    LOGGER.debug("Result is" + result);
+//	    //TODO Remove System.out
+//	    
+//	    // Set the response based on the service retrieved
+//		return result;
+//		
+//
+//	}
+	
+	
 	
 }

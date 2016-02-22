@@ -41,6 +41,7 @@ import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.job.type.UpdateServiceJob;
 import model.status.StatusUpdate;
+import util.PiazzaLogger;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -88,7 +89,6 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "update-service";
 	private static final String List_SERVICE_JOB_TOPIC_NAME = "list-service";
 	
-	
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);
 	
 	private String KAFKA_HOST;
@@ -114,7 +114,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private CoreServiceProperties coreServiceProperties;
 	
 	@Autowired
-	private CoreLogger coreLogger;
+	private PiazzaLogger coreLogger;
 	
 	@Autowired
 	private CoreUUIDGen coreUuidGen;

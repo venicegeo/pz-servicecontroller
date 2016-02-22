@@ -23,6 +23,7 @@ import java.util.List;
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
+import util.PiazzaLogger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,12 +49,12 @@ import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
+	private PiazzaLogger coreLogger;
 	private CoreUUIDGen coreUuidGen;
 	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
 
 
-	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, CoreUUIDGen coreUuidGen){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
 		this.coreUuidGen = coreUuidGen;
@@ -68,7 +69,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
      */
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
-		LOGGER.debug("Registering a service");
+		coreLogger.log("Registering a Service", coreLogger.INFO);
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the ResourceMetadata
@@ -95,7 +96,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				
 			}
 			else {
-				LOGGER.error("No result response from the handler, something went wrong");
+				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
+
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("RegisterServiceHandler handle didn't work");
 				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
@@ -115,7 +117,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 */
 	public String handle (ResourceMetadata rMetadata) {
 
-        //coreLogger.log("about to save a registered service.", CoreLogger.INFO);
+        coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
 
 		rMetadata.id = coreUuidGen.getUUID();
 		String result = accessor.save(rMetadata);

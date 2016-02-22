@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @EnableConfigurationProperties
+@ComponentScan({ "MY_NAMESPACE, util" })
 @ConfigurationProperties(locations = "classpath:application.properties", ignoreUnknownFields = false, prefix = "core")
 public class CoreServiceProperties {
 	
@@ -50,7 +52,7 @@ public class CoreServiceProperties {
 	private String kafka;
 	@NotNull
 	private String uuid;
-	@NotNull
+	@Value("${pz.logger.url}")
 	private String logger;
 	@NotNull
 	private String discoverservice;

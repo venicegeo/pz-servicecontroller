@@ -21,6 +21,7 @@ import java.util.List;
 
 import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
+import util.PiazzaLogger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +47,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DeleteServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
+	private PiazzaLogger coreLogger;
 	private CoreUUIDGen coreUuidGen;
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeleteServiceHandler.class);
 
 
-	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger  coreLogger, CoreUUIDGen coreUuidGen)
+
+	{ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
 		this.coreUuidGen = coreUuidGen;

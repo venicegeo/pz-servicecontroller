@@ -23,6 +23,7 @@ import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
 import model.job.type.UpdateServiceJob;
+import util.PiazzaLogger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,12 +46,12 @@ import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 public class UpdateServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
+	private PiazzaLogger coreLogger;
 	private CoreUUIDGen coreUuidGen;
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
 
-	public UpdateServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public UpdateServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, CoreUUIDGen coreUuidGen){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
 		this.coreUuidGen = coreUuidGen;

@@ -27,6 +27,7 @@ import model.job.PiazzaJobType;
 import model.job.metadata.ExecuteServiceData;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.ExecuteServiceJob;
+import util.PiazzaLogger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +57,7 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
+	private PiazzaLogger coreLogger;
 	private CoreServiceProperties coreServiceProperties;
 	
 	private RestTemplate template;
@@ -65,7 +66,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 	
 
-	public ExecuteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, CoreLogger coreLogger) {
+	public ExecuteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
 		this.accessor = accessor;
 		this.coreServiceProperties = coreServiceProperties;
 		this.template = new RestTemplate();

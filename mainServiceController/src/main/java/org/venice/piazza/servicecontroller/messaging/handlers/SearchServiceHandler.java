@@ -1,13 +1,23 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.venice.piazza.servicecontroller.data.model.SearchCriteria;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import model.job.PiazzaJobType;
+import model.job.metadata.ResourceMetadata;
 import util.PiazzaLogger;
-import util.UUIDFactory;
+
 
 /**
  * Handler for handling search requests.  Searches the databse for 
@@ -18,18 +28,17 @@ import util.UUIDFactory;
  */
 
 
-public class SearchServiceHandler { //implements PiazzaJobHandler {
+public class SearchServiceHandler implements PiazzaJobHandler {
 	
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
-	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SearchServiceHandler.class);
 
 
-	public SearchServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
+	public SearchServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
-		this.uuidFactory = uuidFactory;
+
 	
 	}
 	/*
@@ -38,68 +47,51 @@ public class SearchServiceHandler { //implements PiazzaJobHandler {
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-//	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
-//		
-//		LOGGER.debug("Search a service");
-		//SearchServiceJob job = (SearchServiceJob)jobRequest;
-//		if (job != null)  {
-//			// Get the ResourceMetadata
-//		//	model.job.metadata.SearchQuery queryparams = job.data;
-//
-//			String result = handle(rMetadata);
-//			if (result.length() > 0) {
-				//String jobId = job.getJobId();
-				// TODO Use the result, send a message with the resource ID
-				// and jobId
-				//ArrayList<String> resultList = new ArrayList<String>();
-				//resultList.add(jobId);
-				//resultList.add(rMetadata.id);
-				
-				
-				//ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
-				
-//				String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
-//				ArrayList<String> resultList = new ArrayList<String>();
-//				resultList.add(responseString);
-//				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
-//
-//				return handleResult;
-//				
-//			}
-//			else {
-//				LOGGER.error("No result response from the handler, something went wrong");
-//				ArrayList<String> errorList = new ArrayList<String>();
-//				errorList.add("RegisterServiceHandler handle didn't work");
-//				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
-//				
-//				return errorResult;
-//			}
-//		}
-//		else {
-//			return null;
-//		}
-//	}//handle
+	public ResponseEntity<List<String>> handle (PiazzaJobType jobType ) {
+		
+		LOGGER.debug("Search a service");
+		ArrayList<String> retVal = new ArrayList<String>();
+		
+		// TODO Extract criteria from job
+		SearchCriteria criteria = new SearchCriteria();
+        ResponseEntity<String> response = handle(criteria);
+
+		retVal.add(response.getBody());
+		        
+		return new ResponseEntity<List<String>>(retVal,response.getStatusCode());
+
+	}//handle
 	
-//	**
-//	 * 
-//	 * @param queryParams
-//	 * @return List of ResourceMetadata that matches the search
-//	 */
-//	public String handle (SearchQuery query) {
-//
-//       //coreLogger.log("about to save a registered service.", CoreLogger.INFO);
-//
-//		rMetadata.id = coreUuidGen.getUUID();
-//		String result = accessor.save(rMetadata);
-//		LOGGER.debug("The result of the save is " + result);
-//		if (result.length() > 0) {
-//		   //coreLogger.log("The service " + rMetadata.name + " was stored with id " + result, CoreLogger.INFO);
-//		} else {
-//		//	   coreLogger.log("The service " + rMetadata.name + " was NOT stored", CoreLogger.INFO);
-//		}
-//		// If an ID was returned then send a kafka message back updating the job iD 
-//		// with the resourceID
-//		return result;
-//				
-//	}
+	/**
+	 * 
+	 * @param criteria to search.  field and regex expression
+	 * @return a String of ResourceMetadata items that match the search
+	 */
+	public ResponseEntity<String> handle (SearchCriteria criteria) {
+		ResponseEntity<String> responseEntity = null;
+        String result = null;
+        coreLogger.log("About to search using criteria " + criteria, PiazzaLogger.INFO);
+
+		List <ResourceMetadata> results = accessor.search(criteria);
+		if (results.size() <= 0) {
+		   coreLogger.log("No results were returned searching for field " + 
+				   		criteria.getField() + 
+				   		" and search criteria " + 
+				   		criteria.getPattern(), PiazzaLogger.INFO);
+			responseEntity = new ResponseEntity<String>(result, HttpStatus.NO_CONTENT);
+
+		}
+		else {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+			result = mapper.writeValueAsString(results);
+			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
+			} catch (JsonProcessingException jpe) {
+				coreLogger.log("There was a problem generating the Json response", PiazzaLogger.ERROR);
+			}
+		}
+
+		return responseEntity;
+				
+	}
 }

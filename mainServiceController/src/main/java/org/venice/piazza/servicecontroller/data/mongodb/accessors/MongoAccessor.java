@@ -18,6 +18,7 @@ package org.venice.piazza.servicecontroller.data.mongodb.accessors;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
+import org.venice.piazza.servicecontroller.data.model.SearchCriteria;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
@@ -240,7 +242,7 @@ public class MongoAccessor {
 
 	
 	/**
-	 * Returns a Job that matches the specified ID.
+	 * Returns a ResourceMetadata object that matches the specified ID.
 	 * 
 	 * @param jobId
 	 *            Job ID
@@ -261,6 +263,29 @@ public class MongoAccessor {
 		}
 
 		return resource;
+	}
+	
+	/**
+	 * Returns a list of ResourceMetadata based on the criteria provided
+	 */
+	public List <ResourceMetadata> search(SearchCriteria criteria) {
+		List <ResourceMetadata> results =  new ArrayList<ResourceMetadata>();
+
+		if (criteria != null) {
+		Pattern pattern = Pattern.compile(criteria.pattern);
+		BasicDBObject query = new BasicDBObject(criteria.field, pattern);
+
+			try {
+				DBCursor<ResourceMetadata> cursor = getResourceCollection().find(query);		
+				while (cursor.hasNext()) {
+					results.add(cursor.next());
+				}
+			} catch( MongoTimeoutException mte) {
+				throw new ResourceAccessException("MongoDB instance not available.");
+			}
+		}
+
+		return results;
 	}
 
 }

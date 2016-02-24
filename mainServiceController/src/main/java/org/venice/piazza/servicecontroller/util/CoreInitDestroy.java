@@ -240,8 +240,8 @@ public class CoreInitDestroy implements InitializingBean {
 		 
 		 getMongoHost();
 		 getKafkaHost();
-		 getUUIDHost();
-		 getLoggerHost();
+		 //getUUIDHost();
+		 //getLoggerHost();
 		 
 	 }
 	 

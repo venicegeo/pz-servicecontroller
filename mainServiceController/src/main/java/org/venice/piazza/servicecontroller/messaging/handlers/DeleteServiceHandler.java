@@ -21,15 +21,15 @@ import java.util.List;
 
 import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,15 +46,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DeleteServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
-	private CoreUUIDGen coreUuidGen;
+	private PiazzaLogger coreLogger;
+	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeleteServiceHandler.class);
 
 
-	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger  coreLogger, UUIDFactory uuidFactory)
+
+	{ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
-		this.coreUuidGen = coreUuidGen;
+		this.uuidFactory = uuidFactory;
 	
 	}
 
@@ -105,7 +107,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 */
 	public String handle (String resourceId) {
 
-        coreLogger.log("about to delete a registered service.", CoreLogger.INFO);
+        coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
      
         ObjectMapper mapper = new ObjectMapper();
 		
@@ -118,9 +120,9 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		}
 		LOGGER.debug("The result of the delete is " + result);
 		if (result.length() > 0) {
-		   coreLogger.log("The service with id " + resourceId + " was deleted " + result, CoreLogger.INFO);
+		   coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);
 		} else {
-			   coreLogger.log("The service with id " + resourceId + " was NOT deleted", CoreLogger.INFO);
+			   coreLogger.log("The service with id " + resourceId + " was NOT deleted", PiazzaLogger.INFO);
 		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

@@ -23,6 +23,8 @@ import java.util.List;
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +34,7 @@ import org.springframework.http.ResponseEntity;
 
 
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 
 /**
@@ -48,15 +48,15 @@ import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
-	private CoreUUIDGen coreUuidGen;
+	private PiazzaLogger coreLogger;
+	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
 
 
-	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, CoreLogger coreLogger, CoreUUIDGen coreUuidGen){ 
+	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
-		this.coreUuidGen = coreUuidGen;
+		this.uuidFactory = uuidFactory;
 	
 	}
 
@@ -68,7 +68,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
      */
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
-		LOGGER.debug("Registering a service");
+		coreLogger.log("Registering a Service", coreLogger.INFO);
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the ResourceMetadata
@@ -95,7 +95,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				
 			}
 			else {
-				LOGGER.error("No result response from the handler, something went wrong");
+				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
+
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("RegisterServiceHandler handle didn't work");
 				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
@@ -115,16 +116,19 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 */
 	public String handle (ResourceMetadata rMetadata) {
 
-        //coreLogger.log("about to save a registered service.", CoreLogger.INFO);
+        coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
 
-		rMetadata.id = coreUuidGen.getUUID();
+		rMetadata.id = uuidFactory.getUUID();
 		String result = accessor.save(rMetadata);
 		LOGGER.debug("The result of the save is " + result);
-		if (result.length() > 0) {
-		   //coreLogger.log("The service " + rMetadata.name + " was stored with id " + result, CoreLogger.INFO);
-		} else {
-		//	   coreLogger.log("The service " + rMetadata.name + " was NOT stored", CoreLogger.INFO);
-		}
+		// Check to see if metadta for the name was provided
+		// if so, then log
+		if (rMetadata.name != null)
+			if (result.length() > 0) {
+			    coreLogger.log("The service " + rMetadata.name + " was stored with id " + result, PiazzaLogger.INFO);
+			} else {
+			    coreLogger.log("The service " + rMetadata.name + " was NOT stored", PiazzaLogger.INFO);
+			}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID
 		return result;

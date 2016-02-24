@@ -35,20 +35,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.venice.piazza.servicecontroller.data.model.SearchCriteria;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 /** 
- * Purpose of this controller is to handle service requests
+ * Purpose of this controller is to handle service requests for registerin
+ * and managing services.
  * @author mlynum
  * @since 1.0
  */
@@ -64,6 +67,7 @@ public class ServiceController {
 	private UpdateServiceHandler usHandler;
 	private ListServiceHandler lsHandler;
 	private DeleteServiceHandler dlHandler;
+	private SearchServiceHandler ssHandler;
 	
 	@Autowired
 	private MongoAccessor accessor;
@@ -72,10 +76,10 @@ public class ServiceController {
 	private CoreServiceProperties coreServiceProp;
 	
 	@Autowired
-	private CoreLogger coreLogger;
+	private PiazzaLogger logger;
 	
 	@Autowired
-	private CoreUUIDGen coreUuidGen;
+	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
 	
 	public ServiceController() {
@@ -88,13 +92,14 @@ public class ServiceController {
 	public void initialize() {
 		
 		// Initialize calling server
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
-		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
-		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, coreLogger);
-		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, coreLogger);
-		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, coreLogger, coreUuidGen);
-		lsHandler = new ListServiceHandler(accessor, coreServiceProp, coreLogger);
-		
+		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
+		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
+		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
+		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
+		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
+		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
+		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
+
 	
 	}
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
@@ -189,5 +194,20 @@ public class ServiceController {
 		
 
 	}
+	
+	@RequestMapping(value = "/search", method = RequestMethod.POST, headers="Accept=application/json")
+	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
+
+	    ResponseEntity<String> result = ssHandler.handle(criteria);
+	    LOGGER.debug("Result is" + result);
+	    //TODO Remove System.out
+	    
+	    // Set the response based on the service retrieved
+		return result;
+		
+
+	}
+	
+	
 	
 }

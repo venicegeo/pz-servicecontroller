@@ -23,7 +23,7 @@ import java.util.List;
  */
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
-import model.job.type.DescribeServiceMetadataJob;
+import util.PiazzaLogger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,11 +40,11 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ListServiceHandler.class);
 	
 	private MongoAccessor accessor;
-	private CoreLogger coreLogger;
+	private PiazzaLogger coreLogger;
 	private CoreServiceProperties coreServiceProperties;	
 	private RestTemplate template;
 	
-	public ListServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, CoreLogger coreLogger) {
+	public ListServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
 		this.accessor = accessor;
 		this.coreServiceProperties = coreServiceProperties;
 		this.template = new RestTemplate();

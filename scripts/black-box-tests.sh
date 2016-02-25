@@ -8,6 +8,6 @@ popd > /dev/null
 source $base/vars.sh
 
 #Run the test
+newman -sc $base/tests/PiazzaDevelopment.json.postman_collection
 newman -sc $base/tests/pz-register-test.json
 newman -sc $base/tests/testServiceControllerRestServicesSeq.json.postman_collection
-newman -sc $base/tests/PiazzaAWM%20Development.json.postman_collection

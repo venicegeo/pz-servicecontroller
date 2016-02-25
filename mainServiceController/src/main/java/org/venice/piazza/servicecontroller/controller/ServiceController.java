@@ -15,9 +15,11 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.controller;
 
+import java.io.IOException;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletResponse;
 
 import model.job.metadata.ExecuteServiceData;
 import model.job.metadata.ResourceMetadata;
@@ -26,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,7 +61,7 @@ import util.UUIDFactory;
 
 @RestController
 
-@RequestMapping("/servicecontroller")
+@RequestMapping({"/servicecontroller", ""})
 @DependsOn("coreInitDestroy")
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;
@@ -102,6 +105,15 @@ public class ServiceController {
 
 	
 	}
+	/**
+	 * Registers a service with the piazza service controller. 
+	 * 
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController.  
+	 * @param serviceMetadata 
+	 * 		     metadata about the service
+	 * @return A Json message with the resourceID {resourceId="<the id>"}
+	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String registerService(@RequestBody ResourceMetadata serviceMetadata) {
 
@@ -115,6 +127,16 @@ public class ServiceController {
 
 	}
 	
+	/**
+	 * Updates metadata about an existing service registered in the ServiceController.
+	 * 
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController. 
+	 *  
+	 * @param serviceMetadata
+	 * 		  metadata bout the service
+	 * @return A Json message with the resourceID {resourceId="<the id>"}
+	 */
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String updateService(@RequestBody ResourceMetadata serviceMetadata) {
 
@@ -127,7 +149,18 @@ public class ServiceController {
 		return responseString;
 
 	}
-	
+	/**
+	 * Executes a service registered in the Service Controller.
+	 * 
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController.  
+	 * 
+	 * @param data
+	 * 			ExecuteServiceData used to execute the data.  Contains resourceId and
+	 *          values to use.
+	 *          
+	 * @return the  results of the service execution
+	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
 		LOGGER.debug("executeService resourceId=" + data.resourceId);
@@ -150,7 +183,17 @@ public class ServiceController {
 		
 
 	}
-	
+	/**
+	 * Used to describe details about the service.
+	 * 
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController.  
+	 * 
+	 * @param resourceId
+	 * 			The id associated with the service that is registered within the
+	 * 			Service Controller.
+	 * @return Json with the ResourceMetadata, the metadata about the service
+	 */
 	@RequestMapping(value = "/describeService", method = RequestMethod.GET, headers="Accept=application/json")
 	public ResponseEntity<String> describeService(@ModelAttribute("resourceId") String resourceId) {
 		LOGGER.debug("describeService resourceId=" + resourceId);
@@ -165,6 +208,16 @@ public class ServiceController {
 		
 
 	}
+	
+	/**
+	 * deletes a registered service from the ServiceController.  
+	 * 
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController.  
+	 * 
+	 * @param resourceId
+	 * @return the result of the deletion
+	 */
 	@RequestMapping(value = "/deleteService", method = RequestMethod.GET, headers="Accept=application/json")
 	public ResponseEntity<String> deleteService(@ModelAttribute("resourceId") String resourceId) {
 		LOGGER.debug("deleteService resourceId=" + resourceId);
@@ -179,7 +232,14 @@ public class ServiceController {
 		
 
 	}
-	
+	/**
+	 * Lists all the services registered in the service controller.
+	 * 
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController.  
+	 * 
+	 * @return Json list o resourceMetadata items (Metadata about the service)
+	 */
 	@RequestMapping(value = "/listService", method = RequestMethod.GET, headers="Accept=application/json")
 	public ResponseEntity<String> listService() {
 		
@@ -194,7 +254,16 @@ public class ServiceController {
 		
 
 	}
-	
+	/**
+	 * Searches for registered services.
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController. 
+	 * 
+	 * @param SearchCriteria
+	 * 			The criteria to search with (specify field and regular expression
+	 * 
+	 * @return Json list o resourceMetadata items (Metadata about the service)
+	 */
 	@RequestMapping(value = "/search", method = RequestMethod.POST, headers="Accept=application/json")
 	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
 
@@ -208,6 +277,49 @@ public class ServiceController {
 
 	}
 	
+	/**
+	 * Healthcheck to see if the Piazza Service Controller is up and running.
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController. 
+	 * 
+	 * @return welcome message
+	 */
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public ResponseEntity<String> healthCheck() {
+
+	    
+	    LOGGER.debug("Health Check called");
+	    
+	    HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(MediaType.valueOf("text/html"));
+        String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
+        htmlMessage = htmlMessage +
+        		      "<BODY><BR> Welcome from the Piazza Service Controller. " +
+        		      "<BR>For details on running and using the ServiceController, " +
+        		      "<BR>see <A HREF=\"https://github.com/venicegeo/venice/wiki/Pz-ServiceController\"> Pz Service Controller<A> for details." +
+        		      "<BODY></HTML>";
+        
+	    ResponseEntity<String> response = new ResponseEntity<String>(htmlMessage, responseHeaders, HttpStatus.OK);
+	    
+	    // Set the response based on the service retrieved
+		return response;
+		
+
+	}
+	
+	/**
+	 * Statistics for the Piazza Service controller
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController. 
+	 * 
+	 * @return json as statistics
+	 */
+	@RequestMapping(value = "/admin/stats",  method = RequestMethod.GET)
+	public void stats(HttpServletResponse response) throws IOException {
+		 response.sendRedirect("/metrics");
+		
+		
+	}
 	
 	
 }

@@ -15,9 +15,11 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.controller;
 
+import java.io.IOException;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletResponse;
 
 import model.job.metadata.ExecuteServiceData;
 import model.job.metadata.ResourceMetadata;
@@ -277,7 +279,7 @@ public class ServiceController {
 	
 	/**
 	 * Healthcheck to see if the Piazza Service Controller is up and running.
-	 * his service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
 	 * and for testing of the serviceController. 
 	 * 
 	 * @return welcome message
@@ -305,6 +307,19 @@ public class ServiceController {
 
 	}
 	
+	/**
+	 * Statistics for the Piazza Service controller
+	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
+	 * and for testing of the serviceController. 
+	 * 
+	 * @return json as statistics
+	 */
+	@RequestMapping(value = "/admin/stats",  method = RequestMethod.GET)
+	public void stats(HttpServletResponse response) throws IOException {
+		 response.sendRedirect("/metrics");
+		
+		
+	}
 	
 	
 }

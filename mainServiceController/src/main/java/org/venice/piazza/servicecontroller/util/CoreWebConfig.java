@@ -33,6 +33,6 @@ public class CoreWebConfig extends WebMvcConfigurerAdapter {
 
 	@Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new CoreCorsInterceptor());
+        //registry.addInterceptor(new CoreCorsInterceptor());
     }
 }

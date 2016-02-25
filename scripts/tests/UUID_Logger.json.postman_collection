@@ -1,0 +1,56 @@
+{
+	"id": "ee8184a9-783b-e174-9c23-c970d9148d35",
+	"name": "UUID_Logger",
+	"description": "MVP 1 autmated testing for UUID and Logger services",
+	"order": [
+		"0dabd3e4-33bf-fec2-68ca-4014b7d5d05e",
+		"6feae0b1-b66e-1514-ea64-dd92e6ce7d79"
+	],
+	"folders": [],
+	"timestamp": 1456428123327,
+	"owner": "300577",
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "0dabd3e4-33bf-fec2-68ca-4014b7d5d05e",
+			"headers": "",
+			"url": " http://pz-uuidgen.cf.piazzageo.io/v1/uuids?count=10",
+			"pathVariables": {},
+			"preRequestScript": "",
+			"method": "POST",
+			"collectionId": "ee8184a9-783b-e174-9c23-c970d9148d35",
+			"data": [],
+			"dataMode": "params",
+			"name": " http://pz-uuidgen.cf.piazzageo.io/v1/uuids?count=10",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1456428158326,
+			"version": 2,
+			"responses": [],
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {}
+		},
+		{
+			"id": "6feae0b1-b66e-1514-ea64-dd92e6ce7d79",
+			"headers": "Content-Type: application/json\n",
+			"url": " http://pz-logger.cf.piazzageo.io/v1/messages",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": "tests[\"Status code is 200\"] = responseCode.code === 200;",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1456432803461,
+			"name": " http://pz-logger.cf.piazzageo.io/v1/messages",
+			"description": "",
+			"collectionId": "ee8184a9-783b-e174-9c23-c970d9148d35",
+			"responses": [],
+			"rawModeData": "{\r\n    \"service\": \"log-tester\",\r\n    \"address\": \"128.1.2.3\",\r\n    \"time\": \"2007-04-05T14:30:00Z\",\r\n    \"severity\": \"Info\",\r\n    \"message\": \"The quick brown fox\" \r\n}"
+		}
+	]
+}

@@ -171,6 +171,7 @@ public class GettingStartedController {
        
         message = message + "Welcome to the piazza pz-servicecontroller!\n";
         message = message + "Details on using pz-servicecontrollers are \n";
+        message = message + "here https://github.com/venicegeo/venice/wiki/Pz-ServiceController";
        
         LOGGER.info("Welcome generated" + message);
         return "{\"message\":\"" + message+ "\"}";

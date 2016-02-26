@@ -38,6 +38,7 @@ import model.job.type.ExecuteServiceJob;
 import model.job.type.ListServicesJob;
 import model.job.type.IngestJob;
 import model.job.type.RegisterServiceJob;
+import model.job.type.SearchServiceJob;
 import model.request.PiazzaJobRequest;
 import model.job.type.UpdateServiceJob;
 import model.status.StatusUpdate;
@@ -65,6 +66,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -86,8 +88,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private static final String READ_SERVICE_JOB_TOPIC_NAME = "read-service";
 	private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
 	private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "update-service";
-	private static final String List_SERVICE_JOB_TOPIC_NAME = "list-service";
-	
+	private static final String LIST_SERVICE_JOB_TOPIC_NAME = "list-service";
+	private static final String SEARCH_SERVICE_JOB_TOPIC_NAME = "search-service";
+
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);
 	
 	private String KAFKA_HOST;
@@ -106,6 +109,8 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private DescribeServiceHandler dsHandler;
 	private DeleteServiceHandler dlHandler;
 	private ListServiceHandler lsHandler;
+	private SearchServiceHandler ssHandler;
+
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -124,7 +129,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	public ServiceControllerMessageHandler() {
 		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
-							   UPDATE_SERVICE_JOB_TOPIC_NAME,List_SERVICE_JOB_TOPIC_NAME);
+							   UPDATE_SERVICE_JOB_TOPIC_NAME,LIST_SERVICE_JOB_TOPIC_NAME);
 
 	}
 
@@ -148,6 +153,8 @@ public class ServiceControllerMessageHandler implements Runnable {
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);
+		ssHandler = new SearchServiceHandler(accessor, coreServiceProperties, coreLogger);
+
 		LOGGER.info("=================================");
 
 		String KAFKA_PORT_STRING = new Integer(KAFKA_PORT).toString();
@@ -215,9 +222,17 @@ public class ServiceControllerMessageHandler implements Runnable {
 						    handleResult = dsHandler.handle(jobType);
 						}
 						else if (jobType instanceof ListServicesJob) {
-							   // Handle Register Job						  
+							   // Handle List Job						  
 						   handleResult = lsHandler.handle(jobType);
+						   handleResult = checkResult(handleResult);
+						   sendListStatus(job, handleUpdate, handleResult);
 							
+						}
+						else if (jobType instanceof SearchServiceJob) {
+							   // Handle Search Job						  
+							   handleResult = ssHandler.handle(jobType);
+							   handleResult = checkResult(handleResult);
+							   sendSearchStatus(job, handleUpdate, handleResult);
 						}
 						
 						
@@ -315,11 +330,75 @@ public class ServiceControllerMessageHandler implements Runnable {
 		return handleResult;
 	}
 	
+	/**
+	 * Sends the list of services to the job
+	 */
+	
+	private void sendListStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+		if (handleResult != null) {
+			// Create a text result and update status
+			StatusUpdate su = new StatusUpdate();
+			
+			su.setStatus(StatusUpdate.STATUS_SUCCESS);
+			List <String>stringList = handleResult.getBody();
+			
+			TextResult textResult = new TextResult();
+				textResult.setText(stringList.get(0));
+			su.setResult(textResult);
+			if (handleResult.getStatusCode() == HttpStatus.OK) {
+				
+				LOGGER.debug("THe STATUS is " + su.getStatus());
+				LOGGER.debug("THe RESULT is " + su.getResult());
+	
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				
+				producer.send(prodRecord);
+			}
+			else {
+				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
+				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+			}
+		}
+	}
+	
 	/** 
 	 * Sends an update for registering a job
 	 * 
 	 */
 	private void sendRegisterStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+		if (handleResult != null) {
+			// Create a text result and update status
+			StatusUpdate su = new StatusUpdate();
+			
+			su.setStatus(StatusUpdate.STATUS_SUCCESS);
+			List <String>stringList = handleResult.getBody();
+			
+			TextResult textResult = new TextResult();
+				textResult.setText(stringList.get(0));
+			su.setResult(textResult);
+			if (handleResult.getStatusCode() == HttpStatus.OK) {
+				
+				LOGGER.debug("THe STATUS is " + su.getStatus());
+				LOGGER.debug("THe RESULT is " + su.getResult());
+	
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				
+				producer.send(prodRecord);
+			}
+			else {
+				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
+				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+			}
+		}
+	}
+	
+	/**
+	 * Sends the list of services to the job
+	 */
+	
+	private void sendSearchStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();

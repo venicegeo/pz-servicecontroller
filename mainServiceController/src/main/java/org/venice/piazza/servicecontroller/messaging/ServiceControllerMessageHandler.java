@@ -129,7 +129,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	public ServiceControllerMessageHandler() {
 		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
 							   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
-							   UPDATE_SERVICE_JOB_TOPIC_NAME,LIST_SERVICE_JOB_TOPIC_NAME);
+							   UPDATE_SERVICE_JOB_TOPIC_NAME,LIST_SERVICE_JOB_TOPIC_NAME, SEARCH_SERVICE_JOB_TOPIC_NAME);
 
 	}
 
@@ -420,7 +420,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 			}
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
+				su.setResult(new ErrorResult(stringList.get(0), "No Results returned from the search. HTTP Status:" + handleResult.getStatusCode().toString()));
 	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
 			}
 		}

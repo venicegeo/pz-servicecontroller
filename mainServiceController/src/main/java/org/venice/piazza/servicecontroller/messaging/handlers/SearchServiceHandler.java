@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
+import model.job.type.ExecuteServiceJob;
+import model.job.type.SearchServiceJob;
 import util.PiazzaLogger;
 
 
@@ -47,13 +49,15 @@ public class SearchServiceHandler implements PiazzaJobHandler {
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobType ) {
+	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
 		LOGGER.debug("Search a service");
+		SearchServiceJob job = (SearchServiceJob)jobRequest;
+
 		ArrayList<String> retVal = new ArrayList<String>();
+		// Get the criteria to use for the search
+		SearchCriteria criteria = job.data;
 		
-		// TODO Extract criteria from job
-		SearchCriteria criteria = new SearchCriteria();
         ResponseEntity<String> response = handle(criteria);
 
 		retVal.add(response.getBody());

@@ -270,12 +270,17 @@ public class MongoAccessor {
 	 */
 	public List <ResourceMetadata> search(SearchCriteria criteria) {
 		List <ResourceMetadata> results =  new ArrayList<ResourceMetadata>();
-
 		if (criteria != null) {
+			
+	     LOGGER.debug("Criteria field=" + criteria.getField());
+	     LOGGER.debug("Criteria field=" + criteria.getPattern());
+
+
 		Pattern pattern = Pattern.compile(criteria.pattern);
 		BasicDBObject query = new BasicDBObject(criteria.field, pattern);
 
 			try {
+				
 				DBCursor<ResourceMetadata> cursor = getResourceCollection().find(query);		
 				while (cursor.hasNext()) {
 					results.add(cursor.next());

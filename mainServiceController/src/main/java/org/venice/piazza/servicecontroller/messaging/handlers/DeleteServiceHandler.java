@@ -77,8 +77,6 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 			String result = handle(resourceId);
 			if (result.length() > 0) {
 				String jobId = job.getJobId();
-				// TODO Use the result, send a message with the resource ID
-				// and jobId
 				ArrayList<String> resultList = new ArrayList<String>();
 				resultList.add(jobId);
 				resultList.add(resourceId);
@@ -90,7 +88,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 				LOGGER.error("No result response from the handler, something went wrong");
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("DeleteServiceHandler handle didn't work");
-				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
+				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.NOT_FOUND);
 				
 				return errorResult;
 			}
@@ -115,7 +113,6 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		try {
 			result = mapper.writeValueAsString(accessor.delete(resourceId));
 		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		LOGGER.debug("The result of the delete is " + result);

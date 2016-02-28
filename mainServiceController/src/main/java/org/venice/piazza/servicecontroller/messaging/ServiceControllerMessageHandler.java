@@ -215,11 +215,17 @@ public class ServiceControllerMessageHandler implements Runnable {
 						}
 						else if (jobType instanceof DeleteServiceJob) {
 							   // Handle Register Job
-						    handleResult = dlHandler.handle(jobType);		
+						    handleResult = dlHandler.handle(jobType);	
+						    handleResult = checkResult(handleResult);
+							sendDeleteStatus(job, handleUpdate, handleResult);
+
 						}
 						else if (jobType instanceof DescribeServiceMetadataJob) {
 							   // Handle Register Job
 						    handleResult = dsHandler.handle(jobType);
+						    handleResult = checkResult(handleResult);
+							sendDescribeStatus(job, handleUpdate, handleResult);
+						    
 						}
 						else if (jobType instanceof ListServicesJob) {
 							   // Handle List Job						  
@@ -428,6 +434,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 	
 	/** 
 	 * Sends an update for registering a job
+	 * Message is sent on Kafka Queue
 	 * 
 	 */
 	private void sendUpdateStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
@@ -441,8 +448,82 @@ public class ServiceControllerMessageHandler implements Runnable {
 		producer.send(prodRecord);
 	}
 	
+	/** 
+	 * Sends an update for deleting the resource
+	 * Resource is not deleted but marked as unavailable
+	 * Message is sent on Kafka Queue
+	 * 
+	 */
+	private void sendDeleteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {	
+		
+		if (handleResult != null) {
+			// Create a text result and update status
+			StatusUpdate su = new StatusUpdate();
+			
+			su.setStatus(StatusUpdate.STATUS_SUCCESS);
+			List <String>stringList = handleResult.getBody();
+			TextResult textResult = new TextResult();
+			// Get the resource ID and set it as the result
+			textResult.setText(stringList.get(1));
+			su.setResult(textResult);
+			if (handleResult.getStatusCode() == HttpStatus.OK) {
+				
+				LOGGER.debug("THe STATUS is " + su.getStatus());
+				LOGGER.debug("THe RESULT is " + su.getResult());
+	
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				
+				producer.send(prodRecord);
+			}
+		
+			else {
+				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
+				su.setResult(new ErrorResult(stringList.get(0), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+			}
+		}
+		
+	}
+	
+	/** 
+	 * Sends an update for describing the resource
+	 * Message is sent on Kafka Queue
+	 * 
+	 */
+	private void sendDescribeStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {	
+		
+		if (handleResult != null) {
+			// Create a text result and update status
+			StatusUpdate su = new StatusUpdate();
+			
+			su.setStatus(StatusUpdate.STATUS_SUCCESS);
+			List <String>stringList = handleResult.getBody();
+			
+			TextResult textResult = new TextResult();
+				textResult.setText(stringList.get(0));
+			su.setResult(textResult);
+			if (handleResult.getStatusCode() == HttpStatus.OK) {
+				
+				LOGGER.debug("THe STATUS is " + su.getStatus());
+				LOGGER.debug("THe RESULT is " + su.getResult());
+	
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				
+				producer.send(prodRecord);
+			}
+		
+			else {
+				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
+				su.setResult(new ErrorResult(stringList.get(0), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+			}
+		}
+		
+	}
+	
 	/**
 	 * Send an execute job status and the resource that was used
+	 * Message is sent on Kafka Queue
 	 * @param job
 	 * @param status
 	 * @param handleResult

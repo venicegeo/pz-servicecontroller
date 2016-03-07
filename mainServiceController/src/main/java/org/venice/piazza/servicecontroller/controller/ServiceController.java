@@ -45,12 +45,13 @@ import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandl
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+import model.data.DataType;
 import model.job.metadata.ExecuteServiceData;
 import model.job.metadata.ResourceMetadata;
+import model.job.metadata.Service;
 import model.service.SearchCriteria;
 import util.PiazzaLogger;
 import util.UUIDFactory;
-import model.data.DataType;
 
 /** 
  * Purpose of this controller is to handle service requests for registerin
@@ -115,7 +116,7 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String registerService(@RequestBody ResourceMetadata serviceMetadata) {
+	public @ResponseBody String registerService(@RequestBody Service serviceMetadata) {
 
 		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
 	    String result = rsHandler.handle(serviceMetadata);
@@ -138,7 +139,7 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String updateService(@RequestBody ResourceMetadata serviceMetadata) {
+	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
 
 		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
 	    String result = usHandler.handle(serviceMetadata);

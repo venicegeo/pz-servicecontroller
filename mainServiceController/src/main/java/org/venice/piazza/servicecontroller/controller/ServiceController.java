@@ -21,10 +21,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 
-import model.service.SearchCriteria;
-import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.ResourceMetadata;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,10 +43,14 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import model.job.metadata.ExecuteServiceData;
+import model.job.metadata.ResourceMetadata;
+import model.service.SearchCriteria;
 import util.PiazzaLogger;
 import util.UUIDFactory;
+import model.data.DataType;
 
 /** 
  * Purpose of this controller is to handle service requests for registerin
@@ -163,14 +163,22 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
-		LOGGER.debug("executeService resourceId=" + data.resourceId);
-		LOGGER.debug("executeService datainput=" + data.dataInput);
+		LOGGER.debug("executeService serviceId=" + data.getServiceId());
+		
 
-		for (Map.Entry<String,String> entry : data.dataInputs.entrySet()) {
+		for (Map.Entry<String,Object> entry : data.dataInputs.entrySet()) {
 			  String key = entry.getKey();
-			  String value = entry.getValue();
 			  LOGGER.debug("dataInput key:" + key);
-			  LOGGER.debug("dataInput value:" + value);			  
+			  
+			  String dataInputType = "";
+			  if (entry.getValue() instanceof java.lang.String) {
+				  dataInputType = "java.lang.String";
+			  }
+			  else {
+				  dataInputType = ((DataType)entry.getValue()).getType();
+			  }
+			  
+			  LOGGER.debug("dataInput Type:" + dataInputType);			  
 		}
 		
 		

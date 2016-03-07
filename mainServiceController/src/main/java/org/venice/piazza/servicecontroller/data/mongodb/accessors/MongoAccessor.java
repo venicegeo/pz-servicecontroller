@@ -23,8 +23,6 @@ import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import model.job.metadata.ResourceMetadata;
-
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBQuery.Query;
@@ -37,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
-import model.service.SearchCriteria;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
@@ -45,6 +42,10 @@ import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
+
+import model.job.metadata.ResourceMetadata;
+import model.job.metadata.Service;
+import model.service.SearchCriteria;
 
 /**
  * Class to store service information in MongoDB.  
@@ -60,7 +61,7 @@ public class MongoAccessor {
 	private String DATABASE_HOST;
 	private int DATABASE_PORT;
 	private String DATABASE_NAME;
-	private String RESOURCE_COLLECTION_NAME;
+	private String SERVICE_COLLECTION_NAME;
 	private MongoClient mongoClient;
 	
 	@Autowired
@@ -77,12 +78,12 @@ public class MongoAccessor {
 		DATABASE_HOST = coreServiceProperties.getMongoHost();
 		DATABASE_PORT = coreServiceProperties.getMongoPort();
 		DATABASE_NAME = coreServiceProperties.getMongoDBName();
-		RESOURCE_COLLECTION_NAME = coreServiceProperties.getMongoCollectionName();
+		SERVICE_COLLECTION_NAME = coreServiceProperties.getMongoCollectionName();
 		LOGGER.debug("====================================================");
 		LOGGER.debug("DATABASE_HOST=" + DATABASE_HOST);
 		LOGGER.debug("DATABASE_PORT=" + DATABASE_PORT);
 		LOGGER.debug("DATABASE_NAME=" + DATABASE_NAME);
-		LOGGER.debug("RESOURCE_COLLECTION_NAME=" + RESOURCE_COLLECTION_NAME);
+		LOGGER.debug("SERVICE_COLLECTION_NAME=" + SERVICE_COLLECTION_NAME);
 		LOGGER.debug("====================================================");
 
 		try {
@@ -110,19 +111,19 @@ public class MongoAccessor {
 	/**
 	 * updateservice information
 	 */
-	public String update(ResourceMetadata metadata) {
+	public String update(Service sMetadata) {
 		String result = "";
 		try {
-			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 			
-			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
+			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class,
 			        String.class);
 			
-			Query query = DBQuery.is("id",metadata.id);
+			Query query = DBQuery.is("id",sMetadata.getId());
 			
-			WriteResult<ResourceMetadata, String> writeResult = coll.update(query,metadata);
+			WriteResult<Service, String> writeResult = coll.update(query,sMetadata);
 			// Return the id that was used
-			return metadata.id;
+			return sMetadata.getId();
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
@@ -138,25 +139,25 @@ public class MongoAccessor {
 	/**
 	 * deleteservice 
 	 */
-	public String delete(String resourceId) {
+	public String delete(String serviceId) {
 		String result = "";
 		try {
-			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 			
-			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
+			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class,
 			        String.class);
 			
 			
-			Query query = DBQuery.is("id",resourceId);
-			WriteResult<ResourceMetadata, String> writeResult =
-					coll.update(query,DBUpdate.set("availability", "OUT OF SERVICE"));
+			Query query = DBQuery.is("id",serviceId);
+			WriteResult<Service, String> writeResult =
+					coll.update(query,DBUpdate.set("rmetadata.availability", "OUT OF SERVICE"));
 			int recordsChanged = writeResult.getN();
 			// Return the id that was used
 			if (recordsChanged == 1) {
-				result = " resource " + resourceId + " deleted ";
+				result = " service " + serviceId + " deleted ";
 			}
 			else {
-				result = " resource " + resourceId + " NOT deleted ";
+				result = " service " + serviceId + " NOT deleted ";
 			}
 			
 			return result;
@@ -175,17 +176,17 @@ public class MongoAccessor {
 	/**
 	 * Store the new service information
 	 */
-	public String save(ResourceMetadata metadata) {
+	public String save(Service sMetadata) {
 		String result = "";
 		try {
-			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 			
-			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
+			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class,
 			        String.class);
 			
-			WriteResult<ResourceMetadata, String> writeResult = coll.insert(metadata);
+			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
 			// Return the id that was used
-			return metadata.id;
+			return sMetadata.getId();
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
@@ -200,16 +201,16 @@ public class MongoAccessor {
 	/**
 	 * List services
 	 */
-	public List<ResourceMetadata> list() {
-		ArrayList<ResourceMetadata> result = new ArrayList<ResourceMetadata>();
+	public List<Service> list() {
+		ArrayList<Service> result = new ArrayList<Service>();
 		try {
 			
-			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
+			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 			
-			JacksonDBCollection<ResourceMetadata, String> coll = JacksonDBCollection.wrap(collection, ResourceMetadata.class,
+			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class,
 			        String.class);
 			
-			DBCursor<ResourceMetadata> metadataCursor = 
+			DBCursor<Service> metadataCursor = 
 					coll.find(DBQuery.notEquals("availability", "OUT OF SERVICE"));
 			while (metadataCursor.hasNext()) {
 				result.add(metadataCursor.next());
@@ -233,11 +234,11 @@ public class MongoAccessor {
 	 * 
 	 * @return
 	 */
-	public JacksonDBCollection<ResourceMetadata, String> getResourceCollection() {
+	public JacksonDBCollection<Service, String> getServiceCollection() {
 		// MongoJack does not support the latest Mongo API yet. TODO: Check if
 		// they plan to.
-		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(RESOURCE_COLLECTION_NAME);
-		return JacksonDBCollection.wrap(collection, ResourceMetadata.class, String.class);
+		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
+		return JacksonDBCollection.wrap(collection, Service.class, String.class);
 	}
 
 	
@@ -248,28 +249,28 @@ public class MongoAccessor {
 	 *            Job ID
 	 * @return The Job with the specified ID
 	 */
-	public ResourceMetadata getResourceById(String resourceId) throws ResourceAccessException {
+	public Service getServiceById(String serviceId) throws ResourceAccessException {
 	
 		
-		BasicDBObject query = new BasicDBObject("id", resourceId);
-		ResourceMetadata resource;
+		BasicDBObject query = new BasicDBObject("id", serviceId);
+		Service service;
 
 		try {
-			if ((resource = getResourceCollection().findOne(query)) == null) {
-				throw new ResourceAccessException("ResourceMetadata not found.");
+			if ((service = getServiceCollection().findOne(query)) == null) {
+				throw new ResourceAccessException("Service not found.");
 			}			
 		} catch( MongoTimeoutException mte) {
 			throw new ResourceAccessException("MongoDB instance not available.");
 		}
 
-		return resource;
+		return service;
 	}
 	
 	/**
 	 * Returns a list of ResourceMetadata based on the criteria provided
 	 */
-	public List <ResourceMetadata> search(SearchCriteria criteria) {
-		List <ResourceMetadata> results =  new ArrayList<ResourceMetadata>();
+	public List <Service> search(SearchCriteria criteria) {
+		List <Service> results =  new ArrayList<Service>();
 		if (criteria != null) {
 			
 	     LOGGER.debug("Criteria field=" + criteria.getField());
@@ -281,7 +282,7 @@ public class MongoAccessor {
 
 			try {
 				
-				DBCursor<ResourceMetadata> cursor = getResourceCollection().find(query);		
+				DBCursor<Service> cursor = getServiceCollection().find(query);		
 				while (cursor.hasNext()) {
 					results.add(cursor.next());
 				}

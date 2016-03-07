@@ -5,6 +5,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+import model.data.type.TextDataType;
 import model.job.metadata.ExecuteServiceData;
 import model.job.metadata.InputType;
 import model.job.metadata.ParamDataItem;
@@ -62,13 +64,13 @@ public class TestExecuteServiceHandler {
 	@PrepareForTest({ExecuteServiceHandler.class})
 	@Test
 	public void testHandleWithNoInputs() {
-		/*String upperServiceDef = "{  \"name\":\"toUpper Params\"," +
+		String upperServiceDef = "{  \"name\":\"toUpper Params\"," +
 		        "\"description\":\"Service to convert string to uppercase\"," + 
 		        "\"url\":\"http://localhost:8082/string/toUpper\"," + 
 		         "\"method\":\"POST\"," +
 		         "\"params\": [\"aString\"]," + 
 		         "\"mimeType\":\"application/json\"" +
-		       "}";*/
+		       "}";
 		
 		
 		
@@ -95,16 +97,20 @@ public class TestExecuteServiceHandler {
 		edata.setServiceId("8");
 		ParamDataItem pitem = new ParamDataItem();
 		pitem.setInputType(InputType.ComplexData);
+		pitem.setName("name");
 		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
-		HashMap<String,String> dataInputs = new HashMap<String,String>();
-		dataInputs.put("name","Marge");
+		inputs.add(pitem);
+		service.setInputs(inputs);
+		HashMap<String,Object> dataInputs = new HashMap<String,Object>();
+		TextDataType tdt = new TextDataType();
+		tdt.content = "My name is Marge";
+		dataInputs.put("name",tdt);
 		edata.setDataInputs(dataInputs);
-		edata.setDataInput("");
 		rm.method = "POST";
-	
-		when(template.postForEntity(Mockito.eq("http://localhost:8082/string/toUpper"),Mockito.any(MultiValueMap.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
+	    URI uri = URI.create("http://localhost:8082/string/toUpper");
+		when(template.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.getResourceById("8")).thenReturn(rm);
+		when(mockMongo.getServiceById("8")).thenReturn(service);
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
@@ -112,21 +118,27 @@ public class TestExecuteServiceHandler {
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
 		
 	}
-	
 	@PrepareForTest({ExecuteServiceHandler.class})
 	@Test
 	public void testHandleWithMapInputsGet() {
 		ExecuteServiceData edata = new ExecuteServiceData();
-		edata.resourceId = "8";
-		HashMap<String,String> dataInputs = new HashMap<String,String>();
-		dataInputs.put("name","Marge");
+		edata.setServiceId("8");
+		ParamDataItem pitem = new ParamDataItem();
+		pitem.setInputType(InputType.URLParameter);
+		pitem.setName("name");
+		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
+		inputs.add(pitem);
+		service.setInputs(inputs);
+		HashMap<String,Object> dataInputs = new HashMap<String,Object>();
+		TextDataType tdt = new TextDataType();
+		tdt.content = "Marge";
+		dataInputs.put("name",tdt);
 		edata.setDataInputs(dataInputs);
-		edata.setDataInput("");
-		rm.method = "Get";
-	
-		when(template.getForEntity(Mockito.eq("http://localhost:8082/string/toUpper?name=Marge"),Mockito.eq(String.class),Mockito.any(MultiValueMap.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
+		rm.method = "GET";
+	    URI uri = URI.create("http://localhost:8082/string/toUpper?name=Marge");
+		when(template.getForEntity(Mockito.eq(uri),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.getResourceById("8")).thenReturn(rm);
+		when(mockMongo.getServiceById("8")).thenReturn(service);
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
@@ -134,45 +146,8 @@ public class TestExecuteServiceHandler {
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
 		
 	}
-	@PrepareForTest({ExecuteServiceHandler.class})
-	@Test
-	public void testHandleWithMapInputPost() {
-		ExecuteServiceData edata = new ExecuteServiceData();
-		edata.resourceId = "8";
-		HashMap<String,String> dataInputs = new HashMap<String,String>();
-		edata.setDataInputs(dataInputs);
-		edata.setDataInput("{\"name\":\"MovieQuoteWelcome\"}");
-		rm.method = "POST";
 	
-		when(template.postForEntity(Mockito.eq("http://localhost:8082/string/toUpper"),Mockito.any(HttpEntity.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testHandleWithMapInputPost",HttpStatus.FOUND));
-		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.getResourceById("8")).thenReturn(rm);
-		CoreServiceProperties props = mock(CoreServiceProperties.class);
-		PiazzaLogger logger = mock(PiazzaLogger.class);
-		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
-		ResponseEntity<String> retVal = handler.handle(edata);
-	    assertTrue(retVal.getBody().contains("testHandleWithMapInputPost"));
-	}
-	@PrepareForTest({ExecuteServiceHandler.class})
-	@Test
-	public void testHandleWithMapInputGet() {
-		ExecuteServiceData edata = new ExecuteServiceData();
-		edata.resourceId = "8";
-		HashMap<String,String> dataInputs = new HashMap<String,String>();
-		
-		edata.setDataInputs(dataInputs);
-		edata.setDataInput("name=MovieQuoteWelcome");
-		rm.method = "Get";
 	
-		when(template.getForEntity("http://localhost:8082/string/toUpper?name=MovieQuoteWelcome",String.class)).thenReturn(new ResponseEntity<String>("testHandleWithMapInputGet",HttpStatus.FOUND));
-		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.getResourceById("8")).thenReturn(rm);
-		CoreServiceProperties props = mock(CoreServiceProperties.class);
-		PiazzaLogger logger = mock(PiazzaLogger.class);
-		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
-		ResponseEntity<String> retVal = handler.handle(edata);
-	    assertTrue(retVal.getBody().contains("testHandleWithMapInputGet"));
-		
-	}
-
+	
+	
 }

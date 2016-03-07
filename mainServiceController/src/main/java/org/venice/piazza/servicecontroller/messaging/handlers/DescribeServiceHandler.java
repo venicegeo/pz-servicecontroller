@@ -17,15 +17,6 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author mlynum
- * @version 1.0
- */
-import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.DescribeServiceMetadataJob;
-import util.PiazzaLogger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -35,6 +26,15 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * @author mlynum
+ * @version 1.0
+ */
+import model.job.PiazzaJobType;
+import model.job.metadata.Service;
+import model.job.type.DescribeServiceMetadataJob;
+import util.PiazzaLogger;
 
 public class DescribeServiceHandler implements PiazzaJobHandler { 
 	
@@ -65,19 +65,19 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 		
 	}
 	
-	public ResponseEntity<String> handle (String resourceId) {
+	public ResponseEntity<String> handle (String serviceId) {
 		ResponseEntity<String> responseEntity = null;
 		
 		try {
 	
-			ResourceMetadata rMetadata = accessor.getResourceById(resourceId);
+			Service sMetadata = accessor.getServiceById(serviceId);
 			ObjectMapper mapper = new ObjectMapper();
-			String result = mapper.writeValueAsString(rMetadata);
+			String result = mapper.writeValueAsString(sMetadata);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (Exception ex) {
 			
 			LOGGER.error(ex.getMessage());
-			responseEntity = new ResponseEntity<String>("Could not retrieve resourceId " + resourceId, HttpStatus.NOT_FOUND);
+			responseEntity = new ResponseEntity<String>("Could not retrieve resourceId " + serviceId, HttpStatus.NOT_FOUND);
 			
 		}
 	

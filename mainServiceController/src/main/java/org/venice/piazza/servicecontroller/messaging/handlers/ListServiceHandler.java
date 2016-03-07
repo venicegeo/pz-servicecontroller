@@ -17,14 +17,6 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author mlynum
- * @version 1.0
- */
-import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import util.PiazzaLogger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -34,6 +26,14 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * @author mlynum
+ * @version 1.0
+ */
+import model.job.PiazzaJobType;
+import model.job.metadata.Service;
+import util.PiazzaLogger;
 
 public class ListServiceHandler implements PiazzaJobHandler { 
 	
@@ -69,7 +69,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 		
 		try {
 	
-			List<ResourceMetadata> rmList = accessor.list();
+			List<Service> rmList = accessor.list();
 			ObjectMapper mapper = new ObjectMapper();
 			String result = mapper.writeValueAsString(rmList);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);

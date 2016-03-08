@@ -16,6 +16,7 @@
 package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -45,9 +46,13 @@ import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandl
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import model.data.DataType;
+import model.data.type.TextDataType;
 import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.ResourceMetadata;
 import model.job.metadata.Service;
 import model.service.SearchCriteria;
 import util.PiazzaLogger;
@@ -72,6 +77,7 @@ public class ServiceController {
 	private ListServiceHandler lsHandler;
 	private DeleteServiceHandler dlHandler;
 	private SearchServiceHandler ssHandler;
+	private ObjectMapper mapper;
 	
 	@Autowired
 	private MongoAccessor accessor;
@@ -103,6 +109,7 @@ public class ServiceController {
 		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
+		mapper = new ObjectMapper();
 
 	
 	}
@@ -176,7 +183,8 @@ public class ServiceController {
 				  dataInputType = "java.lang.String";
 			  }
 			  else {
-				  dataInputType = ((DataType)entry.getValue()).getType();
+				  DataType inData = this.convertInputMaptoDataType((HashMap)entry.getValue());
+				  dataInputType = inData.getType();
 			  }
 			  
 			  LOGGER.debug("dataInput Type:" + dataInputType);			  
@@ -329,6 +337,34 @@ public class ServiceController {
 		
 		
 	}
+	
+	DataType convertInputMaptoDataType(HashMap<String,String> input) {
+
+	    DataType retVal = null;
+		try {
+			String inputString = mapper.writeValueAsString(input);
+			
+			
+			switch (input.get("type")) {
+				case "text" :
+						TextDataType tdt = mapper.readValue(inputString,TextDataType.class);
+					    retVal = tdt;
+					break;
+			}
+			
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return retVal ;
+	}
+	
 	
 	
 }

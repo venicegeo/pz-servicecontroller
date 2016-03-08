@@ -150,8 +150,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			Map.Entry pair = (Map.Entry)it.next();
 			String inputName = (String)pair.getKey();
 			if (parameterNames.contains(inputName)) {
-				if (pair.getValue() instanceof TextDataType) {
-					String paramValue = ((TextDataType)pair.getValue()).content;
+				if (pair.getValue() instanceof HashMap) {
+					String paramValue = (String) ((HashMap)(pair.getValue())).get("content");
 					 builder.queryParam(inputName,paramValue);
 				}
 				else {

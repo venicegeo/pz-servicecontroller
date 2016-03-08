@@ -13,19 +13,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.job.metadata.InputType;
 import model.job.metadata.ParamDataItem;
 import model.job.metadata.ResourceMetadata;
 import model.job.metadata.Service;
-import model.resource.UUID;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
@@ -56,12 +55,24 @@ public class TestRegistryServiceHandler {
 		service.setMimeType("application/json");
 		service.setId("8");
 		ParamDataItem pitem = new ParamDataItem();
-		pitem.setInputType(InputType.ComplexData);
-		pitem.setName("name");
+		pitem.setInputType(InputType.URLParameter);
+		pitem.setName("aString");
+		pitem.setMinOccurs(1);
+		pitem.setMaxOccurs(1);
 		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
 		inputs.add(pitem);
 		service.setInputs(inputs);
-		//rm.requestMimeType = "application";
+		
+		//DEBUGGING
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			String jsonReq = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(service);
+			System.out.println(jsonReq);
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
 	@PrepareForTest({RegisterServiceHandler.class})

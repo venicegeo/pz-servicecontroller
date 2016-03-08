@@ -6,6 +6,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +21,10 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+import model.job.metadata.InputType;
+import model.job.metadata.ParamDataItem;
 import model.job.metadata.ResourceMetadata;
+import model.job.metadata.Service;
 import model.resource.UUID;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -28,6 +32,7 @@ import util.UUIDFactory;
 @RunWith(PowerMockRunner.class)
 public class TestRegistryServiceHandler {
 	RestTemplate template = null;
+	Service service = null;
 	ResourceMetadata rm  = null;
 	UUIDFactory uuidFactory = null;
 	@Before
@@ -46,21 +51,31 @@ public class TestRegistryServiceHandler {
 		rm.description = "Service to convert string to uppercase";
 		rm.url = "http://localhost:8082/string/toUpper";
 		rm.method = "POST";
-		rm.requestMimeType = "application";
+		service = new Service();
+		service.setResourceMetadata(rm);
+		service.setMimeType("application/json");
+		service.setId("8");
+		ParamDataItem pitem = new ParamDataItem();
+		pitem.setInputType(InputType.ComplexData);
+		pitem.setName("name");
+		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
+		inputs.add(pitem);
+		service.setInputs(inputs);
+		//rm.requestMimeType = "application";
 	}
 	
 	@PrepareForTest({RegisterServiceHandler.class})
 	@Test
 	public void testHandleWithData() {
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.save(rm)).thenReturn("8");
+		when(mockMongo.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		when(props.getUuidservice()).thenReturn("Nothing");
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,props,logger,uuidFactory);
-        String retVal = handler.handle(rm);
+        String retVal = handler.handle(service);
         assertTrue(retVal.contains("8"));
-        assertTrue(rm.id.contains("NoDoz"));
+        assertTrue(service.getId().contains("NoDoz"));
 		
 	}
 }

@@ -150,6 +150,10 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			Map.Entry pair = (Map.Entry)it.next();
 			String inputName = (String)pair.getKey();
 			if (parameterNames.contains(inputName)) {
+				if (inputName.length() == 0) {
+					String paramValue = (String) ((HashMap)(pair.getValue())).get("content");
+					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
+				}
 				if (pair.getValue() instanceof HashMap) {
 					String paramValue = (String) ((HashMap)(pair.getValue())).get("content");
 					 builder.queryParam(inputName,paramValue);
@@ -160,8 +164,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					return null;
 				}
 			}
-			else if (pair.getValue() instanceof String){
-				postString = (String)pair.getValue();
+			else if (((String)pair.getKey()).toUpperCase().contains("BODY")){
+				postString = (String) ((HashMap)(pair.getValue())).get("content");
 			}
 			else {
 				postObjects.put(inputName, pair.getValue());

@@ -21,10 +21,14 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import model.job.metadata.InputType;
-import model.job.metadata.ParamDataItem;
+import model.data.DataType;
+import model.data.type.TextDataType;
+import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
-import model.job.metadata.Service;
+import model.service.metadata.Format;
+import model.service.metadata.MetadataType;
+import model.service.metadata.ParamDataItem;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
@@ -52,16 +56,35 @@ public class TestRegistryServiceHandler {
 		rm.method = "POST";
 		service = new Service();
 		service.setResourceMetadata(rm);
-		service.setMimeType("application/json");
 		service.setId("8");
 		ParamDataItem pitem = new ParamDataItem();
-		pitem.setInputType(InputType.URLParameter);
+		DataType dataType1 = new URLParameterDataType();
+		pitem.setDataType(dataType1);
 		pitem.setName("aString");
 		pitem.setMinOccurs(1);
 		pitem.setMaxOccurs(1);
 		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
 		inputs.add(pitem);
 		service.setInputs(inputs);
+		ParamDataItem output1 = new ParamDataItem();
+		TextDataType dataType3 = new TextDataType();
+		output1.setDataType(dataType3);
+		output1.setMaxOccurs(1);
+		output1.setMinOccurs(1);
+		output1.setName("Upper Case message");
+		
+		Format format1 = new Format();
+		format1.setMimeType("application/json");
+		List<Format> formats1 = new ArrayList<Format>();
+		formats1.add(format1);
+		output1.setFormats(formats1);
+		MetadataType outMetadata = new MetadataType();
+		outMetadata.setTitle("Upper Case Text");
+		outMetadata.setAbout("ConvertToUpperCase");
+		output1.setMetadata(outMetadata);
+		List<ParamDataItem> outputs = new ArrayList<ParamDataItem>();
+		outputs.add(output1);
+		service.setOutputs(outputs);
 		
 		//DEBUGGING
 		ObjectMapper mapper = new ObjectMapper();

@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @version 1.0
  */
 import model.job.PiazzaJobType;
-import model.job.metadata.Service;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 public class ListServiceHandler implements PiazzaJobHandler { 

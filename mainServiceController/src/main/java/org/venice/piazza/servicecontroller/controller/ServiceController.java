@@ -52,9 +52,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data.DataType;
 import model.data.type.TextDataType;
-import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.Service;
 import model.service.SearchCriteria;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
@@ -174,20 +174,13 @@ public class ServiceController {
 		LOGGER.debug("executeService serviceId=" + data.getServiceId());
 		
 
-		for (Map.Entry<String,Object> entry : data.dataInputs.entrySet()) {
+		for (Map.Entry<String,DataType> entry : data.dataInputs.entrySet()) {
 			  String key = entry.getKey();
 			  LOGGER.debug("dataInput key:" + key);
 			  
-			  String dataInputType = "";
-			  if (entry.getValue() instanceof java.lang.String) {
-				  dataInputType = "java.lang.String";
-			  }
-			  else {
-				  DataType inData = this.convertInputMaptoDataType((HashMap)entry.getValue());
-				  dataInputType = inData.getType();
-			  }
+			 
 			  
-			  LOGGER.debug("dataInput Type:" + dataInputType);			  
+			  LOGGER.debug("dataInput Type:" + entry.getValue().getType());			  
 		}
 		
 		

@@ -43,14 +43,15 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import model.data.DataType;
+import model.data.type.BodyDataType;
 import model.data.type.TextDataType;
+import model.data.type.URLParameterDataType;
 import model.job.PiazzaJobType;
-import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.InputType;
-import model.job.metadata.ParamDataItem;
-import model.job.metadata.ResourceMetadata;
-import model.job.metadata.Service;
 import model.job.type.ExecuteServiceJob;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.ParamDataItem;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 
@@ -130,33 +131,35 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		// Get the id from the data
 		String serviceId = data.getServiceId();
 		Service sMetadata = accessor.getServiceById(serviceId);
-		// Now get the mimeType for the request not using for now..
-		String requestMimeType = sMetadata.getMimeType();
+		// Default request mimeType application/json
+		String requestMimeType = "application/json";
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
 	
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url);
 		Set<String> parameterNames = new HashSet<String>();
 		if (sMetadata.getInputs() != null && sMetadata.getInputs().size() > 0) {
 			for (ParamDataItem pdataItem : sMetadata.getInputs()) {
-				if (pdataItem.getInputType().equals(InputType.URLParameter)) {
+				if (pdataItem.getDataType() instanceof URLParameterDataType) {
 					parameterNames.add(pdataItem.getName());
 				}
 			}
 		}
-		Map<String,Object> postObjects = new HashMap<String,Object>();
-		Iterator<Entry<String,Object>> it = data.getDataInputs().entrySet().iterator();
+		Map<String,DataType> postObjects = new HashMap<String,DataType>();
+		Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
 		String postString = "";
 		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry)it.next();
-			String inputName = (String)pair.getKey();
+			Entry<String,DataType> entry = it.next();
+			
+			String inputName = entry.getKey();
 			if (parameterNames.contains(inputName)) {
-				if (inputName.length() == 0) {
-					String paramValue = (String) ((HashMap)(pair.getValue())).get("content");
-					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
-				}
-				if (pair.getValue() instanceof HashMap) {
-					String paramValue = (String) ((HashMap)(pair.getValue())).get("content");
-					 builder.queryParam(inputName,paramValue);
+				if (entry.getValue() instanceof TextDataType) {
+					String paramValue = ((TextDataType)entry.getValue()).getContent();
+					if (inputName.length() == 0) {
+						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
+					}
+					else {
+						 builder.queryParam(inputName,paramValue);
+					}
 				}
 				else {
 					LOGGER.error("URL parameter value has to be specified in TextDataType" );
@@ -164,11 +167,15 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					return null;
 				}
 			}
-			else if (((String)pair.getKey()).toUpperCase().contains("BODY")){
-				postString = (String) ((HashMap)(pair.getValue())).get("content");
+			else if (entry.getValue() instanceof BodyDataType){
+				BodyDataType bdt = (BodyDataType)entry.getValue();
+				postString = bdt.getContent();
+				requestMimeType = bdt.getMimeType();
 			}
+			//Default behavior for other inputs, put them in list of objects
+			// which are transformed into JSON consistent with default requestMimeType
 			else {
-				postObjects.put(inputName, pair.getValue());
+				postObjects.put(inputName, entry.getValue());
 			}
 		}
 		if (postString.length() > 0 && postObjects.size() > 0) {
@@ -195,8 +202,10 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			HttpHeaders headers = new HttpHeaders();
 			
 			// Set the mimeType of the request
-			MediaType mediaType = createMediaType(sMetadata.getMimeType());
+			MediaType mediaType = createMediaType(requestMimeType);
 			headers.setContentType(mediaType);
+			// Set the mimeType of the request
+			//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
 			HttpEntity<String> requestEntity = null;
 			if (postString.length() > 0) {
 				requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
@@ -253,12 +262,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
 	
 		
-		// Set the mimeType of the request
-		headers.add("Content-type", sMetadata.getMimeType());
+		
 		//MediaType mediaType = createMediaType(rMetadata.requestMimeType);
 		//headers.setContentType(mediaType);
-		LOGGER.debug("data to be used " + data);
-		LOGGER.debug("Mimetype is " + sMetadata.getMimeType());
+		//LOGGER.debug("data to be used " + data);
+		//LOGGER.debug("Mimetype is " + sMetadata.getOutputs().get(0).getDataType().getMimeType());
 		HttpEntity<String> requestEntity = new HttpEntity<String>(data,headers);
 		return requestEntity;
 	

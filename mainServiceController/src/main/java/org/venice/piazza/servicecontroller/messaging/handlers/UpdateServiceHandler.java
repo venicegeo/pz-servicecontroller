@@ -27,9 +27,8 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import model.job.metadata.Service;
 import model.job.type.UpdateServiceJob;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 

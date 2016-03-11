@@ -43,9 +43,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
-import model.job.metadata.ResourceMetadata;
-import model.job.metadata.Service;
 import model.service.SearchCriteria;
+import model.service.metadata.Service;
 
 /**
  * Class to store service information in MongoDB.  
@@ -123,7 +122,7 @@ public class MongoAccessor {
 			
 			WriteResult<Service, String> writeResult = coll.update(query,sMetadata);
 			// Return the id that was used
-			return sMetadata.getId();
+			return sMetadata.getId().toString();
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
@@ -150,7 +149,7 @@ public class MongoAccessor {
 			
 			Query query = DBQuery.is("id",serviceId);
 			WriteResult<Service, String> writeResult =
-					coll.update(query,DBUpdate.set("rmetadata.availability", "OUT OF SERVICE"));
+					coll.update(query,DBUpdate.set("resourceMetadata.availability", "OUT OF SERVICE"));
 			int recordsChanged = writeResult.getN();
 			// Return the id that was used
 			if (recordsChanged == 1) {
@@ -186,7 +185,7 @@ public class MongoAccessor {
 			
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
 			// Return the id that was used
-			return sMetadata.getId();
+			return sMetadata.getId().toString();
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
@@ -211,7 +210,7 @@ public class MongoAccessor {
 			        String.class);
 			
 			DBCursor<Service> metadataCursor = 
-					coll.find(DBQuery.notEquals("availability", "OUT OF SERVICE"));
+					coll.find(DBQuery.notEquals("resourceMetadata.availability", "OUT OF SERVICE"));
 			while (metadataCursor.hasNext()) {
 				result.add(metadataCursor.next());
 			}

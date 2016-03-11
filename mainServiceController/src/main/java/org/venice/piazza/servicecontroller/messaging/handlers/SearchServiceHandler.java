@@ -14,9 +14,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.job.PiazzaJobType;
-import model.job.metadata.Service;
 import model.job.type.SearchServiceJob;
 import model.service.SearchCriteria;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 

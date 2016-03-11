@@ -26,12 +26,16 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import model.data.DataType;
+import model.data.type.BodyDataType;
 import model.data.type.TextDataType;
-import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.InputType;
-import model.job.metadata.ParamDataItem;
+import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
-import model.job.metadata.Service;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.Format;
+import model.service.metadata.MetadataType;
+import model.service.metadata.ParamDataItem;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 
@@ -59,7 +63,37 @@ public class TestExecuteServiceHandler {
 		rm.id="Cheese";
 		service = new Service();
 		service.setResourceMetadata(rm);
-		service.setMimeType("application/json");
+		service.setId("8");
+		ParamDataItem pitem = new ParamDataItem();
+		DataType dataType1 = new URLParameterDataType();
+		pitem.setDataType(dataType1);
+		pitem.setName("aString");
+		pitem.setMinOccurs(1);
+		pitem.setMaxOccurs(1);
+		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
+		inputs.add(pitem);
+		service.setInputs(inputs);
+		ParamDataItem output1 = new ParamDataItem();
+		TextDataType dataType3 = new TextDataType();
+		dataType3.mimeType = "appliction/json";
+		output1.setDataType(dataType3);
+		output1.setMaxOccurs(1);
+		output1.setMinOccurs(1);
+		output1.setName("Upper Case message");
+		
+		Format format1 = new Format();
+		format1.setMimeType("application/json");
+		List<Format> formats1 = new ArrayList<Format>();
+		formats1.add(format1);
+		output1.setFormats(formats1);
+		MetadataType outMetadata = new MetadataType();
+		outMetadata.setTitle("Upper Case Text");
+		outMetadata.setAbout("ConvertToUpperCase");
+		output1.setMetadata(outMetadata);
+		
+		List<ParamDataItem> outputs = new ArrayList<ParamDataItem>();
+		outputs.add(output1);
+		service.setOutputs(outputs);
     	
     }
 	@PrepareForTest({ExecuteServiceHandler.class})
@@ -79,9 +113,11 @@ public class TestExecuteServiceHandler {
 		//edata.resourceId = "8";
 		edata.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
 		
-		HashMap<String,Object> dataInputs = new HashMap<String,Object>();
+		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
 		String istring = "The rain in Spain falls mainly in the plain";
-		dataInputs.put("Body", istring);
+		BodyDataType body = new BodyDataType();
+		body.content = istring;
+		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
 		
@@ -104,13 +140,14 @@ public class TestExecuteServiceHandler {
 		ExecuteServiceData edata = new ExecuteServiceData();
 		edata.setServiceId("8");
 		ParamDataItem pitem = new ParamDataItem();
-		pitem.setInputType(InputType.ComplexData);
+		TextDataType tdt = new TextDataType();
+		pitem.setDataType(tdt);
 		pitem.setName("name");
 		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
 		inputs.add(pitem);
 		service.setInputs(inputs);
-		HashMap<String,Object> dataInputs = new HashMap<String,Object>();
-		TextDataType tdt = new TextDataType();
+		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
+		
 		tdt.content = "My name is Marge";
 		dataInputs.put("name",tdt);
 		edata.setDataInputs(dataInputs);
@@ -132,12 +169,13 @@ public class TestExecuteServiceHandler {
 		ExecuteServiceData edata = new ExecuteServiceData();
 		edata.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
 		ParamDataItem pitem = new ParamDataItem();
-		pitem.setInputType(InputType.URLParameter);
+		URLParameterDataType urlPType = new URLParameterDataType();
+		pitem.setDataType(urlPType);
 		pitem.setName("aString");
 		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
 		inputs.add(pitem);
 		service.setInputs(inputs);
-		HashMap<String,Object> dataInputs = new HashMap<String,Object>();
+		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
 		TextDataType tdt = new TextDataType();
 		tdt.content = "The rain in Spain";
 		dataInputs.put("aString",tdt);
@@ -154,7 +192,7 @@ public class TestExecuteServiceHandler {
 	    URI uri = URI.create("http://localhost:8085/string/toUpper?aString=Marge");
 		when(template.getForEntity(Mockito.eq(uri),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.getServiceById("8")).thenReturn(service);
+		when(mockMongo.getServiceById("a842aae2-bd74-4c4b-9a65-c45e8cd9060f")).thenReturn(service);
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);

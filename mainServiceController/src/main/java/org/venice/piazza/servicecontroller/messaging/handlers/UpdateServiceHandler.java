@@ -19,19 +19,18 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 import java.util.ArrayList;
 import java.util.List;
 
-import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.RegisterServiceJob;
-import model.job.type.UpdateServiceJob;
-import util.PiazzaLogger;
-import util.UUIDFactory;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import model.job.PiazzaJobType;
+import model.job.type.UpdateServiceJob;
+import model.service.metadata.Service;
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 
 /**
@@ -69,16 +68,16 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		UpdateServiceJob job = (UpdateServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the ResourceMetadata
-			model.job.metadata.ResourceMetadata rMetadata = job.data;
+			Service sMetadata = job.data;
 
-			String result = handle(rMetadata);
+			String result = handle(sMetadata);
 			if (result.length() > 0) {
 				String jobId = job.getJobId();
 				// TODO Use the result, send a message with the resource ID
 				// and jobId
 				ArrayList<String> resultList = new ArrayList<String>();
 				resultList.add(jobId);
-				resultList.add(rMetadata.id);
+				resultList.add(sMetadata.getId());
 				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
 				return handleResult;
 				
@@ -102,17 +101,17 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	 * @param rMetadata
 	 * @return resourceID of the registered service
 	 */
-	public String handle (ResourceMetadata rMetadata) {
+	public String handle (Service sMetadata) {
 
         coreLogger.log("about to update a registered service.", PiazzaLogger.INFO);
 
 		
-		String result = accessor.update(rMetadata);
+		String result = accessor.update(sMetadata);
 		LOGGER.debug("The result of the update is " + result);
 		if (result.length() > 0) {
-		   coreLogger.log("The service " + rMetadata.name + " was updated with id " + result, PiazzaLogger.INFO);
+		   coreLogger.log("The service " + sMetadata.getName() + " was updated with id " + result, PiazzaLogger.INFO);
 		} else {
-			   coreLogger.log("The service " + rMetadata.name + " was NOT updated", PiazzaLogger.INFO);
+			   coreLogger.log("The service " + sMetadata.getName() + " was NOT updated", PiazzaLogger.INFO);
 		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

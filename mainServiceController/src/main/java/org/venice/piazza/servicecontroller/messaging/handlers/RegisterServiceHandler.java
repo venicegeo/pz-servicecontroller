@@ -19,22 +19,18 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 import java.util.ArrayList;
 import java.util.List;
 
-
-import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.RegisterServiceJob;
-import util.PiazzaLogger;
-import util.UUIDFactory;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import model.job.PiazzaJobType;
+import model.job.type.RegisterServiceJob;
+import model.service.metadata.Service;
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 
 /**
@@ -71,10 +67,10 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		coreLogger.log("Registering a Service", coreLogger.INFO);
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
 		if (job != null)  {
-			// Get the ResourceMetadata
-			model.job.metadata.ResourceMetadata rMetadata = job.data;
+			// Get the Service metadata
+			Service serviceMetadata = job.data;
 
-			String result = handle(rMetadata);
+			String result = handle(serviceMetadata);
 			if (result.length() > 0) {
 				//String jobId = job.getJobId();
 				// TODO Use the result, send a message with the resource ID
@@ -114,20 +110,20 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 * @param rMetadata
 	 * @return resourceID of the registered service
 	 */
-	public String handle (ResourceMetadata rMetadata) {
+	public String handle (Service sMetadata) {
 
         coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
 
-		rMetadata.id = uuidFactory.getUUID();
-		String result = accessor.save(rMetadata);
+		sMetadata.setId(uuidFactory.getUUID());
+		String result = accessor.save(sMetadata);
 		LOGGER.debug("The result of the save is " + result);
 		// Check to see if metadta for the name was provided
 		// if so, then log
-		if (rMetadata.name != null)
+		if (sMetadata.getName() != null)
 			if (result.length() > 0) {
-			    coreLogger.log("The service " + rMetadata.name + " was stored with id " + result, PiazzaLogger.INFO);
+			    coreLogger.log("The service " + sMetadata.getName() + " was stored with id " + result, PiazzaLogger.INFO);
 			} else {
-			    coreLogger.log("The service " + rMetadata.name + " was NOT stored", PiazzaLogger.INFO);
+			    coreLogger.log("The service " + sMetadata.getName() + " was NOT stored", PiazzaLogger.INFO);
 			}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

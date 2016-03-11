@@ -22,29 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 
-import messaging.job.JobMessageFactory;
-import messaging.job.KafkaClientFactory;
-import model.data.DataResource;
-import model.data.type.TextResource;
-import model.job.Job;
-import model.job.PiazzaJobType;
-import model.job.result.type.DataResult;
-import model.job.result.type.ErrorResult;
-import model.job.result.type.TextResult;
-import model.job.type.DeleteServiceJob;
-import model.job.type.DescribeServiceMetadataJob;
-import model.job.type.ExecuteServiceJob;
-
-import model.job.type.ListServicesJob;
-import model.job.type.IngestJob;
-import model.job.type.RegisterServiceJob;
-import model.job.type.SearchServiceJob;
-import model.request.PiazzaJobRequest;
-import model.job.type.UpdateServiceJob;
-import model.status.StatusUpdate;
-import util.PiazzaLogger;
-import util.UUIDFactory;
-
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -72,6 +49,28 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import messaging.job.JobMessageFactory;
+import messaging.job.KafkaClientFactory;
+import model.data.DataResource;
+import model.data.type.TextDataType;
+import model.job.Job;
+import model.job.PiazzaJobType;
+import model.job.result.type.DataResult;
+import model.job.result.type.ErrorResult;
+import model.job.result.type.TextResult;
+import model.job.type.DeleteServiceJob;
+import model.job.type.DescribeServiceMetadataJob;
+import model.job.type.ExecuteServiceJob;
+import model.job.type.IngestJob;
+import model.job.type.ListServicesJob;
+import model.job.type.RegisterServiceJob;
+import model.job.type.SearchServiceJob;
+import model.job.type.UpdateServiceJob;
+import model.request.PiazzaJobRequest;
+import model.status.StatusUpdate;
+import util.PiazzaLogger;
+import util.UUIDFactory;
 /**
  * Purpose of this controller is to register for the Kafka messages and listen for service controller topics.
  * @author mlynum
@@ -540,7 +539,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		DataResource data = new DataResource();
 		//TODO  MML UUIDGen
 		data.dataId = uuidFactory.getUUID();
-		TextResource tr = new TextResource();
+		TextDataType tr = new TextDataType();
 		tr.content = serviceControlString;
 		data.dataType = tr;
 		ingestJob.data=data;

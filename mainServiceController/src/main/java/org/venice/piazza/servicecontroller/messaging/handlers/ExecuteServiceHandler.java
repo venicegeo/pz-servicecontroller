@@ -17,17 +17,15 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 
 
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import model.job.PiazzaJobType;
-import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.ExecuteServiceJob;
-import util.PiazzaLogger;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +39,20 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import model.data.DataType;
+import model.data.type.BodyDataType;
+import model.data.type.TextDataType;
+import model.data.type.URLParameterDataType;
+import model.job.PiazzaJobType;
+import model.job.type.ExecuteServiceJob;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.ParamDataItem;
+import model.service.metadata.Service;
+import util.PiazzaLogger;
 
 
 
@@ -117,125 +129,101 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	public ResponseEntity<String> handle (ExecuteServiceData data) {
 		ResponseEntity<String> responseEntity = null;
 		// Get the id from the data
-		String resourceId = data.getResourceId();
-		ResourceMetadata rMetadata = accessor.getResourceById(resourceId);
-		// Now get the mimeType for the request not using for now..
-		String requestMimeType = rMetadata.requestMimeType;
+		String serviceId = data.getServiceId();
+		Service sMetadata = accessor.getServiceById(serviceId);
+		// Default request mimeType application/json
+		String requestMimeType = "application/json";
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
 	
-        // If there are parameters
-		if (data.dataInputs.size() > 0) {
-			LOGGER.info("number of inputs are" + data.dataInputs.size());
-			LOGGER.info("The inputs are " + data.dataInputs.toString());
-			
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rMetadata.url);
-			
-			// Loop Through and add the parameters for the call
-			Iterator<Entry<String, String>>  it = data.dataInputs.entrySet().iterator();
-		    while (it.hasNext()) {
-		        Map.Entry pair = (Map.Entry)it.next();
-		        LOGGER.debug(pair.getKey() + " = " + pair.getValue());
-		        map.add((String)pair.getKey(), (String)pair.getValue());
-
-		        builder.queryParam((String)pair.getKey(), (String)pair.getValue());
-		    }
-		    
-		    
-		    // Determine the method type to execute the service
-		    // Just handling Post and get for now
-
-		    // If there is no Json or body coming with this the just execute
-		    if (data.dataInput == null || data.dataInput.length() <= 0) {
-			    if (rMetadata.method.toUpperCase().equals("POST")) {
-			    	LOGGER.debug("The url to be executed is " + rMetadata.url);
-			    	responseEntity = template.postForEntity(rMetadata.url, map, String.class);
-			    	LOGGER.debug("The Response is " + responseEntity.toString());	
-			 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseEntity, PiazzaLogger.INFO);
-			    
-			    }
-			    else if (rMetadata.method.toUpperCase().equals("GET")) {
-			    	LOGGER.debug("The map of parameters is " + map.size());
-			    	LOGGER.debug("The url to be executed is " + rMetadata.url);
-			    	LOGGER.debug("The built URI is  " + builder.toUriString());
-			    	responseEntity = template.getForEntity(builder.toUriString(), String.class, map);
-			    	LOGGER.debug("The Response is " + responseEntity.toString());
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity, PiazzaLogger.INFO);
-		
-			    }
-			} 
-		    // There are parameters and a request BODY (POST) so handle 
-		    else {
-				// If it is a post with a body then build the enttiy adding teh body
-				if (rMetadata.method.toUpperCase().equals("POST")) {
-					HttpEntity<String> requestEntity = buildHttpEntity(rMetadata, map, data.dataInput);
-					LOGGER.debug("The url to be executed is " + rMetadata.url);
-			    	responseEntity = template.postForEntity(rMetadata.url, requestEntity, String.class);
-			    	LOGGER.debug("The Response is " + responseEntity.toString());	
-			 		coreLogger.log("Service with resourceID " + resourceId + " was executed with the following result " + responseEntity, PiazzaLogger.INFO);
-
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url);
+		Set<String> parameterNames = new HashSet<String>();
+		if (sMetadata.getInputs() != null && sMetadata.getInputs().size() > 0) {
+			for (ParamDataItem pdataItem : sMetadata.getInputs()) {
+				if (pdataItem.getDataType() instanceof URLParameterDataType) {
+					parameterNames.add(pdataItem.getName());
 				}
 			}
-		}// If there were named parameters
-		// Else there were no named parameters so if there is just a blob of data
-
-		else {
+		}
+		Map<String,DataType> postObjects = new HashMap<String,DataType>();
+		Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
+		String postString = "";
+		while (it.hasNext()) {
+			Entry<String,DataType> entry = it.next();
 			
-			// Check to see if there is a value in the dataInput assume JSON mass post
-			if (data.dataInput.length() > 0) {
-				if (rMetadata.method.toUpperCase().equals("POST")) {
-					
-					HttpHeaders headers = new HttpHeaders();
-					
-					// Set the mimeType of the request
-					MediaType mediaType = createMediaType(rMetadata.requestMimeType);
-					headers.setContentType(mediaType);
-					LOGGER.debug("Json to be used " + data.dataInput);
-					LOGGER.debug("Mimetype is " + mediaType.getType());
-					HttpEntity<String> requestEntity = new HttpEntity<String>(data.dataInput,headers);
-
-				
-					responseEntity = template.postForEntity(rMetadata.url, requestEntity, String.class);
-					LOGGER.debug("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody());
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
-
-
+			String inputName = entry.getKey();
+			if (parameterNames.contains(inputName)) {
+				if (entry.getValue() instanceof TextDataType) {
+					String paramValue = ((TextDataType)entry.getValue()).getContent();
+					if (inputName.length() == 0) {
+						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
+					}
+					else {
+						 builder.queryParam(inputName,paramValue);
+					}
 				}
-				else if (rMetadata.method.toUpperCase().equals("GET")) {
-					LOGGER.debug("Json to be used " + data.dataInput);
-
-					String uri = rMetadata.url + "?" + data.dataInput;
-					responseEntity = template.getForEntity(uri, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
-
-			 	}
-				
+				else {
+					LOGGER.error("URL parameter value has to be specified in TextDataType" );
+					//TODO make ResponseEntity with error
+					return null;
+				}
 			}
-			// There are no parameters, just make a call
+			else if (entry.getValue() instanceof BodyDataType){
+				BodyDataType bdt = (BodyDataType)entry.getValue();
+				postString = bdt.getContent();
+				requestMimeType = bdt.getMimeType();
+			}
+			//Default behavior for other inputs, put them in list of objects
+			// which are transformed into JSON consistent with default requestMimeType
 			else {
-				
-				if (rMetadata.method.toUpperCase().equals("POST")) {
-					HttpHeaders headers = new HttpHeaders();
-					MediaType mediaType = createMediaType(rMetadata.requestMimeType);
-					headers.setContentType(mediaType);
-					LOGGER.debug("Calling URL POST " + rMetadata.url);
-					LOGGER.debug("Mimetype is " + mediaType.getType() + mediaType.getSubtype());
-
-					responseEntity = template.postForEntity(rMetadata.url, null, String.class);
-					LOGGER.debug("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody());
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
-
-
-				}
-				else if (rMetadata.method.toUpperCase().equals("GET")) {
-					LOGGER.debug("Calling URL GET" + rMetadata.url);
-					responseEntity = template.getForEntity(rMetadata.url, String.class);
-			 		coreLogger.log("Service " + rMetadata.name + " with resourceID " + rMetadata.id + " was executed with the following result " + responseEntity.getBody(), PiazzaLogger.INFO);
-
-			 	}
-				
+				postObjects.put(inputName, entry.getValue());
 			}
+		}
+		if (postString.length() > 0 && postObjects.size() > 0) {
+			LOGGER.error("String Input not consistent with other Inputs");
+			return null;
+		}
+		else if (postObjects.size() > 0){
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				postString = mapper.writeValueAsString(postObjects);
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		URI url = URI.create(builder.toUriString());
+	
+		
+		if (sMetadata.getResourceMetadata().method.equals("GET")) {
+			responseEntity = template.getForEntity(url, String.class);
 			
 		}
+		else {
+			HttpHeaders headers = new HttpHeaders();
+			
+			// Set the mimeType of the request
+			MediaType mediaType = createMediaType(requestMimeType);
+			headers.setContentType(mediaType);
+			// Set the mimeType of the request
+			//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
+			HttpEntity<String> requestEntity = null;
+			if (postString.length() > 0) {
+				requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
+				
+			}
+			else {
+				requestEntity = new HttpEntity(headers);
+				
+			}
+			responseEntity = template.postForEntity(url, requestEntity, String.class);
+			
+		}
+		
+		
+		
+		
+		
+       
 	 
 	  	return responseEntity;
 		
@@ -271,15 +259,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		
 	}
 	
-	public HttpEntity<String> buildHttpEntity(ResourceMetadata rMetadata, MultiValueMap<String, String> headers, String data) {
+	public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
 	
 		
-		// Set the mimeType of the request
-		headers.add("Content-type", rMetadata.requestMimeType);
+		
 		//MediaType mediaType = createMediaType(rMetadata.requestMimeType);
 		//headers.setContentType(mediaType);
-		LOGGER.debug("data to be used " + data);
-		LOGGER.debug("Mimetype is " + rMetadata.requestMimeType);
+		//LOGGER.debug("data to be used " + data);
+		//LOGGER.debug("Mimetype is " + sMetadata.getOutputs().get(0).getDataType().getMimeType());
 		HttpEntity<String> requestEntity = new HttpEntity<String>(data,headers);
 		return requestEntity;
 	

@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import model.service.SearchCriteria;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -15,9 +14,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.job.PiazzaJobType;
-import model.job.metadata.ResourceMetadata;
-import model.job.type.ExecuteServiceJob;
 import model.job.type.SearchServiceJob;
+import model.service.SearchCriteria;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 
@@ -76,7 +75,7 @@ public class SearchServiceHandler implements PiazzaJobHandler {
         String result = null;
         coreLogger.log("About to search using criteria " + criteria, PiazzaLogger.INFO);
 
-		List <ResourceMetadata> results = accessor.search(criteria);
+		List <Service> results = accessor.search(criteria);
 		if (results.size() <= 0) {
 		   coreLogger.log("No results were returned searching for field " + 
 				   		criteria.getField() + 

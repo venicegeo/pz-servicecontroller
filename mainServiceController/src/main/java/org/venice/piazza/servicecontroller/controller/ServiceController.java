@@ -16,14 +16,11 @@
 package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
-
-import model.service.SearchCriteria;
-import model.job.metadata.ExecuteServiceData;
-import model.job.metadata.ResourceMetadata;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,8 +44,17 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import model.data.DataType;
+import model.data.type.TextDataType;
+import model.service.SearchCriteria;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
@@ -71,6 +77,7 @@ public class ServiceController {
 	private ListServiceHandler lsHandler;
 	private DeleteServiceHandler dlHandler;
 	private SearchServiceHandler ssHandler;
+	private ObjectMapper mapper;
 	
 	@Autowired
 	private MongoAccessor accessor;
@@ -102,6 +109,7 @@ public class ServiceController {
 		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
+		mapper = new ObjectMapper();
 
 	
 	}
@@ -115,7 +123,7 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String registerService(@RequestBody ResourceMetadata serviceMetadata) {
+	public @ResponseBody String registerService(@RequestBody Service serviceMetadata) {
 
 		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
 	    String result = rsHandler.handle(serviceMetadata);
@@ -138,7 +146,7 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String updateService(@RequestBody ResourceMetadata serviceMetadata) {
+	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
 
 		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
 	    String result = usHandler.handle(serviceMetadata);
@@ -163,14 +171,16 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
-		LOGGER.debug("executeService resourceId=" + data.resourceId);
-		LOGGER.debug("executeService datainput=" + data.dataInput);
+		LOGGER.debug("executeService serviceId=" + data.getServiceId());
+		
 
-		for (Map.Entry<String,String> entry : data.dataInputs.entrySet()) {
+		for (Map.Entry<String,DataType> entry : data.dataInputs.entrySet()) {
 			  String key = entry.getKey();
-			  String value = entry.getValue();
 			  LOGGER.debug("dataInput key:" + key);
-			  LOGGER.debug("dataInput value:" + value);			  
+			  
+			 
+			  
+			  LOGGER.debug("dataInput Type:" + entry.getValue().getType());			  
 		}
 		
 		
@@ -320,6 +330,34 @@ public class ServiceController {
 		
 		
 	}
+	
+	DataType convertInputMaptoDataType(HashMap<String,String> input) {
+
+	    DataType retVal = null;
+		try {
+			String inputString = mapper.writeValueAsString(input);
+			
+			
+			switch (input.get("type")) {
+				case "text" :
+						TextDataType tdt = mapper.readValue(inputString,TextDataType.class);
+					    retVal = tdt;
+					break;
+			}
+			
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return retVal ;
+	}
+	
 	
 	
 }

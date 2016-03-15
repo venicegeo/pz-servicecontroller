@@ -34,7 +34,7 @@ public class JobFactory {
 		Job job = new Job();
 		job.setJobId(jobId);
 		job.jobType = jobRequest.jobType;
-		job.submitterApiKey = jobRequest.apiKey;
+		job.submitterUserName = jobRequest.userName;
 		job.status = "Submitted"; // TODO: Enum
 		job.submitted = new DateTime();
 		return job;

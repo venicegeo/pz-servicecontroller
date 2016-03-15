@@ -534,7 +534,7 @@ public class ServiceControllerMessageHandler implements Runnable {
 		// Now produce a new record
 		PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
 		// TODO read from properties file
-		pjr.apiKey = "pz-sc-ingest-test";
+		pjr.userName = "pz-sc-ingest-test";
 		IngestJob ingestJob = new IngestJob();						
 		DataResource data = new DataResource();
 		//TODO  MML UUIDGen

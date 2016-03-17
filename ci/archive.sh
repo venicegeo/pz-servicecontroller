@@ -11,8 +11,7 @@ source $root/ci/vars.sh
 cp $root/mainServiceController/conf/application-cf.properties $root/mainServiceController/src/main/resources/application.properties
 
 # Path to output JAR
-src=$root/mainServiceController/target/piazzaServiceController*.jar
-
+src=$root/mainServiceController/target/piazzaServiceController-1.0.0.BUILD-SNAPSHOT.jar
 # Build Spring-boot JAR
 [ -f $src ] || mvn clean package
 

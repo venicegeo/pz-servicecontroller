@@ -1,0 +1,139 @@
+{
+	"id": "a810da73-7da6-9d6d-9567-87910f6833fc",
+	"name": "WPSV1Gateway",
+	"description": "",
+	"order": [
+		"c39905b4-e128-b0c1-f6df-3e7244e7d670",
+		"a3122833-64c7-c291-5c07-aa89d62f111c",
+		"b09d0b5a-ad43-c7e9-cbc8-76efacc26814",
+		"d27aef9c-d6ef-f69d-2097-8ebb7f510212",
+		"251b86d9-5173-9683-94b2-b9e460e01364"
+	],
+	"folders": [],
+	"timestamp": 1457963100012,
+	"owner": "271049",
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "251b86d9-5173-9683-94b2-b9e460e01364",
+			"url": "http://localhost:8081/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"get-resource\",         \"resourceId\": \"{{dataId}}\"     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "var data = JSON.parse(responseBody);\r\nif (data.data.dataType.type == \"text\" && data.data.dataType.content.indexOf(\"latitude\") > -1) {\r\n    tests[\"Coordinate Conversion\"] = true\r\n    \r\n}\r\nelse {\r\n    tests[\"Coordinate Conversion\"] = false\r\n}",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8081/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "a810da73-7da6-9d6d-9567-87910f6833fc"
+		},
+		{
+			"id": "a3122833-64c7-c291-5c07-aa89d62f111c",
+			"url": "http://localhost:8081/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"get\",         \"jobId\": \"{{jobId}}\"     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "var contentTypeHeaderExists = responseHeaders.hasOwnProperty(\"Content-Type\");\r\n \r\ntests[\"Has Content-Type\"] = contentTypeHeaderExists;\r\n \r\nif (contentTypeHeaderExists) {\r\n    tests[\"Content-Type is application/json\"] = responseHeaders[\"Content-Type\"].indexOf(\"application/json\") > -1\r\n}\r\n\r\nvar data = JSON.parse(responseBody);\r\nif (data.result.text) {\r\n    tests[\"Body has text\"] = true;\r\n    var resourceVal = JSON.parse(data.result.text)\r\n    postman.setEnvironmentVariable(\"serviceId\",resourceVal.resourceId);\r\n}",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8081/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "a810da73-7da6-9d6d-9567-87910f6833fc"
+		},
+		{
+			"id": "b09d0b5a-ad43-c7e9-cbc8-76efacc26814",
+			"url": "http://localhost:8081/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"execute-service\",         \"data\" : {  \"serviceId\" : \"{{serviceId}}\",   \"dataInputs\" : {     \"\" : {       \"content\" : \"123456N 1234556W\",       \"type\" : \"text\" } }}}}",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "var contentTypeHeaderExists = responseHeaders.hasOwnProperty(\"Content-Type\");\r\n \r\ntests[\"Has Content-Type\"] = contentTypeHeaderExists;\r\n \r\nif (contentTypeHeaderExists) {\r\n    tests[\"Content-Type is application/json\"] = responseHeaders[\"Content-Type\"].indexOf(\"application/json\") > -1\r\n}\r\n\r\nvar data = JSON.parse(responseBody);\r\nif (data.jobId) {\r\n    tests[\"Body has jobId\"] = true;\r\n    postman.setEnvironmentVariable(\"jobId\",data.jobId);\r\n}",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8081/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "a810da73-7da6-9d6d-9567-87910f6833fc"
+		},
+		{
+			"id": "c39905b4-e128-b0c1-f6df-3e7244e7d670",
+			"url": "http://localhost:8081/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"register-service\",         \"data\" :              {   \"id\" : \"8\",   \"resourceMetadata\" : {     \"name\" : \"Coordinate Conversion\",     \"description\" : \"Read and convert various types of geospatial location formats\",     \"url\" : \"http://pzsvc-coordinate-conversion.stage.geointservices.io/location/convert\",     \"method\" : \"POST\"   },   \"inputs\" : [ {     \"name\" : \"\",     \"minOccurs\" : 1,     \"maxOccurs\" : 1,     \"dataType\" : {       \"type\" : \"urlparameter\"     },     \"metadata\" : null,     \"formats\" : null   } ],   \"outputs\" : [ {     \"name\" : \"converted coordinates\",     \"minOccurs\" : 1,     \"maxOccurs\" : 1,     \"dataType\" : {       \"mimeType\" : \"application/json\",       \"type\" : \"text\",       \"type\" : \"text\"     },     \"metadata\" : {       \"about\" : \"Convert coordinates\",       \"href\" : null,       \"role\" : null,       \"title\" : \"coordinated coords\"     },     \"formats\" : [ {       \"mimeType\" : \"application/json\",       \"encoding\" : null,       \"schema\" : null,       \"maximumMegabytes\" : null,       \"dataType\" : null     } ]   } ] }    } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "var contentTypeHeaderExists = responseHeaders.hasOwnProperty(\"Content-Type\");\r\n \r\ntests[\"Has Content-Type\"] = contentTypeHeaderExists;\r\n \r\nif (contentTypeHeaderExists) {\r\n    tests[\"Content-Type is application/json\"] = responseHeaders[\"Content-Type\"].indexOf(\"application/json\") > -1\r\n}\r\n\r\nvar data = JSON.parse(responseBody);\r\nif (data.jobId) {\r\n    tests[\"Body has jobId\"] = true;\r\n    postman.setEnvironmentVariable(\"jobId\",data.jobId);\r\n}",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8081/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "a810da73-7da6-9d6d-9567-87910f6833fc"
+		},
+		{
+			"id": "d27aef9c-d6ef-f69d-2097-8ebb7f510212",
+			"url": "http://localhost:8081/job",
+			"method": "POST",
+			"headers": "",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"get\",         \"jobId\": \"{{jobId}}\"     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"tests": "var contentTypeHeaderExists = responseHeaders.hasOwnProperty(\"Content-Type\");\r\n \r\ntests[\"Has Content-Type\"] = contentTypeHeaderExists;\r\n \r\nif (contentTypeHeaderExists) {\r\n    tests[\"Content-Type is application/json\"] = responseHeaders[\"Content-Type\"].indexOf(\"application/json\") > -1\r\n}\r\n\r\nvar data = JSON.parse(responseBody);\r\nif (data.result.dataId) {\r\n    postman.setEnvironmentVariable(\"dataId\",data.result.dataId)\r\n}",
+			"preRequestScript": "",
+			"currentHelper": "normal",
+			"pathVariables": {},
+			"version": 2,
+			"name": "http://localhost:8081/job",
+			"description": "",
+			"descriptionFormat": "html",
+			"collectionId": "a810da73-7da6-9d6d-9567-87910f6833fc"
+		}
+	]
+}

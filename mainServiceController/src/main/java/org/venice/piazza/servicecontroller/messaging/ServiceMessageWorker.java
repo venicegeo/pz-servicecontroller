@@ -30,6 +30,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
 import model.data.DataResource;
+import model.data.DataType;
+import model.data.type.RasterDataType;
 import model.data.type.TextDataType;
 import model.job.Job;
 import model.job.PiazzaJobType;
@@ -45,11 +47,16 @@ import model.job.type.RegisterServiceJob;
 import model.job.type.SearchServiceJob;
 import model.job.type.UpdateServiceJob;
 import model.request.PiazzaJobRequest;
+import model.service.metadata.ParamDataItem;
+import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
 public class ServiceMessageWorker implements Runnable {
+	
+	private final static String TEXT_TYPE="text";
+	private final static String RASTER_TYPE="raster";
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
@@ -410,21 +417,49 @@ public class ServiceMessageWorker implements Runnable {
 	 * @param handleResult
 	 * @throws JsonProcessingException
 	 */
-	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
 		// Now produce a new record
 		PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
 		// TODO read from properties file
 		pjr.apiKey = "pz-sc-ingest-test";
-		IngestJob ingestJob = new IngestJob();						
+		
+		// Create an ingest object
+		IngestJob ingestJob = new IngestJob();
+		//Create a dataresource
 		DataResource data = new DataResource();
-		//TODO  MML UUIDGen
+		
+		// Generate a unique identifier
 		data.dataId = uuidFactory.getUUID();
-		TextDataType tr = new TextDataType();
-		tr.content = serviceControlString;
-		data.dataType = tr;
-		ingestJob.data=data;
+		
+		// Get the JobTYpe
+		ExecuteServiceJob esj = (ExecuteServiceJob)job.getJobType();
+		// Get the metadata about the service
+		String serviceId = esj.data.getServiceId();
+		Service service = accessor.getServiceById(serviceId);
+		// TODO THe jobcommon has to be changed to send the type upon execution
+		// Assume there will only be one output format for now
+		List <ParamDataItem> outputList = service.getOutputs();
+		ParamDataItem param = outputList.get(0);
+		DataType dataType = param.getDataType();
+		// If the type is text then create a new TextDataType
+		if (dataType.getType().equals(TEXT_TYPE)) {
+			
+			TextDataType tr = new TextDataType();
+			tr.content = serviceControlString;
+			data.dataType = tr;
+			ingestJob.data=data;
+		}
+		// Check to see if the type is a RASTER_TYPE
+		else if (dataType.getType().equals(RASTER_TYPE)) {
+			
+			RasterDataType rasterDataItem = mapper.readValue(serviceControlString, RasterDataType.class);
+			data.dataType = rasterDataItem;
+			ingestJob.data=data;
+		}
+			
+		
 		ingestJob.host = true;
 		
 		pjr.jobType  = ingestJob;

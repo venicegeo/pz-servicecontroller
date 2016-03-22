@@ -23,8 +23,10 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import messaging.job.JobMessageFactory;
@@ -66,6 +68,7 @@ public class ServiceMessageWorker implements Runnable {
 	private Producer<String, String> producer;
 	private WorkerCallback callback;
 	private UUIDFactory uuidFactory;
+	private CoreUUIDGen uuidGenerator;
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the jobRequest
 	 * @param consumerRecord
@@ -78,6 +81,7 @@ public class ServiceMessageWorker implements Runnable {
 	public ServiceMessageWorker (ConsumerRecord<String, String> consumerRecord,
 			Producer<String, String> producer, MongoAccessor accessor, WorkerCallback callback, 
 			CoreServiceProperties coreServiceProperties, UUIDFactory uuidFactory, 
+			CoreUUIDGen uuidGenerator,
 			PiazzaLogger logger,Job job) {
 		this.job = job;
 		this.consumerRecord = consumerRecord;
@@ -86,6 +90,7 @@ public class ServiceMessageWorker implements Runnable {
 		this.callback = callback;
 		this.coreLogger = logger;
 		this.uuidFactory = uuidFactory;
+		this.uuidGenerator = uuidGenerator;
 		
 		
 	}
@@ -418,8 +423,11 @@ public class ServiceMessageWorker implements Runnable {
 	 * @throws JsonProcessingException
 	 */
 	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException, IOException {
+		DataResource dataResource;
 		ObjectMapper mapper = new ObjectMapper();
+		LOGGER.debug("The body is " + handleResult.getBody());
 		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
+		LOGGER.debug("string returned" + serviceControlString);
 		// Now produce a new record
 		PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
 		// TODO read from properties file
@@ -427,53 +435,84 @@ public class ServiceMessageWorker implements Runnable {
 		
 		// Create an ingest object
 		IngestJob ingestJob = new IngestJob();
-		//Create a dataresource
-		DataResource data = new DataResource();
-		
-		// Generate a unique identifier
-		data.dataId = uuidFactory.getUUID();
 		
 		// Get the JobTYpe
 		ExecuteServiceJob esj = (ExecuteServiceJob)job.getJobType();
-		// Get the metadata about the service
+		// Now get the expected output type
+        DataType outputDataType = esj.data.getDataOutput();
+        
+		// Get the metadata about the service for later use
 		String serviceId = esj.data.getServiceId();
 		Service service = accessor.getServiceById(serviceId);
-		// TODO THe jobcommon has to be changed to send the type upon execution
-		// Assume there will only be one output format for now
-		List <ParamDataItem> outputList = service.getOutputs();
-		ParamDataItem param = outputList.get(0);
-		DataType dataType = param.getDataType();
+		
 		// If the type is text then create a new TextDataType
-		if (dataType.getType().equals(TEXT_TYPE)) {
+		try {
+			dataResource = mapper.readValue(serviceControlString, DataResource.class);
+			// Generate a unique identifier
+			dataResource.dataId = uuidFactory.getUUID();
+			DataType drDataType = dataResource.getDataType();
 			
+			// Check to see if the provide response matches the execute 
+			// expected response
+			if (drDataType.getType().equals(outputDataType.getType())) {
+				// May combine all these two the same to handle
+				// all of them but for now, breaking down individually
+				
+				if (outputDataType.getType().equals(TEXT_TYPE)) {
+				
+					//data.dataType = drDataType;
+					ingestJob.data=dataResource;
+					dataResource.metadata.name = service.getResourceMetadata().name;
+					dataResource.metadata.description = service.getResourceMetadata().description;
+					dataResource.metadata.url = service.getResourceMetadata().url;
+					dataResource.metadata.classType = service.getResourceMetadata().classType;
+					
+
+					
+				}
+				// Check to see if the type is a RasterDataType
+				else if (outputDataType.getType().equals(RASTER_TYPE)) {
+					
+					//data.dataType = drDataType;
+					ingestJob.data=dataResource;
+				}
+			} else {
+				// Log that the returned result from the service
+				// does not match what the execute request requested
+				coreLogger.log("Expected execution output=" + outputDataType.getType() + " Actual execution output=" + drDataType.getType(), coreLogger.ERROR);
+				// Send on the results anyway
+				//data.dataType = drDataType;
+				ingestJob.data=dataResource;
+			}
+			// For exceptions with json parsing errors then just send the
+			// text that was provided back
+		} catch (JsonProcessingException  jpe) {	
+			dataResource = new DataResource();
+			LOGGER.debug(jpe.toString());
+			coreLogger.log(jpe.toString(), coreLogger.ERROR);
 			TextDataType tr = new TextDataType();
 			tr.content = serviceControlString;
-			data.dataType = tr;
-			ingestJob.data=data;
-		}
-		// Check to see if the type is a RASTER_TYPE
-		else if (dataType.getType().equals(RASTER_TYPE)) {
+			dataResource.dataType = tr;
+			ingestJob.data=dataResource;
 			
-			RasterDataType rasterDataItem = mapper.readValue(serviceControlString, RasterDataType.class);
-			data.dataType = rasterDataItem;
-			ingestJob.data=data;
-		}
+		} 
 			
-		
+		// Host the data for now, will work on this later
 		ingestJob.host = true;
 		
 		pjr.jobType  = ingestJob;
 		
 		// TODO Generate 123-456 with UUIDGen
 		ProducerRecord<String,String> newProdRecord =
-		JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());	
-		
+		//JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());	
+	    JobMessageFactory.getRequestJobMessage(pjr, uuidGenerator.getUUID());	
+
 		producer.send(newProdRecord);
 		
 		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 		
 	    // Create a text result and update status
-		DataResult textResult = new DataResult(data.dataId);
+		DataResult textResult = new DataResult(dataResource.dataId);
 
 		statusUpdate.setResult(textResult);
 		

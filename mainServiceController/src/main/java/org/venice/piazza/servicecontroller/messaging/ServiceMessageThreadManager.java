@@ -31,6 +31,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -93,6 +94,8 @@ public class ServiceMessageThreadManager {
 		@Autowired
 		private UUIDFactory uuidFactory;
 
+		@Autowired
+		private CoreUUIDGen coreUUIDGen;
 		/**
 		 * Constructor for ServiceMessageThreadManager
 		 */
@@ -175,7 +178,7 @@ public class ServiceMessageThreadManager {
 							job = mapper.readValue(consumerRecord.value(), Job.class);		
 							
 							ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor, 
-									callback,coreServiceProperties, uuidFactory, coreLogger, job);
+									callback,coreServiceProperties, uuidFactory, coreUUIDGen, coreLogger, job);
 
 							Future<?> workerFuture = executor.submit(serviceMessageWorker);
 

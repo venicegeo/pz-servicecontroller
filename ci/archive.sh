@@ -7,8 +7,6 @@ popd > /dev/null
 # gather some data about the repo
 source $root/ci/vars.sh
 
-# Copy the cloud foundry properties file 
-cp $root/mainServiceController/conf/application-cf.properties $root/mainServiceController/src/main/resources/application.properties
 
 # Path to output JAR
 src=$root/mainServiceController/target/piazzaServiceController-1.0.0.BUILD-SNAPSHOT.jar

@@ -110,10 +110,10 @@
 	        <artifactId>spring-data-mongodb</artifactId>
     	</dependency>
 
-		<dependency>
-      <groupId>io.piazzageo</groupId>
-      <artifactId>pz-jobcommon</artifactId>
-      <version>Sprint01-27-g29ee48b</version>
+	<dependency>
+      		<groupId>io.piazzageo</groupId>
+	        <artifactId>pz-jobcommon</artifactId>
+                <version>LATEST</version>
 		</dependency>
 
 		<dependency>

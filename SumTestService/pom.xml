@@ -39,7 +39,7 @@
 		<dependency>
 			<groupId>com.github.venicegeo</groupId>
 			<artifactId>pz-jobcommon</artifactId>
-			<version>master-SNAPSHOT</version>
+			<version>LATEST</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>

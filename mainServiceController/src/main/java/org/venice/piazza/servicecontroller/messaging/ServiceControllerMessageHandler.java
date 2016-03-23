@@ -93,7 +93,6 @@ public class ServiceControllerMessageHandler implements Runnable {
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceControllerMessageHandler.class);
 	
 	private String KAFKA_HOST;
-	private int KAFKA_PORT;
 	private String KAFKA_GROUP;
 	/*
 	  TODO need to determine how statuses will be sent to update the job  (Call back?)
@@ -141,6 +140,9 @@ public class ServiceControllerMessageHandler implements Runnable {
 
 		KAFKA_HOST = coreServiceProperties.getKafkaHost();
 		KAFKA_GROUP = coreServiceProperties.getKafkaGroup();
+		
+		String kafkaHost = KAFKA_HOST.split(":")[0];
+		String kafkaPort = KAFKA_HOST.split(":")[1];
 		LOGGER.info("=================================");
 		LOGGER.info("The KAFKA Host Properties is " + coreServiceProperties.getKafkaHost());
 		LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
@@ -155,9 +157,10 @@ public class ServiceControllerMessageHandler implements Runnable {
 
 		LOGGER.info("=================================");
 
-		String KAFKA_PORT_STRING = new Integer(KAFKA_PORT).toString();
-		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT_STRING);
-		consumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT_STRING, KAFKA_GROUP);
+		// Now split so we can initialize properly
+		 
+		producer = KafkaClientFactory.getProducer(kafkaHost, kafkaPort);
+		consumer = KafkaClientFactory.getConsumer(kafkaHost, kafkaPort, KAFKA_GROUP);
 		// Start the runner that will relay Job Creation topics.
 		Thread kafkaListenerThread = new Thread(this);
 		

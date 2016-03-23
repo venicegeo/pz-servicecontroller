@@ -272,10 +272,8 @@ public class CoreInitDestroy implements InitializingBean {
 			        		 int portIndex = sBuffer.indexOf(":");
 			        		 if (portIndex != -1) {
 			        			 coreServiceProperties.setKafkaHost(sBuffer.substring(0, portIndex));
-			        			 coreServiceProperties.setKafkaPort(new Integer(sBuffer.substring(portIndex + 1)).intValue());
 			        			 
 			        			 LOGGER.debug("KafkaHost=" + coreServiceProperties.getKafkaHost());
-			        			 LOGGER.debug("KafkaPort=" + coreServiceProperties.getKafkaPort());
 			        		 } else {
 			        			 coreServiceProperties.setKafkaHost(cr.getHost());
 			        			 LOGGER.debug("KafkaHost=" + coreServiceProperties.getKafkaHost());
@@ -323,9 +321,7 @@ public class CoreInitDestroy implements InitializingBean {
 			        		 int portIndex = sBuffer.indexOf(":");
 			        		 if (portIndex != -1) {
 			        			 coreServiceProperties.setMongoHost(sBuffer.substring(0, portIndex));
-			        			 coreServiceProperties.setMongoPort(new Integer(sBuffer.substring(portIndex + 1)).intValue());
 			        			 LOGGER.debug("MongoHost=" + coreServiceProperties.getMongoHost());
-			        			 LOGGER.debug("MongoPort=" + coreServiceProperties.getMongoPort());
 			        		 } else {
 			        			 coreServiceProperties.setMongoHost(cr.getHost());
 			        			 LOGGER.debug("MongoHost=" + coreServiceProperties.getMongoHost());

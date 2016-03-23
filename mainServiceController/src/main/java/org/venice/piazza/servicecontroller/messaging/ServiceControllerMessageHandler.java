@@ -138,11 +138,10 @@ public class ServiceControllerMessageHandler implements Runnable {
 	@PostConstruct
 	public void initialize() {
 		// Initialize the Kafka consumer/producer
-		KAFKA_PORT = coreServiceProperties.getKafkaPort();
+
 		KAFKA_HOST = coreServiceProperties.getKafkaHost();
 		KAFKA_GROUP = coreServiceProperties.getKafkaGroup();
 		LOGGER.info("=================================");
-		LOGGER.info("The KAFKA Port Properties is " + coreServiceProperties.getKafkaPort());
 		LOGGER.info("The KAFKA Host Properties is " + coreServiceProperties.getKafkaHost());
 		LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
 		 // Initialize the handlers to handle requests from the message queue

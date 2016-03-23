@@ -104,7 +104,7 @@ public class TestRegistryServiceHandler {
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
 		when(mockMongo.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
-		when(props.getUuidservice()).thenReturn("Nothing");
+		//when(props.getUuidservicehost().thenReturn("Nothing");
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,props,logger,uuidFactory);
         String retVal = handler.handle(service);

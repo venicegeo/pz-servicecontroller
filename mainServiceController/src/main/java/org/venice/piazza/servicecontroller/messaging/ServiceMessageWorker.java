@@ -23,6 +23,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -69,6 +70,7 @@ public class ServiceMessageWorker implements Runnable {
 	private Producer<String, String> producer;
 	private WorkerCallback callback;
 	private UUIDFactory uuidFactory;
+	private CoreUUIDGen uuidGenerator;
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the jobRequest
 	 * @param consumerRecord
@@ -89,6 +91,7 @@ public class ServiceMessageWorker implements Runnable {
 		this.callback = callback;
 		this.coreLogger = logger;
 		this.uuidFactory = uuidFactory;
+		this.uuidGenerator = uuidGenerator;
 		
 		
 	}
@@ -447,61 +450,49 @@ public class ServiceMessageWorker implements Runnable {
 			//dataResource = mapper.readValue(serviceControlString, DataResource.class);
 			ObjectMapper drMapper = new ObjectMapper();
 			
-			//JsonNode root = drMapper.readTree("{\"dataType\" : \"hello\"}");
-			JsonNode root = drMapper.readTree(serviceControlString);
-			JsonNode dataTypeNode = root.at("/dataType");
-			if (dataTypeNode != null)  {
-				LOGGER.debug("!!!!!!!!!!!!!Found dataType!!!!");
-			}
-			LOGGER.debug("The Text of the root is " + root.asText());
+			JsonNode root = drMapper.valueToTree(serviceControlString);
+			JsonNode dataTypeNode = root.get("dataType");
+			if (dataTypeNode != null)
+				LOGGER.debug("Found dataType!!!!");
+			LOGGER.debug("The Text of teh root is " + root.asText());
 
 			dataResource = new DataResource();
-		
-			
-			//String testString = "{ \"dataType\": { \"type\": \"raster\", \"location\": { \"type\": \"s3\", \"bucketName\": \"pz-svcs-prevgen\", \"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\", \"domainName\": \"s3.amazonaws.com\" }, \"mimeType\": \"image/tiff\",\"type\": \"raster\"}, \"metadata\": { \"name\": \"External Crop Raster Service\", \"id\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\",\"description\": \"Service that takes payload containing S3 location and bounding box for some raster file, downloads, crops and uploads the crop back up to s3.\",\"url\": \"http://host:8086/crop\" }}";
-			//String testString = "{ \"dataType\": { \"type\": \"raster\", \"location\": { \"type\": \"s3\", \"bucketName\": \"pz-svcs-prevgen\", \"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\", \"domainName\": \"s3.amazonaws.com\" }, \"mimeType\": \"image/tiff\"}, \"metadata\": { \"name\": \"External Crop Raster Service\", \"id\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\",\"description\": \"Service that takes payload containing S3 location and bounding box for some raster file, downloads, crops and uploads the crop back up to s3.\"}}";
-			String testString = "{ \"dataType\": { \"type\": \"raster\", \"location\": { \"type\": \"s3\", \"bucketName\": \"pz-svcs-prevgen\", \"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\", \"domainName\": \"s3.amazonaws.com\" }, \"mimeType\": \"image/tiff\"}, \"metadata\": { \"name\": \"External Crop Raster Service\"}}";
-
-			
-			ObjectMapper anotherMapper = new ObjectMapper();
-			DataResource dr = anotherMapper.readValue(testString, DataResource.class);
-			
-			
-			dr.dataId = uuidFactory.getUUID();
-			LOGGER.debug("The UUID Retrieved is " + dataResource.getDataId());
 			// Generate a unique identifier
+			//dataResource.dataId = uuidFactory.getUUID();
+			dataResource.dataId =  uuidGenerator.getUUID();
+			DataType drDataType = dataResource.getDataType();
 			
 			// Check to see if the provide response matches the execute 
 			// expected response
-			if (dr.dataType.getType().equals(outputDataType.getType())) {
+			if (drDataType.getType().equals(outputDataType.getType())) {
 				// May combine all these two the same to handle
 				// all of them but for now, breaking down individually
 				
-				if (outputDataType instanceof TextDataType) {
+				if (outputDataType.getType().equals(TEXT_TYPE)) {
 				
 					//data.dataType = drDataType;
 					ingestJob.data=dataResource;
-					dr.metadata.name = service.getResourceMetadata().name;
-					dr.metadata.description = service.getResourceMetadata().description;
-					dr.metadata.url = service.getResourceMetadata().url;
-					dr.metadata.classType = service.getResourceMetadata().classType;
+					dataResource.metadata.name = service.getResourceMetadata().name;
+					dataResource.metadata.description = service.getResourceMetadata().description;
+					dataResource.metadata.url = service.getResourceMetadata().url;
+					dataResource.metadata.classType = service.getResourceMetadata().classType;
 					
 
 					
 				}
 				// Check to see if the type is a RasterDataType
-				else if (outputDataType instanceof RasterDataType) {
+				else if (outputDataType.getType().equals(RASTER_TYPE)) {
 					
 					//data.dataType = drDataType;
-					ingestJob.data=dr;
+					ingestJob.data=dataResource;
 				}
 			} else {
 				// Log that the returned result from the service
 				// does not match what the execute request requested
-				coreLogger.log("Expected execution output=" + outputDataType.getType() + " Actual execution output=" + dataResource.dataType.getType(), coreLogger.ERROR);
+				coreLogger.log("Expected execution output=" + outputDataType.getType() + " Actual execution output=" + drDataType.getType(), coreLogger.ERROR);
 				// Send on the results anyway
 				//data.dataType = drDataType;
-				ingestJob.data=dr;
+				ingestJob.data=dataResource;
 			}
 			// For exceptions with json parsing errors then just send the
 			// text that was provided back
@@ -509,7 +500,7 @@ public class ServiceMessageWorker implements Runnable {
 		} catch (Exception  jpe) {	
 
 			dataResource = new DataResource();
-			jpe.printStackTrace();
+			LOGGER.debug(jpe.toString());
 			coreLogger.log(jpe.toString(), coreLogger.ERROR);
 			TextDataType tr = new TextDataType();
 			tr.content = serviceControlString;
@@ -525,7 +516,8 @@ public class ServiceMessageWorker implements Runnable {
 		
 		// TODO Generate 123-456 with UUIDGen
 		ProducerRecord<String,String> newProdRecord =
-		JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());	
+		//JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());	
+	    JobMessageFactory.getRequestJobMessage(pjr, uuidGenerator.getUUID());	
 
 		producer.send(newProdRecord);
 		

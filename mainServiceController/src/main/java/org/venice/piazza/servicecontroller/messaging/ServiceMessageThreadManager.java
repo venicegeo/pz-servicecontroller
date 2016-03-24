@@ -58,8 +58,10 @@ public class ServiceMessageThreadManager {
 		private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
 		
 		private String KAFKA_HOST;
+
 		private String KAFKA_PORT;
 		private String KAFKA_GROUP;
+
 		
 		/*
 		  TODO need to determine how statuses will be sent to update the job  (Call back?)
@@ -93,7 +95,7 @@ public class ServiceMessageThreadManager {
 		@Autowired
 		private UUIDFactory uuidFactory;
 
-	
+
 		/**
 		 * Constructor for ServiceMessageThreadManager
 		 */
@@ -107,6 +109,7 @@ public class ServiceMessageThreadManager {
 		@PostConstruct
 		public void initialize() {
 			// Initialize the Kafka consumer/producer
+
 			String kafkaHostFull = coreServiceProperties.getKafkaHost();
 			KAFKA_GROUP = coreServiceProperties.getKafkaGroup();
 			
@@ -114,14 +117,17 @@ public class ServiceMessageThreadManager {
 			KAFKA_PORT = kafkaHostFull.split(":")[1];
 			
 			LOGGER.info("=================================");
+
 			LOGGER.info("The KAFKA Host Properties is " + coreServiceProperties.getKafkaHost());
 			LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
 			LOGGER.info("=================================");
+
 
 			/* Initialize producer and consumer for the Kafka Queue */
 
 			producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
 			consumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP);
+
 			// Initialize the HashMap
 			runningServiceRequests = new HashMap<String, Future<?>>();
 
@@ -176,8 +182,9 @@ public class ServiceMessageThreadManager {
 						try {
 							job = mapper.readValue(consumerRecord.value(), Job.class);		
 							
-							ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor, 
-									callback,coreServiceProperties, uuidFactory, coreLogger, job);
+							ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
+														callback,coreServiceProperties, uuidFactory, coreLogger, job);
+
 
 							Future<?> workerFuture = executor.submit(serviceMessageWorker);
 
@@ -206,6 +213,7 @@ public class ServiceMessageThreadManager {
 				// Create the Unique Consumer
 				
 				Consumer<String, String> uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT,
+
 						String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
 				uniqueConsumer.subscribe(Arrays.asList(JobMessageFactory.ABORT_JOB_TOPIC_NAME));
 

@@ -1,8 +1,15 @@
 package org.venice.piazza.servicecontroller.messaging;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
@@ -10,10 +17,18 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
@@ -25,6 +40,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandl
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,8 +51,10 @@ import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
 import model.data.DataResource;
 import model.data.DataType;
+import model.data.type.BodyDataType;
 import model.data.type.RasterDataType;
 import model.data.type.TextDataType;
+import model.data.type.URLParameterDataType;
 import model.job.Job;
 import model.job.PiazzaJobType;
 import model.job.result.type.DataResult;
@@ -51,6 +69,7 @@ import model.job.type.RegisterServiceJob;
 import model.job.type.SearchServiceJob;
 import model.job.type.UpdateServiceJob;
 import model.request.PiazzaJobRequest;
+import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.ParamDataItem;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
@@ -121,7 +140,15 @@ public class ServiceMessageWorker implements Runnable {
 					   handleResult = checkResult(handleResult);
 					   sendRegisterStatus(job, handleUpdate, handleResult);
 							
-					} else if (jobType instanceof ExecuteServiceJob) {
+					} else if (jobType instanceof ExecuteServiceJob) {		
+						// Get the ResourceMetadata
+						ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
+						ExecuteServiceData esData = jobItem.data;
+						DataType dataType= esData.getDataOutput();
+						if (dataType.getType().equals("raster")) {
+							// Call special method to call and send
+							handleRasterType(jobItem);
+						}
 						ExecuteServiceHandler esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 						handleResult = esHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
@@ -459,6 +486,161 @@ public class ServiceMessageWorker implements Runnable {
         ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
 
         producer.send(prodRecord);
+	}
+	
+	/**
+	 *  This method is for demonstrating ingest of raster data
+	 *  This will be refactored once the API changes have been communicated to
+	 *  other team members
+	 */
+	public void handleRasterType(ExecuteServiceJob executeJob) {
+		
+		RestTemplate restTemplate = new RestTemplate();
+		ExecuteServiceData data = executeJob.data;
+		// Get the id from the data
+			String serviceId = data.getServiceId();
+			Service sMetadata = accessor.getServiceById(serviceId);
+			// Default request mimeType application/json
+			String requestMimeType = "application/json";
+			MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
+		
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url);
+			Set<String> parameterNames = new HashSet<String>();
+			if (sMetadata.getInputs() != null && sMetadata.getInputs().size() > 0) {
+				for (ParamDataItem pdataItem : sMetadata.getInputs()) {
+					if (pdataItem.getDataType() instanceof URLParameterDataType) {
+						parameterNames.add(pdataItem.getName());
+					}
+				}
+			}
+			Map<String,DataType> postObjects = new HashMap<String,DataType>();
+			Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
+			String postString = "";
+			while (it.hasNext()) {
+				Entry<String,DataType> entry = it.next();
+				
+				String inputName = entry.getKey();
+				if (parameterNames.contains(inputName)) {
+					if (entry.getValue() instanceof TextDataType) {
+						String paramValue = ((TextDataType)entry.getValue()).getContent();
+						if (inputName.length() == 0) {
+							builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
+						}
+						else {
+							 builder.queryParam(inputName,paramValue);
+						}
+					}
+					else {
+						LOGGER.error("URL parameter value has to be specified in TextDataType" );
+						return;
+					}
+				}
+				else if (entry.getValue() instanceof BodyDataType){
+					BodyDataType bdt = (BodyDataType)entry.getValue();
+					postString = bdt.getContent();
+					requestMimeType = bdt.getMimeType();
+				}
+				//Default behavior for other inputs, put them in list of objects
+				// which are transformed into JSON consistent with default requestMimeType
+				else {
+					postObjects.put(inputName, entry.getValue());
+				}
+			}
+			if (postString.length() > 0 && postObjects.size() > 0) {
+				LOGGER.error("String Input not consistent with other Inputs");
+				return;
+			}
+			else if (postObjects.size() > 0){
+				ObjectMapper mapper = new ObjectMapper();
+				try {
+					postString = mapper.writeValueAsString(postObjects);
+				} catch (JsonProcessingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			URI url = URI.create(builder.toUriString());		
+			HttpHeaders headers = new HttpHeaders();
+			
+			// Set the mimeType of the request
+			MediaType mediaType = createMediaType(requestMimeType);
+			headers.setContentType(mediaType);
+			// Set the mimeType of the request
+			//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
+			HttpEntity<String> requestEntity = null;
+			if (postString.length() > 0) {
+				requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
+				
+			}
+			else {
+				requestEntity = new HttpEntity(headers);
+				
+			}
+			
+			try {
+				
+			
+			    ResponseEntity<DataResource> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, DataResource.class);
+	            DataResource dataResource = response.getBody();
+	            dataResource.dataId = uuidFactory.getUUID();
+	            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
+	            pjr.apiKey = "pz-sc-ingest-raster-test";
+	            
+	            IngestJob ingestJob = new IngestJob();
+	            ingestJob.data=dataResource;
+	            ingestJob.host = true;
+	            pjr.jobType  = ingestJob;
+	            ProducerRecord<String,String> newProdRecord =
+	            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
+	
+	             producer.send(newProdRecord);
+	
+	             StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+	
+	             // Create a text result and update status
+	             DataResult textResult = new DataResult(dataResource.dataId);
+	
+	              statusUpdate.setResult(textResult);
+	
+	
+	             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+	
+	             producer.send(prodRecord);
+			} catch (JsonProcessingException ex) {
+				ex.printStackTrace();
+			}
+            
+		
+	}
+	
+	private MediaType createMediaType(String mimeType) {
+		MediaType mediaType;
+		String type, subtype;
+		StringBuffer sb = new StringBuffer(mimeType);
+		int index = sb.indexOf("/");
+		// If a slash was found then there is a type and subtype
+		if (index != -1) {
+			type = sb.substring(0, index);
+			
+		    subtype = sb.substring(index+1, mimeType.length());
+		    mediaType = new MediaType(type, subtype);
+		    LOGGER.debug("The type is="+type);
+			LOGGER.debug("The subtype="+subtype);
+		}
+		else {
+			// Assume there is just a type for the mime, no subtype
+			mediaType = new MediaType(mimeType);			
+		}
+		
+		return mediaType;
+	
+		
+	}
+	
+	public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
+		HttpEntity<String> requestEntity = new HttpEntity<String>(data,headers);
+		return requestEntity;
+	
 	}
 	
     /**

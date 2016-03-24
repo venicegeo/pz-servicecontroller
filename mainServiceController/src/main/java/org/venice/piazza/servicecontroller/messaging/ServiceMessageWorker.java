@@ -27,7 +27,9 @@ import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
@@ -81,7 +83,6 @@ public class ServiceMessageWorker implements Runnable {
 	public ServiceMessageWorker (ConsumerRecord<String, String> consumerRecord,
 			Producer<String, String> producer, MongoAccessor accessor, WorkerCallback callback, 
 			CoreServiceProperties coreServiceProperties, UUIDFactory uuidFactory, 
-			CoreUUIDGen uuidGenerator,
 			PiazzaLogger logger,Job job) {
 		this.job = job;
 		this.consumerRecord = consumerRecord;
@@ -426,7 +427,7 @@ public class ServiceMessageWorker implements Runnable {
 		DataResource dataResource;
 		ObjectMapper mapper = new ObjectMapper();
 		LOGGER.debug("The body is " + handleResult.getBody());
-		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
+		String serviceControlString = mapper.writeValueAsString(handleResult.getBody().get(0));
 		LOGGER.debug("string returned" + serviceControlString);
 		// Now produce a new record
 		PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
@@ -444,12 +445,21 @@ public class ServiceMessageWorker implements Runnable {
 		// Get the metadata about the service for later use
 		String serviceId = esj.data.getServiceId();
 		Service service = accessor.getServiceById(serviceId);
-		
 		// If the type is text then create a new TextDataType
 		try {
-			dataResource = mapper.readValue(serviceControlString, DataResource.class);
+			//dataResource = mapper.readValue(serviceControlString, DataResource.class);
+			ObjectMapper drMapper = new ObjectMapper();
+			
+			JsonNode root = drMapper.valueToTree(serviceControlString);
+			JsonNode dataTypeNode = root.get("dataType");
+			if (dataTypeNode != null)
+				LOGGER.debug("Found dataType!!!!");
+			LOGGER.debug("The Text of teh root is " + root.asText());
+
+			dataResource = new DataResource();
 			// Generate a unique identifier
-			dataResource.dataId = uuidFactory.getUUID();
+			//dataResource.dataId = uuidFactory.getUUID();
+			dataResource.dataId =  uuidGenerator.getUUID();
 			DataType drDataType = dataResource.getDataType();
 			
 			// Check to see if the provide response matches the execute 
@@ -486,7 +496,9 @@ public class ServiceMessageWorker implements Runnable {
 			}
 			// For exceptions with json parsing errors then just send the
 			// text that was provided back
-		} catch (JsonProcessingException  jpe) {	
+		//} catch (JsonProcessingException  jpe) {	
+		} catch (Exception  jpe) {	
+
 			dataResource = new DataResource();
 			LOGGER.debug(jpe.toString());
 			coreLogger.log(jpe.toString(), coreLogger.ERROR);

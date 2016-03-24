@@ -37,8 +37,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(locations = "classpath:application.properties", ignoreUnknownFields = false, prefix = "core")
 public class CoreServiceProperties {
 	
-	@NotBlank
-	private String uuidservice;
+	
 	@Value("${pz.uuid.url}")
 	private String uuidservicehost;
 	private String logservice;
@@ -57,19 +56,15 @@ public class CoreServiceProperties {
 	private String logger;
 	@NotNull
 	private String discoverservice;
-	@Value ("${kafka.host}")
+	@Value ("${vcap.services.pz-kafka.credentials.host}")
 	private String kafkaHost;
 	@Value ("${kafka.group}")
 	private String kafkaGroup;
-	@Value ("${kafka.port}")
-	private int kafkaPort;
 	@Value ("${server.port}")
 	private int serverPort;
-	@Value ("${mongo.host}")
+	@Value ("${vcap.services.pz-mongodb.credentials.uri}")
 	private String mongoHost;
-	@Value ("${mongo.port}")
-	private int mongoPort;
-	@Value ("${mongo.db.name}")
+	@Value ("${vcap.services.pz-mongodb.credentials.database}")
 	private String mongoDBName;
 	@Value ("${mongo.db.collection.name}")
 	private String mongoCollectionName;
@@ -199,14 +194,6 @@ public class CoreServiceProperties {
 		this.mongoHost = mongoHost;
 	}
 
-	public int getMongoPort() {
-		return mongoPort;
-	}
-
-	public void setMongoPort(int mongoPort) {
-		this.mongoPort = mongoPort;
-	}
-
 	public String getMongoDBName() {
 		return mongoDBName;
 	}
@@ -223,13 +210,6 @@ public class CoreServiceProperties {
 		this.mongoCollectionName = mongoCollectionName;
 	}
 	
-	public int getKafkaPort() {
-		return kafkaPort;
-	}
-
-	public void setKafkaPort(int kafkaPort) {
-		this.kafkaPort = kafkaPort;
-	}
 
 	public String getLogservice() {
 		return logservice;
@@ -239,13 +219,7 @@ public class CoreServiceProperties {
 		this.logservice = logservice;
 	}
 
-	public String getUuidservice() {
-		return uuidservice;
-	}
 
-	public void setUuidservice(String uuidservice) {
-		this.uuidservice = uuidservice;
-	}
 	
 	@Bean
 	public CoreInitDestroy coreInitDestroy() {

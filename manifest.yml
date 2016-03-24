@@ -5,3 +5,6 @@ applications:
   instances: 1
   timeout: 80
   path: pz-servicecontroller.jar
+  services:
+    - pz-kafka
+    - pz-mongodb

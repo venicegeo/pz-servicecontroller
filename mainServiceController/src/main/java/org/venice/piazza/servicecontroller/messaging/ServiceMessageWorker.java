@@ -134,13 +134,16 @@ public class ServiceMessageWorker implements Runnable {
 					LOGGER.debug("Job ID:" + job.getJobId());
 
 					if (jobType instanceof RegisterServiceJob) {
+					   LOGGER.debug("RegisterServiceJob Detected");
 					   // Handle Register Job
 					   RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);
 					   handleResult = rsHandler.handle(jobType);
 					   handleResult = checkResult(handleResult);
 					   sendRegisterStatus(job, handleUpdate, handleResult);
 							
-					} else if (jobType instanceof ExecuteServiceJob) {		
+					} else if (jobType instanceof ExecuteServiceJob) {	
+						LOGGER.debug("ExecuteServiceJob Detected");
+
 						// Get the ResourceMetadata
 						ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
 						ExecuteServiceData esData = jobItem.data;
@@ -150,9 +153,14 @@ public class ServiceMessageWorker implements Runnable {
 							handleRasterType(jobItem);
 						}
 						else {
+							LOGGER.debug("ExecuteServiceJob Original Way");
+
 							ExecuteServiceHandler esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 							handleResult = esHandler.handle(jobType);
+							LOGGER.debug("Execution handled");
 							handleResult = checkResult(handleResult);
+							LOGGER.debug("Send Execute Status KAFKA");
+
 							sendExecuteStatus(job, handleUpdate, handleResult);
 						}
 					} 

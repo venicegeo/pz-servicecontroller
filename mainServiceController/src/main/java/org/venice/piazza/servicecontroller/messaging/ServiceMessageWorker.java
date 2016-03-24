@@ -594,7 +594,7 @@ public class ServiceMessageWorker implements Runnable {
 	            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
 	
 	             producer.send(newProdRecord);
-	
+	             LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
 	             StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 	
 	             // Create a text result and update status
@@ -606,6 +606,8 @@ public class ServiceMessageWorker implements Runnable {
 	             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
 	
 	             producer.send(prodRecord);
+	             LOGGER.debug("prodRecord sent" + prodRecord.toString());
+
 			} catch (JsonProcessingException ex) {
 				ex.printStackTrace();
 			}

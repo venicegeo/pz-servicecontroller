@@ -569,6 +569,7 @@ public class ServiceMessageWorker implements Runnable {
 			//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
 			HttpEntity<String> requestEntity = null;
 			if (postString.length() > 0) {
+				LOGGER.debug("The postString is " + postString);
 				requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
 				
 			}
@@ -581,6 +582,7 @@ public class ServiceMessageWorker implements Runnable {
 				
 			    LOGGER.debug("About to call special service");
 			    //ResponseEntity<DataResource> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, DataResource.class);
+			    LOGGER.debug("URL calling" + url);
 			    ResponseEntity<DataResource> response = restTemplate.postForEntity(url, requestEntity, DataResource.class);
 
 	            DataResource dataResource = response.getBody();
@@ -610,7 +612,9 @@ public class ServiceMessageWorker implements Runnable {
 	             producer.send(prodRecord);
 	             LOGGER.debug("prodRecord sent" + prodRecord.toString());
 
-			} catch (JsonProcessingException ex) {
+			} catch (JsonProcessingException jpe) {
+				jpe.printStackTrace();
+			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
             

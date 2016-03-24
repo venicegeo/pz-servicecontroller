@@ -149,10 +149,12 @@ public class ServiceMessageWorker implements Runnable {
 							// Call special method to call and send
 							handleRasterType(jobItem);
 						}
-						ExecuteServiceHandler esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
-						handleResult = esHandler.handle(jobType);
-						handleResult = checkResult(handleResult);
-						sendExecuteStatus(job, handleUpdate, handleResult);
+						else {
+							ExecuteServiceHandler esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
+							handleResult = esHandler.handle(jobType);
+							handleResult = checkResult(handleResult);
+							sendExecuteStatus(job, handleUpdate, handleResult);
+						}
 					} 
 					else if (jobType instanceof UpdateServiceJob) {
 						UpdateServiceHandler usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);

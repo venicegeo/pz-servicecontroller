@@ -577,10 +577,12 @@ public class ServiceMessageWorker implements Runnable {
 				
 			}
 			
-			try {
+			try {  
 				
-			
-			    ResponseEntity<DataResource> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, DataResource.class);
+			    LOGGER.debug("About to call special service");
+			    //ResponseEntity<DataResource> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, DataResource.class);
+			    ResponseEntity<DataResource> response = restTemplate.postForEntity(url, requestEntity, DataResource.class);
+
 	            DataResource dataResource = response.getBody();
 	            dataResource.dataId = uuidFactory.getUUID();
 	            PiazzaJobRequest pjr  =  new PiazzaJobRequest();

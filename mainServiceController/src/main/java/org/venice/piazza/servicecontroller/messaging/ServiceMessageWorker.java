@@ -424,114 +424,41 @@ public class ServiceMessageWorker implements Runnable {
 	 * @throws JsonProcessingException
 	 */
 	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException, IOException {
-		DataResource dataResource;
-		ObjectMapper mapper = new ObjectMapper();
-		LOGGER.debug("The body is " + handleResult.getBody());
-		String serviceControlString = mapper.writeValueAsString(handleResult.getBody().get(0));
-		LOGGER.debug("string returned" + serviceControlString);
-		// Now produce a new record
-		PiazzaJobRequest pjr  =  new PiazzaJobRequest();		
-		// TODO read from properties file
-		pjr.apiKey = "pz-sc-ingest-test";
-		
-		// Create an ingest object
-		IngestJob ingestJob = new IngestJob();
-		
-		// Get the JobTYpe
-		ExecuteServiceJob esj = (ExecuteServiceJob)job.getJobType();
-		// Now get the expected output type
-        DataType outputDataType = esj.data.getDataOutput();
-        
-		// Get the metadata about the service for later use
-		String serviceId = esj.data.getServiceId();
-		Service service = accessor.getServiceById(serviceId);
-		// If the type is text then create a new TextDataType
-		try {
-			//dataResource = mapper.readValue(serviceControlString, DataResource.class);
-			ObjectMapper drMapper = new ObjectMapper();
-			
-			JsonNode root = drMapper.valueToTree(serviceControlString);
-			JsonNode dataTypeNode = root.get("dataType");
-			if (dataTypeNode != null)
-				LOGGER.debug("Found dataType!!!!");
-			LOGGER.debug("The Text of teh root is " + root.asText());
+        ObjectMapper mapper = new ObjectMapper();
+        String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
+        // Now produce a new record
+        PiazzaJobRequest pjr  =  new PiazzaJobRequest();
+        // TODO read from properties file
+        pjr.apiKey = "pz-sc-ingest-test";
+        IngestJob ingestJob = new IngestJob();
+        DataResource data = new DataResource();
+        //TODO  MML UUIDGen
+        data.dataId = uuidFactory.getUUID();
+        TextDataType tr = new TextDataType();
+        tr.content = serviceControlString;
+        data.dataType = tr;
+        ingestJob.data=data;
+        ingestJob.host = true;
 
-			dataResource = new DataResource();
-			// Generate a unique identifier
-			//dataResource.dataId = uuidFactory.getUUID();
-			dataResource.dataId =  uuidGenerator.getUUID();
-			DataType drDataType = dataResource.getDataType();
-			
-			// Check to see if the provide response matches the execute 
-			// expected response
-			if (drDataType.getType().equals(outputDataType.getType())) {
-				// May combine all these two the same to handle
-				// all of them but for now, breaking down individually
-				
-				if (outputDataType.getType().equals(TEXT_TYPE)) {
-				
-					//data.dataType = drDataType;
-					ingestJob.data=dataResource;
-					dataResource.metadata.name = service.getResourceMetadata().name;
-					dataResource.metadata.description = service.getResourceMetadata().description;
-					dataResource.metadata.url = service.getResourceMetadata().url;
-					dataResource.metadata.classType = service.getResourceMetadata().classType;
-					
+        pjr.jobType  = ingestJob;
 
-					
-				}
-				// Check to see if the type is a RasterDataType
-				else if (outputDataType.getType().equals(RASTER_TYPE)) {
-					
-					//data.dataType = drDataType;
-					ingestJob.data=dataResource;
-				}
-			} else {
-				// Log that the returned result from the service
-				// does not match what the execute request requested
-				coreLogger.log("Expected execution output=" + outputDataType.getType() + " Actual execution output=" + drDataType.getType(), coreLogger.ERROR);
-				// Send on the results anyway
-				//data.dataType = drDataType;
-				ingestJob.data=dataResource;
-			}
-			// For exceptions with json parsing errors then just send the
-			// text that was provided back
-		//} catch (JsonProcessingException  jpe) {	
-		} catch (Exception  jpe) {	
+        // TODO Generate 123-456 with UUIDGen
+        ProducerRecord<String,String> newProdRecord =
+        JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
 
-			dataResource = new DataResource();
-			LOGGER.debug(jpe.toString());
-			coreLogger.log(jpe.toString(), coreLogger.ERROR);
-			TextDataType tr = new TextDataType();
-			tr.content = serviceControlString;
-			dataResource.dataType = tr;
-			ingestJob.data=dataResource;
-			
-		} 
-			
-		// Host the data for now, will work on this later
-		ingestJob.host = true;
-		
-		pjr.jobType  = ingestJob;
-		
-		// TODO Generate 123-456 with UUIDGen
-		ProducerRecord<String,String> newProdRecord =
-		//JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());	
-	    JobMessageFactory.getRequestJobMessage(pjr, uuidGenerator.getUUID());	
+        producer.send(newProdRecord);
 
-		producer.send(newProdRecord);
-		
-		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-		
-	    // Create a text result and update status
-		DataResult textResult = new DataResult(dataResource.dataId);
+        StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 
-		statusUpdate.setResult(textResult);
-		
+    // Create a text result and update status
+        DataResult textResult = new DataResult(data.dataId);
 
-		ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+        statusUpdate.setResult(textResult);
 
-		producer.send(prodRecord);
+
+        ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+
+        producer.send(prodRecord);
 	}
 	
     /**

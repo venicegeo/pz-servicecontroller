@@ -175,8 +175,8 @@ public class ServiceMessageThreadManager {
 					for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
 						LOGGER.info("Received topic: " + consumerRecord.topic() + " with key "
 								+ consumerRecord.key());
-						coreLogger.log("Received topic: " + consumerRecord.topic() + " with key "
-								+ consumerRecord.key(), coreLogger.INFO);
+						//coreLogger.log("Received topic: " + consumerRecord.topic() + " with key "
+						//		+ consumerRecord.key(), coreLogger.INFO);
 												
 						// Wrap the JobRequest in the Job object
 						try {
@@ -197,8 +197,8 @@ public class ServiceMessageThreadManager {
 					}// for loop
 				}// while loop
 			} catch (Exception ex) {
-				coreLogger.log(String.format("There was a problem.", ex.getMessage()),
-						PiazzaLogger.FATAL);
+				//coreLogger.log(String.format("There was a problem.", ex.getMessage()),
+				//		PiazzaLogger.FATAL);
 				
 			}
 			

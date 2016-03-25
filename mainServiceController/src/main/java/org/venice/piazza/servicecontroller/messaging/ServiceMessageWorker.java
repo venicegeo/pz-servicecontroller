@@ -580,54 +580,94 @@ public class ServiceMessageWorker implements Runnable {
 			HttpEntity<String> requestEntity = null;
 			if (postString.length() > 0) {
 				LOGGER.debug("The postString is " + postString);
-				requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
+				//requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
+				HttpHeaders theHeaders = new HttpHeaders();
+				//headers.add("Authorization", "Basic " + credentials);
+				theHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+				// Create the Request template and execute
+				HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
 				
-			}
-			else {
-				requestEntity = new HttpEntity(headers);
-				
-			}
+		
 			
-			try {  
-				
-			    LOGGER.debug("About to call special service");
-			    //ResponseEntity<DataResource> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, DataResource.class);
-			    LOGGER.debug("URL calling" + url);
-			    ResponseEntity<DataResource> response = restTemplate.postForEntity(url, requestEntity, DataResource.class);
+				try {  
+					
+				    LOGGER.debug("About to call special service");
+				    LOGGER.debug("URL calling" + url);
+                    // COMMENT OUT CALLING SERVICE
+				    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+				    LOGGER.debug("The Response is " + response.getBody());
+				    // DOES NOT RETURN!!!!!!
+		            //DataResource dataResource = response.getBody();
+				    
+				    ObjectMapper mapper = new ObjectMapper();
 
-	            DataResource dataResource = response.getBody();
-	            dataResource.dataId = uuidFactory.getUUID();
-	            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
-	            pjr.apiKey = "pz-sc-ingest-raster-test";
-	            
-	            IngestJob ingestJob = new IngestJob();
-	            ingestJob.data=dataResource;
-	            ingestJob.host = true;
-	            pjr.jobType  = ingestJob;
-	            ProducerRecord<String,String> newProdRecord =
-	            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
-	
-	             producer.send(newProdRecord);
-	             LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
-	             StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-	
-	             // Create a text result and update status
-	             DataResult textResult = new DataResult(dataResource.dataId);
-	
-	              statusUpdate.setResult(textResult);
-	
-	
-	             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
-	
-	             producer.send(prodRecord);
-	             LOGGER.debug("prodRecord sent" + prodRecord.toString());
+				    String serviceControlString = response.getBody();
+			        LOGGER.debug("Service Control String" + serviceControlString); 
+			       
+				    // END CALLING SERVICE CALL
 
-			} catch (JsonProcessingException jpe) {
-				jpe.printStackTrace();
-			} catch (Exception ex) {
-				ex.printStackTrace();
+				   // String tempString = "{\"dataType\":{\"type\":\"raster\",\"location\":{\"type\":\"s3\",\"bucketName\":\"pz-svcs-prevgen\",\"fileName\":\"c4226046-e20d-450e-a2ae-04eec7bce5e0-NASA-GDEM-10km-colorized.tif\",\"domainName\":\"s3.amazonaws.com\",\"type\":\"s3\"}},\"metadata\":{\"name\":\"External Crop Raster Service\"}}";
+				    
+				   /*String tempString = "{" +
+				        "\"dataType\": {" +
+				           "\"type\": \"raster\","+
+				            "\"location\": {"+
+				                "\"type\": \"s3\","+
+				                "\"bucketName\": \"pz-svcs-prevgen\","+
+				                "\"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\"," +
+				               "\"domainName\": \"s3.amazonaws.com\""+
+				           " },"+
+				           "\"type\": \"raster\""+
+				        "},"+
+				        "\"metadata\": {" +
+				            "\"name\": \"External Crop Raster Service\""+
+				        "}" +
+				    "}";  */
+			        /*String tempString = "{\"dataType\":{\"type\":\"text\",\"type\":\"text\"}}";
+			        if (tempString.equals(serviceControlString))
+			        	LOGGER.debug("The strings have equal values");
+			        else
+			        	LOGGER.debug("The strings are not equal");*/
+			        ObjectMapper tempMapper = new ObjectMapper();
+				    DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
+			        
+			        LOGGER.debug("This is a test");
+			        LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());
+
+				    //DataResource dataResource = new DataResource();
+		            dataResource.dataId = uuidFactory.getUUID();
+		            LOGGER.debug("dataId" + dataResource.dataId);
+		            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
+		            pjr.apiKey = "pz-sc-ingest-raster-test";
+		            
+		            IngestJob ingestJob = new IngestJob();
+		            ingestJob.data=dataResource;
+		            ingestJob.host = true;
+		            pjr.jobType  = ingestJob;
+		            ProducerRecord<String,String> newProdRecord =
+		            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
+		
+		             producer.send(newProdRecord);
+		             LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
+		             StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+		
+		             // Create a text result and update status
+		             DataResult textResult = new DataResult(dataResource.dataId);
+		
+		             statusUpdate.setResult(textResult);
+		
+		             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+		
+		             producer.send(prodRecord);
+		             LOGGER.debug("prodRecord sent" + prodRecord.toString());
+	
+				} catch (JsonProcessingException jpe) {
+					jpe.printStackTrace();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
-            
 		
 	}
 	

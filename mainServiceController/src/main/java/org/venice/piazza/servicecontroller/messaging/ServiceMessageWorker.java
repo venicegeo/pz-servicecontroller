@@ -609,28 +609,59 @@ public class ServiceMessageWorker implements Runnable {
 
 				   // String tempString = "{\"dataType\":{\"type\":\"raster\",\"location\":{\"type\":\"s3\",\"bucketName\":\"pz-svcs-prevgen\",\"fileName\":\"c4226046-e20d-450e-a2ae-04eec7bce5e0-NASA-GDEM-10km-colorized.tif\",\"domainName\":\"s3.amazonaws.com\",\"type\":\"s3\"}},\"metadata\":{\"name\":\"External Crop Raster Service\"}}";
 				    
-				   /*String tempString = "{" +
-				        "\"dataType\": {" +
-				           "\"type\": \"raster\","+
-				            "\"location\": {"+
-				                "\"type\": \"s3\","+
-				                "\"bucketName\": \"pz-svcs-prevgen\","+
-				                "\"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\"," +
-				               "\"domainName\": \"s3.amazonaws.com\""+
-				           " },"+
-				           "\"type\": \"raster\""+
-				        "},"+
-				        "\"metadata\": {" +
-				            "\"name\": \"External Crop Raster Service\""+
-				        "}" +
-				    "}";  */
-			        /*String tempString = "{\"dataType\":{\"type\":\"text\",\"type\":\"text\"}}";
-			        if (tempString.equals(serviceControlString))
-			        	LOGGER.debug("The strings have equal values");
-			        else
-			        	LOGGER.debug("The strings are not equal");*/
+//				   String tempString = "{" +
+//				        "\"dataType\": {" +
+//				           "\"type\": \"raster\","+
+//				            "\"location\": {"+
+//				                "\"type\": \"s3\","+
+//				                "\"bucketName\": \"pz-svcs-prevgen\","+
+//				                "\"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\"," +
+//				               "\"domainName\": \"s3.amazonaws.com\""+
+//				           " },"+
+//				           "\"type\": \"raster\""+
+//				        "},"+
+//				        "\"metadata\": {" +
+//				            "\"name\": \"External Crop Raster Service\""+
+//				        "}" +
+//				    "}";  
+			        // Does not Work BLOCKS FOREVER
+//			        String tempString = "{" +
+//					        "\"dataType\": {" +
+//					           "\"type\": \"raster\","+
+//					           "\"location\": {"+
+//				                "\"type\": \"s3\","+
+//				                "\"bucketName\": \"pz-svcs-prevgen\""+
+//				             " }" +
+//					        "},"+
+//					        "\"metadata\": {" +
+//					            "\"name\": \"External Crop Raster Service\""+
+//					        "}" +
+//					    "}";  
+			        // Does not Work - BLOCKS FOREVER
+//			        String tempString = "{" +
+//					        "\"dataType\": {" +
+//					           "\"type\": \"raster\","+
+//					           "\"location\": {"+
+//				                "\"type\": \"s3\""+
+//				             " }" +
+//					        "},"+
+//					        "\"metadata\": {" +
+//					            "\"name\": \"External Crop Raster Service\""+
+//					        "}" +
+//					    "}";
+			        String tempString = "{" +
+					        "\"dataType\": {" +
+					           "\"type\": \"raster\""+
+					        "},"+
+					        "\"metadata\": {" +
+					            "\"name\": \"External Crop Raster Service\""+
+					        "}" +
+					    "}";
+			        LOGGER.debug("Temp String " + tempString);
+			        //String tempString = "{\"dataType\":{\"type\":\"text\",\"type\":\"text\"}}";
+			     
 			        ObjectMapper tempMapper = new ObjectMapper();
-				    DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
+				    DataResource dataResource = tempMapper.readValue(tempString, DataResource.class);
 			        
 			        LOGGER.debug("This is a test");
 			        LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());

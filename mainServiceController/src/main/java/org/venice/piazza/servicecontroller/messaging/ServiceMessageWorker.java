@@ -148,7 +148,7 @@ public class ServiceMessageWorker implements Runnable {
 						ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
 						ExecuteServiceData esData = jobItem.data;
 						DataType dataType= esData.getDataOutput();
-						if (dataType.getType().equals("raster")) {
+						if ((dataType != null) && (dataType instanceof RasterDataType)) {
 							// Call special method to call and send
 							handleRasterType(jobItem);
 						}

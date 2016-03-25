@@ -1,11 +1,16 @@
 package org.venice.piazza.servicecontroller.messaging;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -17,11 +22,22 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
@@ -33,13 +49,27 @@ import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandl
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
+import model.data.DataResource;
+import model.data.DataType;
+import model.data.type.BodyDataType;
+import model.data.type.RasterDataType;
+import model.data.type.TextDataType;
+import model.data.type.URLParameterDataType;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.result.type.DataResult;
+import model.job.type.ExecuteServiceJob;
+import model.job.type.IngestJob;
+import model.request.PiazzaJobRequest;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.ParamDataItem;
+import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -180,16 +210,34 @@ public class ServiceMessageThreadManager {
 												
 						// Wrap the JobRequest in the Job object
 						try {
-							job = mapper.readValue(consumerRecord.value(), Job.class);		
+							job = mapper.readValue(consumerRecord.value(), Job.class);	
 							
-							ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
-														callback,coreServiceProperties, uuidFactory, coreLogger, job);
+							if (job != null) {
+								PiazzaJobType jobType = job.getJobType();
 
-
-							Future<?> workerFuture = executor.submit(serviceMessageWorker);
-
-							// Keep track of all Running Jobs
-							runningServiceRequests.put(consumerRecord.key(), workerFuture);
+							
+								if (jobType instanceof ExecuteServiceJob) {
+						
+									ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
+									ExecuteServiceData esData = jobItem.data;
+									DataType dataType= esData.getDataOutput();
+									if ((dataType != null) && (dataType instanceof RasterDataType)) {
+										// Call special method to call and send
+										handleRasterType(jobItem, job);
+									}
+								}
+								else {
+							
+									ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
+																callback,coreServiceProperties, uuidFactory, coreLogger, job);
+		
+		
+									Future<?> workerFuture = executor.submit(serviceMessageWorker);
+		
+									// Keep track of all Running Jobs
+									runningServiceRequests.put(consumerRecord.key(), workerFuture);
+								}
+							}
 
 						} catch (Exception ex) {
 							
@@ -238,5 +286,253 @@ public class ServiceMessageThreadManager {
 						PiazzaLogger.FATAL);
 			}
 		}
+		/**
+		 *  This method is for demonstrating ingest of raster data
+		 *  This will be refactored once the API changes have been communicated to
+		 *  other team members
+		 */
+		public void handleRasterType(ExecuteServiceJob executeJob, Job job) {
+			
+			RestTemplate restTemplate = new RestTemplate();
+			ExecuteServiceData data = executeJob.data;
+			// Get the id from the data
+				String serviceId = data.getServiceId();
+				Service sMetadata = accessor.getServiceById(serviceId);
+				// Default request mimeType application/json
+				String requestMimeType = "application/json";
+				MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
+			
+				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url);
+				Set<String> parameterNames = new HashSet<String>();
+				if (sMetadata.getInputs() != null && sMetadata.getInputs().size() > 0) {
+					for (ParamDataItem pdataItem : sMetadata.getInputs()) {
+						if (pdataItem.getDataType() instanceof URLParameterDataType) {
+							parameterNames.add(pdataItem.getName());
+						}
+					}
+				}
+				Map<String,DataType> postObjects = new HashMap<String,DataType>();
+				Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
+				String postString = "";
+				while (it.hasNext()) {
+					Entry<String,DataType> entry = it.next();
+					
+					String inputName = entry.getKey();
+					if (parameterNames.contains(inputName)) {
+						if (entry.getValue() instanceof TextDataType) {
+							String paramValue = ((TextDataType)entry.getValue()).getContent();
+							if (inputName.length() == 0) {
+								builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
+							}
+							else {
+								 builder.queryParam(inputName,paramValue);
+							}
+						}
+						else {
+							LOGGER.error("URL parameter value has to be specified in TextDataType" );
+							return;
+						}
+					}
+					else if (entry.getValue() instanceof BodyDataType){
+						BodyDataType bdt = (BodyDataType)entry.getValue();
+						postString = bdt.getContent();
+						requestMimeType = bdt.getMimeType();
+					}
+					//Default behavior for other inputs, put them in list of objects
+					// which are transformed into JSON consistent with default requestMimeType
+					else {
+						postObjects.put(inputName, entry.getValue());
+					}
+				}
+				if (postString.length() > 0 && postObjects.size() > 0) {
+					LOGGER.error("String Input not consistent with other Inputs");
+					return;
+				}
+				else if (postObjects.size() > 0){
+					ObjectMapper mapper = new ObjectMapper();
+					try {
+						postString = mapper.writeValueAsString(postObjects);
+					} catch (JsonProcessingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				URI url = URI.create(builder.toUriString());		
+				HttpHeaders headers = new HttpHeaders();
+				
+				// Set the mimeType of the request
+				MediaType mediaType = createMediaType(requestMimeType);
+				headers.setContentType(mediaType);
+				// Set the mimeType of the request
+				//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
+				HttpEntity<String> requestEntity = null;
+				if (postString.length() > 0) {
+					LOGGER.debug("The postString is " + postString);
+					//requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
+					HttpHeaders theHeaders = new HttpHeaders();
+					//headers.add("Authorization", "Basic " + credentials);
+					theHeaders.setContentType(MediaType.APPLICATION_JSON);
 
+					// Create the Request template and execute
+					HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
+					
+			
+				
+					try {  
+						
+					    LOGGER.debug("About to call special service");
+					    LOGGER.debug("URL calling" + url);
+	                    // COMMENT OUT CALLING SERVICE
+					    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+					    LOGGER.debug("The Response is " + response.getBody());
+					    // DOES NOT RETURN!!!!!!
+			            //DataResource dataResource = response.getBody();
+					    
+					    ObjectMapper mapper = new ObjectMapper();
+
+					    String serviceControlString = response.getBody();
+				        LOGGER.debug("Service Control String" + serviceControlString); 
+				       
+					    // END CALLING SERVICE CALL
+
+					   // String tempString = "{\"dataType\":{\"type\":\"raster\",\"location\":{\"type\":\"s3\",\"bucketName\":\"pz-svcs-prevgen\",\"fileName\":\"c4226046-e20d-450e-a2ae-04eec7bce5e0-NASA-GDEM-10km-colorized.tif\",\"domainName\":\"s3.amazonaws.com\",\"type\":\"s3\"}},\"metadata\":{\"name\":\"External Crop Raster Service\"}}";
+					   // DOES NOT WORK, BLOCKS FOR EVER
+//					   String tempString = "{" +
+//					        "\"dataType\": {" +
+//					           "\"type\": \"raster\","+
+//					            "\"location\": {"+
+//					                "\"type\": \"s3\","+
+//					                "\"bucketName\": \"pz-svcs-prevgen\","+
+//					                "\"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\"," +
+//					               "\"domainName\": \"s3.amazonaws.com\""+
+//					           " },"+
+//					           "\"type\": \"raster\""+
+//					        "},"+
+//					        "\"metadata\": {" +
+//					            "\"name\": \"External Crop Raster Service\""+
+//					        "}" +
+//					    "}";  
+				        // Does not Work BLOCKS FOREVER
+//				        String tempString = "{" +
+//						        "\"dataType\": {" +
+//						           "\"type\": \"raster\","+
+//						           "\"location\": {"+
+//					                "\"type\": \"s3\","+
+//					                "\"bucketName\": \"pz-svcs-prevgen\""+
+//					             " }" +
+//						        "},"+
+//						        "\"metadata\": {" +
+//						            "\"name\": \"External Crop Raster Service\""+
+//						        "}" +
+//						    "}";  
+				        // Does not Work - BLOCKS FOREVER
+				        String tempString = "{" +
+						        "\"dataType\": {" +
+						           "\"type\": \"raster\","+
+						        "\"location\": {"+
+					                "\"type\": \"s3\""+
+					             " }" +
+						        "},"+
+						        "\"metadata\": {" +
+						       "\"name\": \"External Crop Raster Service\""+
+						        "}" +
+						    "}";
+				        // Works
+//				        String tempString = "{" +
+//						        "\"dataType\": {" +
+//						           "\"type\": \"raster\""+
+//						        "},"+
+//						        "\"metadata\": {" +
+//						            "\"name\": \"External Crop Raster Service\""+
+//						        "}" +
+//						    "}";
+				        LOGGER.debug("Temp String " + tempString);
+				        // Works Too
+				        //String tempString = "{\"dataType\":{\"type\":\"text\",\"type\":\"text\"}}";
+				     
+				        ObjectMapper tempMapper = new ObjectMapper();
+					    DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
+				        
+				        LOGGER.debug("This is a test");
+				        LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());
+
+					    //DataResource dataResource = new DataResource();
+			            dataResource.dataId = uuidFactory.getUUID();
+			            LOGGER.debug("dataId" + dataResource.dataId);
+			            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
+			            pjr.apiKey = "pz-sc-ingest-raster-test";
+			            
+			            IngestJob ingestJob = new IngestJob();
+			            ingestJob.data=dataResource;
+			            ingestJob.host = true;
+			            pjr.jobType  = ingestJob;
+			            ProducerRecord<String,String> newProdRecord =
+			            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
+			
+			             producer.send(newProdRecord);
+			             LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
+			             StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+			
+			             // Create a text result and update status
+			             DataResult textResult = new DataResult(dataResource.dataId);
+			
+			             statusUpdate.setResult(textResult);
+			
+			             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+			
+			             producer.send(prodRecord);
+			             LOGGER.debug("prodRecord sent" + prodRecord.toString());
+		
+					} catch (JsonProcessingException jpe) {
+						jpe.printStackTrace();
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
+				}
+		}
+		public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
+			HttpEntity<String> requestEntity = new HttpEntity<String>(data,headers);
+			return requestEntity;
+		
+		}
+		
+	    /**
+	     * Check to see if there is a valid handleResult that was created.  If not,
+	     * then create a message with No Content
+	     * @param handleResult
+	     * @return handleResult - Created if the result is not valid
+	     */
+		private ResponseEntity<List<String>> checkResult(ResponseEntity<List<String>> handleResult) {
+			if (handleResult == null) {
+				handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
+				
+			}
+			
+			return handleResult;
+		}
+		
+		private MediaType createMediaType(String mimeType) {
+			MediaType mediaType;
+			String type, subtype;
+			StringBuffer sb = new StringBuffer(mimeType);
+			int index = sb.indexOf("/");
+			// If a slash was found then there is a type and subtype
+			if (index != -1) {
+				type = sb.substring(0, index);
+				
+			    subtype = sb.substring(index+1, mimeType.length());
+			    mediaType = new MediaType(type, subtype);
+			    LOGGER.debug("The type is="+type);
+				LOGGER.debug("The subtype="+subtype);
+			}
+			else {
+				// Assume there is just a type for the mime, no subtype
+				mediaType = new MediaType(mimeType);			
+			}
+			
+			return mediaType;
+		}
+		
+			
+		
 }

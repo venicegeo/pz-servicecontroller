@@ -608,7 +608,7 @@ public class ServiceMessageWorker implements Runnable {
 				    // END CALLING SERVICE CALL
 
 				   // String tempString = "{\"dataType\":{\"type\":\"raster\",\"location\":{\"type\":\"s3\",\"bucketName\":\"pz-svcs-prevgen\",\"fileName\":\"c4226046-e20d-450e-a2ae-04eec7bce5e0-NASA-GDEM-10km-colorized.tif\",\"domainName\":\"s3.amazonaws.com\",\"type\":\"s3\"}},\"metadata\":{\"name\":\"External Crop Raster Service\"}}";
-				    
+				   // DOES NOT WORK, BLOCKS FOR EVER
 //				   String tempString = "{" +
 //				        "\"dataType\": {" +
 //				           "\"type\": \"raster\","+
@@ -638,30 +638,32 @@ public class ServiceMessageWorker implements Runnable {
 //					        "}" +
 //					    "}";  
 			        // Does not Work - BLOCKS FOREVER
+			        String tempString = "{" +
+					        "\"dataType\": {" +
+					           "\"type\": \"raster\","+
+					        "\"location\": {"+
+				                "\"type\": \"s3\""+
+				             " }" +
+					        "},"+
+					        "\"metadata\": {" +
+					       "\"name\": \"External Crop Raster Service\""+
+					        "}" +
+					    "}";
+			        // Works
 //			        String tempString = "{" +
 //					        "\"dataType\": {" +
-//					           "\"type\": \"raster\","+
-//					           "\"location\": {"+
-//				                "\"type\": \"s3\""+
-//				             " }" +
+//					           "\"type\": \"raster\""+
 //					        "},"+
 //					        "\"metadata\": {" +
 //					            "\"name\": \"External Crop Raster Service\""+
 //					        "}" +
 //					    "}";
-			        String tempString = "{" +
-					        "\"dataType\": {" +
-					           "\"type\": \"raster\""+
-					        "},"+
-					        "\"metadata\": {" +
-					            "\"name\": \"External Crop Raster Service\""+
-					        "}" +
-					    "}";
 			        LOGGER.debug("Temp String " + tempString);
+			        // Works Too
 			        //String tempString = "{\"dataType\":{\"type\":\"text\",\"type\":\"text\"}}";
 			     
 			        ObjectMapper tempMapper = new ObjectMapper();
-				    DataResource dataResource = tempMapper.readValue(tempString, DataResource.class);
+				    DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
 			        
 			        LOGGER.debug("This is a test");
 			        LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());

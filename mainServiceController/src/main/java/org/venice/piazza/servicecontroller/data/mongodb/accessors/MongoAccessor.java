@@ -46,6 +46,7 @@ import com.mongodb.MongoTimeoutException;
 
 import model.service.SearchCriteria;
 import model.service.metadata.Service;
+import util.PiazzaLogger;
 
 /**
  * Class to store service information in MongoDB.  
@@ -63,6 +64,8 @@ public class MongoAccessor {
 	private String SERVICE_COLLECTION_NAME;
 	private MongoClient mongoClient;
 	
+	@Autowired
+	private PiazzaLogger logger;
 	@Autowired
 	private CoreServiceProperties coreServiceProperties;
 	
@@ -85,9 +88,12 @@ public class MongoAccessor {
 
 		try {
 			mongoClient = new MongoClient(new MongoClientURI(DATABASE_HOST));
-		} catch (UnknownHostException ex) {
+		} catch (Exception ex) {
 			LOGGER.error(ex.getMessage());
+			String message = String.format("Error Contacting Mongo Host %s: %s", DATABASE_HOST,ex.getMessage());
+			logger.log(message, PiazzaLogger.ERROR);
 			LOGGER.debug(ex.toString());
+
 		}
 	}
 
@@ -125,6 +131,8 @@ public class MongoAccessor {
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
 			LOGGER.error(ex.getMessage());
+			String message = String.format("Error Updating Mongo Service entry : %s",ex.getMessage());
+			logger.log(message, PiazzaLogger.ERROR);
 			ex.printStackTrace();
 			
 		}
@@ -162,7 +170,8 @@ public class MongoAccessor {
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
 			LOGGER.error(ex.getMessage());
-			ex.printStackTrace();
+			String message = String.format("Error Deleting Mongo Service entry : %s",ex.getMessage());
+			logger.log(message, PiazzaLogger.ERROR);
 			
 		}
 			
@@ -188,7 +197,9 @@ public class MongoAccessor {
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
 			LOGGER.error(ex.getMessage());
-			ex.printStackTrace();
+			String message = String.format("Error Saving Mongo Service entry : %s",ex.getMessage());
+			logger.log(message, PiazzaLogger.ERROR);
+			
 			
 		}
 			
@@ -218,7 +229,9 @@ public class MongoAccessor {
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
 			LOGGER.error(ex.getMessage());
-			ex.printStackTrace();
+			String message = String.format("Error Listing Mongo Service entries : %s",ex.getMessage());
+			logger.log(message, PiazzaLogger.ERROR);
+			
 			
 		}
 			

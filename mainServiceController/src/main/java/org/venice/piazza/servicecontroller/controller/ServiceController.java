@@ -182,9 +182,15 @@ public class ServiceController {
 			  
 			  LOGGER.debug("dataInput Type:" + entry.getValue().getType());			  
 		}
-		
-		
-	    ResponseEntity<String> result = esHandler.handle(data);
+		 ResponseEntity<String> result = null;
+		try {
+			result = esHandler.handle(data);
+		}
+		catch (Exception ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error("Service Controller Error",ex);
+			
+		}
 	    LOGGER.debug("Result is" + result);
 	    //TODO Remove System.out
 	    

@@ -1,7 +1,0 @@
-applications:
-- name: pz-servicecontroller
-  host: pz-servicecontroller
-  memory: 512M
-  instances: 1
-  timeout: 80
-  path: pz-servicecontroller.jar

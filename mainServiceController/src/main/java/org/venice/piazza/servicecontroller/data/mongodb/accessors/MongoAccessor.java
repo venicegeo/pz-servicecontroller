@@ -40,6 +40,7 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
@@ -58,7 +59,6 @@ import model.service.metadata.Service;
 @DependsOn("coreInitDestroy")
 public class MongoAccessor {
 	private String DATABASE_HOST;
-	private int DATABASE_PORT;
 	private String DATABASE_NAME;
 	private String SERVICE_COLLECTION_NAME;
 	private MongoClient mongoClient;
@@ -75,18 +75,16 @@ public class MongoAccessor {
 	private void initialize() {
 		// Initialize the MongoDB 
 		DATABASE_HOST = coreServiceProperties.getMongoHost();
-		DATABASE_PORT = coreServiceProperties.getMongoPort();
 		DATABASE_NAME = coreServiceProperties.getMongoDBName();
 		SERVICE_COLLECTION_NAME = coreServiceProperties.getMongoCollectionName();
 		LOGGER.debug("====================================================");
 		LOGGER.debug("DATABASE_HOST=" + DATABASE_HOST);
-		LOGGER.debug("DATABASE_PORT=" + DATABASE_PORT);
 		LOGGER.debug("DATABASE_NAME=" + DATABASE_NAME);
 		LOGGER.debug("SERVICE_COLLECTION_NAME=" + SERVICE_COLLECTION_NAME);
 		LOGGER.debug("====================================================");
 
 		try {
-			mongoClient = new MongoClient(DATABASE_HOST, DATABASE_PORT);
+			mongoClient = new MongoClient(new MongoClientURI(DATABASE_HOST));
 		} catch (UnknownHostException ex) {
 			LOGGER.error(ex.getMessage());
 			LOGGER.debug(ex.toString());

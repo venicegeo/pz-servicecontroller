@@ -50,7 +50,6 @@ import model.resource.UUID;
 
 	public class CoreUUIDGen {
 
-		private String uuidService;
 		private String uuidServiceHost;
 	
 		private final static Logger LOGGER = LoggerFactory.getLogger(CoreUUIDGen.class);
@@ -62,7 +61,6 @@ import model.resource.UUID;
 			LOGGER.info("CoreUUIDGen initialized");
 			template = new RestTemplate();
 			
-			uuidService = coreServiceProperties.getUuidservice();
 			uuidServiceHost = coreServiceProperties.getUuidservicehost();
 		}
 		/**
@@ -89,8 +87,7 @@ import model.resource.UUID;
 					
 					MultiValueMap<String, Integer> map = new LinkedMultiValueMap<String, Integer>();
 					   map.add("count", new Integer(count));
-					LOGGER.debug("Calling UUIDGen Service" + uuidServiceHost + uuidService);
-					ResponseEntity<UUID> uuid = template.postForEntity("http://" + uuidServiceHost + uuidService, map, UUID.class);
+					ResponseEntity<UUID> uuid = template.postForEntity("http://" + uuidServiceHost, map, UUID.class);
 					List <String> data = uuid.getBody().getData();
 					
 					if (data != null )

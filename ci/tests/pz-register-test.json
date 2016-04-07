@@ -14,7 +14,7 @@
 		{
 			"id": "64d28f3b-aead-c3bd-7944-b7769a10ee26",
 			"headers": "Content-Type: application/json\n",
-			"url": "http://pz-servicecontroller.cf.piazzageo.io/servicecontroller/registerService",
+			"url": "http://pz-servicecontroller.stage.geointservices.io/servicecontroller/registerService",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -25,11 +25,11 @@
 			"currentHelper": "normal",
 			"helperAttributes": {},
 			"time": 1455040518911,
-			"name": "http://pz-servicecontroller.cf.piazzageo.io/servicecontroller/registerService",
+			"name": "http://pz-servicecontroller.stage.geointservices.io/servicecontroller/registerService",
 			"description": "service registery",
 			"collectionId": "94407eb4-a953-df53-6d71-e9fef7a99dc7",
 			"responses": [],
-			"rawModeData": "{  \r\n   \"name\":\"The toLower Service\",  \r\n  \"description\":\"Service to convert string to lower case\",  \r\n  \"url\":\"http://pz-servicecontroller.cf.piazzageo.io/jumpstart/string/toLower\",  \r\n  \"method\":\"POST\",  \r\n  \"params\": [\"aString\"],  \r\n  \"responseMimeType\":\"application/json\"  \r\n}"
+			"rawModeData": "{  \r\n   \"name\":\"The toLower Service\",  \r\n  \"description\":\"Service to convert string to lower case\",  \r\n  \"url\":\"http://pz-servicecontroller.stage.geointservices.io/jumpstart/string/toLower\",  \r\n  \"method\":\"POST\",  \r\n  \"params\": [\"aString\"],  \r\n  \"responseMimeType\":\"application/json\"  \r\n}"
 		}
 	]
 }

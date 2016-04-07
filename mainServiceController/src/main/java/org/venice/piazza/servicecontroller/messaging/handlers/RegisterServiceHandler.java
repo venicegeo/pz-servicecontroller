@@ -64,7 +64,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
      */
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
-		coreLogger.log("Registering a Service", coreLogger.INFO);
+		//coreLogger.log("Registering a Service", coreLogger.INFO);
 		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the Service metadata
@@ -91,7 +91,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				
 			}
 			else {
-				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
+				//coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
 
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("RegisterServiceHandler handle didn't work");
@@ -112,7 +112,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 */
 	public String handle (Service sMetadata) {
 
-        coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
+        //coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
 
 		sMetadata.setId(uuidFactory.getUUID());
 		String result = accessor.save(sMetadata);
@@ -121,9 +121,9 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		// if so, then log
 		if (sMetadata.getName() != null)
 			if (result.length() > 0) {
-			    coreLogger.log("The service " + sMetadata.getName() + " was stored with id " + result, PiazzaLogger.INFO);
+			    //coreLogger.log("The service " + sMetadata.getName() + " was stored with id " + result, PiazzaLogger.INFO);
 			} else {
-			    coreLogger.log("The service " + sMetadata.getName() + " was NOT stored", PiazzaLogger.INFO);
+			    //coreLogger.log("The service " + sMetadata.getName() + " was NOT stored", PiazzaLogger.INFO);
 			}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

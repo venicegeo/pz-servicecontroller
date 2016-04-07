@@ -44,6 +44,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
+import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -125,7 +126,8 @@ public class ServiceController {
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String registerService(@RequestBody Service serviceMetadata) {
 
-		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
+		LOGGER.info("serviceMetadata received is " + serviceMetadata);
+		logger.log("serviceMetadata received is " + serviceMetadata, logger.INFO);
 	    String result = rsHandler.handle(serviceMetadata);
 	    
 	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
@@ -148,7 +150,8 @@ public class ServiceController {
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
 
-		LOGGER.debug("serviceMetadata received is " + serviceMetadata);
+		LOGGER.info("serviceMetadata received is " + serviceMetadata);
+		logger.log("serviceMetadata received is " + serviceMetadata, logger.INFO);
 	    String result = usHandler.handle(serviceMetadata);
 	    
 	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
@@ -171,8 +174,8 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
-		LOGGER.debug("executeService serviceId=" + data.getServiceId());
-		
+		LOGGER.info("executeService serviceId=" + data.getServiceId());
+		logger.log("executeService serviceId=" + data.getServiceId(), logger.INFO);
 
 		for (Map.Entry<String,DataType> entry : data.dataInputs.entrySet()) {
 			  String key = entry.getKey();
@@ -213,7 +216,8 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/describeService", method = RequestMethod.GET, headers="Accept=application/json")
 	public ResponseEntity<String> describeService(@ModelAttribute("resourceId") String resourceId) {
-		LOGGER.debug("describeService resourceId=" + resourceId);
+		LOGGER.info("describeService resourceId=" + resourceId);
+		logger.log("describeService resourceId=" + resourceId, logger.INFO);
 	
 			
 	    ResponseEntity<String> result = dsHandler.handle(resourceId);
@@ -237,7 +241,8 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/deleteService", method = RequestMethod.GET, headers="Accept=application/json")
 	public ResponseEntity<String> deleteService(@ModelAttribute("resourceId") String resourceId) {
-		LOGGER.debug("deleteService resourceId=" + resourceId);
+		LOGGER.info("deleteService resourceId=" + resourceId);
+		logger.log("deleteService resourceId=" + resourceId, logger.INFO);
 	
 			
 	    String result = dlHandler.handle(resourceId);
@@ -261,7 +266,8 @@ public class ServiceController {
 	public ResponseEntity<String> listService() {
 		
 	
-			
+		LOGGER.info("listService");
+		logger.log("listService", logger.INFO);
 	    ResponseEntity<String> result = lsHandler.handle();
 	    LOGGER.debug("Result is" + result);
 	    //TODO Remove System.out
@@ -284,6 +290,8 @@ public class ServiceController {
 	@RequestMapping(value = "/search", method = RequestMethod.POST, headers="Accept=application/json")
 	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
 
+		LOGGER.info("search " + " " + criteria.field + "->" + criteria.pattern);
+		logger.log("search " + " " + criteria.field + "->" + criteria.pattern,logger.INFO);
 	    ResponseEntity<String> result = ssHandler.handle(criteria);
 	    LOGGER.debug("Result is" + result);
 	    //TODO Remove System.out

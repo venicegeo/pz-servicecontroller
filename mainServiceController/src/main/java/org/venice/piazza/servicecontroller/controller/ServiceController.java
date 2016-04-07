@@ -188,6 +188,7 @@ public class ServiceController {
 		}
 		catch (Exception ex) {
 			LOGGER.error(ex.getMessage());
+			logger.log("Service Controller Error Caused Exception: "+ ex.getMessage(), logger.ERROR);
 			LOGGER.error("Service Controller Error",ex);
 			
 		}
@@ -352,14 +353,14 @@ public class ServiceController {
 			}
 			
 		} catch (JsonParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.error("convertInputMaptoDataType",e);
+			logger.log("convertInputMaptoDataType " + e.getMessage(), logger.ERROR);
 		} catch (JsonMappingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.error("convertInputMaptoDataType",e);
+			logger.log("convertInputMaptoDataType " + e.getMessage(), logger.ERROR);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.error("convertInputMaptoDataType",e);
+			logger.log("convertInputMaptoDataType " + e.getMessage(), logger.ERROR);
 		}
 		return retVal ;
 	}

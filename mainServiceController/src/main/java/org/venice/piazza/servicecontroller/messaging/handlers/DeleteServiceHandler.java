@@ -86,6 +86,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 			}
 			else {
 				LOGGER.error("No result response from the handler, something went wrong");
+				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("DeleteServiceHandler handle didn't work");
 				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.NOT_FOUND);
@@ -106,6 +107,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	public String handle (String resourceId) {
 
         coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
+        LOGGER.info("about to delete a registered service.");
      
         ObjectMapper mapper = new ObjectMapper();
 		
@@ -118,8 +120,10 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		LOGGER.debug("The result of the delete is " + result);
 		if (result.length() > 0) {
 		   coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);
+		   LOGGER.info("The service with id " + resourceId + " was deleted " + result);
 		} else {
 			   coreLogger.log("The service with id " + resourceId + " was NOT deleted", PiazzaLogger.INFO);
+			   LOGGER.info("The service with id " + resourceId + " was NOT deleted");
 		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

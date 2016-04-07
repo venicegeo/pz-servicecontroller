@@ -77,6 +77,7 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 		} catch (Exception ex) {
 			
 			LOGGER.error(ex.getMessage());
+			coreLogger.log("Could not retrieve resourceId " + serviceId, coreLogger.ERROR);
 			responseEntity = new ResponseEntity<String>("Could not retrieve resourceId " + serviceId, HttpStatus.NOT_FOUND);
 			
 		}

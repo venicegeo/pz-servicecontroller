@@ -76,6 +76,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 		} catch (Exception ex) {
 			
 			LOGGER.error(ex.getMessage());
+			coreLogger.log(ex.getMessage(), coreLogger.ERROR);
 			responseEntity = new ResponseEntity<String>("Could not retrieve list of service metadata " , HttpStatus.NOT_FOUND);
 			
 		}

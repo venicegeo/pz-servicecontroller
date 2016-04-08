@@ -278,6 +278,7 @@ public class MongoAccessor {
 	
 	/**
 	 * Returns a list of ResourceMetadata based on the criteria provided
+	 * @return List of matching services that match the search criteria
 	 */
 	public List <Service> search(SearchCriteria criteria) {
 		List <Service> results =  new ArrayList<Service>();
@@ -296,12 +297,40 @@ public class MongoAccessor {
 				while (cursor.hasNext()) {
 					results.add(cursor.next());
 				}
+
+				// Now try to look for the field in the resourceMetadata just to make sure
+				
+				query = new BasicDBObject("resourceMetadata." + criteria.field, pattern);
+				cursor = getServiceCollection().find(query);		
+				while (cursor.hasNext()) {
+					Service serviceItem = cursor.next();
+					if (!exists(results, serviceItem.getId()))
+						results.add(serviceItem);
+				}
+				
 			} catch( MongoTimeoutException mte) {
 				throw new ResourceAccessException("MongoDB instance not available.");
 			}
 		}
 
 		return results;
+	}
+	
+	/**
+	 * Checks to see if the result was already found
+	 * @return true - result is already there
+	 * false - result has not been found
+	 */
+	private boolean exists(List<Service>serviceResults, String id) {
+		boolean doesExist = false;
+		
+		for (int i = 0; i < serviceResults.size(); i++) {
+			String serviceItemId = serviceResults.get(i).getId();
+			if (serviceItemId.equals(id))
+				doesExist = true;
+		}
+		return doesExist;
+		
 	}
 
 }

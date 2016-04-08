@@ -54,7 +54,8 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	//TODO needs to be implemented
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
-		LOGGER.debug("Listing services");
+		LOGGER.info("Listing services");
+		coreLogger.log("listing service", coreLogger.INFO);
 		
         ArrayList<String> retVal = new ArrayList<String>();
         ResponseEntity<String> handleResourceReturn = handle();

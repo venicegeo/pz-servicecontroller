@@ -51,11 +51,14 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
 		LOGGER.debug("Search a service");
+		
 		SearchServiceJob job = (SearchServiceJob)jobRequest;
 
 		ArrayList<String> retVal = new ArrayList<String>();
 		// Get the criteria to use for the search
 		SearchCriteria criteria = job.data;
+		LOGGER.info("search " + " " + criteria.field + "->" + criteria.pattern);
+		coreLogger.log("search " + " " + criteria.field + "->" + criteria.pattern,coreLogger.INFO);
 		
         ResponseEntity<String> response = handle(criteria);
 

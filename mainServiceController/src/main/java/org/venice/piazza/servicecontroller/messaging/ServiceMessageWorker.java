@@ -193,10 +193,13 @@ public class ServiceMessageWorker implements Runnable {
 						
 					}
 					else if (jobType instanceof SearchServiceJob) {
+					    LOGGER.debug("SearchService Job Detected");
 						SearchServiceHandler ssHandler = new SearchServiceHandler(accessor, coreServiceProperties, coreLogger);
+					   
 						handleResult = ssHandler.handle(jobType);
+						 LOGGER.debug("Performed Search Job Detected");
 						handleResult = checkResult(handleResult);
-					   sendSearchStatus(job, handleUpdate, handleResult);
+					    sendSearchStatus(job, handleUpdate, handleResult);
 					}
 				}// if job not null
 			} catch (IOException ex) {
@@ -336,6 +339,7 @@ public class ServiceMessageWorker implements Runnable {
 	 */
 	
 	private void sendSearchStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+		LOGGER.info("sendSearchStatus to jobmanager");
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
@@ -348,8 +352,8 @@ public class ServiceMessageWorker implements Runnable {
 			su.setResult(textResult);
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
 				
-				LOGGER.debug("THe STATUS is " + su.getStatus());
-				LOGGER.debug("THe RESULT is " + su.getResult());
+				LOGGER.info("THe STATUS is " + su.getStatus());
+				LOGGER.info("THe RESULT is " + su.getResult());
 	
 				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
 				
@@ -359,6 +363,26 @@ public class ServiceMessageWorker implements Runnable {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(stringList.get(0), "No Results returned from the search. HTTP Status:" + handleResult.getStatusCode().toString()));
 	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+			}
+		}else {
+			LOGGER.info("There are no search results that match");
+			// Create a text result and update status
+			StatusUpdate su = new StatusUpdate();
+			
+			su.setStatus(StatusUpdate.STATUS_SUCCESS);
+			
+			
+			TextResult textResult = new TextResult();
+				textResult.setText("");
+			su.setResult(textResult);
+			if (handleResult.getStatusCode() == HttpStatus.OK) {
+				
+				LOGGER.info("THe STATUS is " + su.getStatus());
+				LOGGER.info("THe RESULT is " + su.getResult());
+	
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				
+				producer.send(prodRecord);
 			}
 		}
 	}

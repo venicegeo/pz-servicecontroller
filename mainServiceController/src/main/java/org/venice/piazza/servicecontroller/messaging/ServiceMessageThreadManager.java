@@ -215,9 +215,6 @@ public class ServiceMessageThreadManager {
 							if (job != null) {
 								PiazzaJobType jobType = job.getJobType();
 
-								ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
-								ExecuteServiceData esData = jobItem.data;
-								DataType dataType= esData.getDataOutput();
 
 								ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
 															callback,coreServiceProperties, uuidFactory, coreLogger, job);

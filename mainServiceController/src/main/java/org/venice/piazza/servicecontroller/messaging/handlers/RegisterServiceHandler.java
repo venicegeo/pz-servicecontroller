@@ -91,8 +91,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				
 			}
 			else {
-				//coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
-
+				LOGGER.error("No result response from the handler, something went wrong");
+				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("RegisterServiceHandler handle didn't work");
 				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
@@ -101,7 +101,13 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			}
 		}
 		else {
-			return null;
+			LOGGER.error("No RegisterServiceJob");
+			coreLogger.log("No RegisterServiceJob", coreLogger.ERROR);
+			ArrayList<String> errorList = new ArrayList<String>();
+			errorList.add("No RegisterServiceJob");
+			ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
+			
+			return errorResult;
 		}
 	}//handle
 	

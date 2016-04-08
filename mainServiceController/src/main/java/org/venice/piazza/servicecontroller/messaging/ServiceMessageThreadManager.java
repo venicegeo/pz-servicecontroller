@@ -215,28 +215,19 @@ public class ServiceMessageThreadManager {
 							if (job != null) {
 								PiazzaJobType jobType = job.getJobType();
 
-							
-								if (jobType instanceof ExecuteServiceJob) {
-						
-									ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
-									ExecuteServiceData esData = jobItem.data;
-									DataType dataType= esData.getDataOutput();
-									if ((dataType != null) && (dataType instanceof RasterDataType)) {
-										// Call special method to call and send
-										handleRasterType(jobItem, job);
-									}
-								}
-								else {
-							
-									ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
-																callback,coreServiceProperties, uuidFactory, coreLogger, job);
-		
-		
-									Future<?> workerFuture = executor.submit(serviceMessageWorker);
-		
-									// Keep track of all Running Jobs
-									runningServiceRequests.put(consumerRecord.key(), workerFuture);
-								}
+								ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
+								ExecuteServiceData esData = jobItem.data;
+								DataType dataType= esData.getDataOutput();
+
+								ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
+															callback,coreServiceProperties, uuidFactory, coreLogger, job);
+	
+	
+								Future<?> workerFuture = executor.submit(serviceMessageWorker);
+	
+								// Keep track of all Running Jobs
+								runningServiceRequests.put(consumerRecord.key(), workerFuture);
+								
 							}
 
 						} catch (Exception ex) {
@@ -460,7 +451,7 @@ public class ServiceMessageThreadManager {
 			            dataResource.dataId = uuidFactory.getUUID();
 			            LOGGER.debug("dataId" + dataResource.dataId);
 			            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
-			            pjr.apiKey = "pz-sc-ingest-raster-test";
+			            pjr.userName = "pz-sc-ingest-raster-test";
 			            
 			            IngestJob ingestJob = new IngestJob();
 			            ingestJob.data=dataResource;

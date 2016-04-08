@@ -466,7 +466,7 @@ public class ServiceMessageWorker implements Runnable {
         // Now produce a new record
         PiazzaJobRequest pjr  =  new PiazzaJobRequest();
         // TODO read from properties file
-        pjr.apiKey = "pz-sc-ingest-test";
+        pjr.userName = "pz-sc-ingest-test";
         IngestJob ingestJob = new IngestJob();
         DataResource data = new DataResource();
         //TODO  MML UUIDGen
@@ -604,64 +604,7 @@ public class ServiceMessageWorker implements Runnable {
 
 				    String serviceControlString = response.getBody();
 			        LOGGER.debug("Service Control String" + serviceControlString); 
-			       
-				    // END CALLING SERVICE CALL
 
-				   // String tempString = "{\"dataType\":{\"type\":\"raster\",\"location\":{\"type\":\"s3\",\"bucketName\":\"pz-svcs-prevgen\",\"fileName\":\"c4226046-e20d-450e-a2ae-04eec7bce5e0-NASA-GDEM-10km-colorized.tif\",\"domainName\":\"s3.amazonaws.com\",\"type\":\"s3\"}},\"metadata\":{\"name\":\"External Crop Raster Service\"}}";
-				   // DOES NOT WORK, BLOCKS FOR EVER
-//				   String tempString = "{" +
-//				        "\"dataType\": {" +
-//				           "\"type\": \"raster\","+
-//				            "\"location\": {"+
-//				                "\"type\": \"s3\","+
-//				                "\"bucketName\": \"pz-svcs-prevgen\","+
-//				                "\"fileName\": \"27d26a9b-3f42-453e-914d-05d4cb6a4445-NASA-GDEM-10km-colorized.tif\"," +
-//				               "\"domainName\": \"s3.amazonaws.com\""+
-//				           " },"+
-//				           "\"type\": \"raster\""+
-//				        "},"+
-//				        "\"metadata\": {" +
-//				            "\"name\": \"External Crop Raster Service\""+
-//				        "}" +
-//				    "}";  
-			        // Does not Work BLOCKS FOREVER
-//			        String tempString = "{" +
-//					        "\"dataType\": {" +
-//					           "\"type\": \"raster\","+
-//					           "\"location\": {"+
-//				                "\"type\": \"s3\","+
-//				                "\"bucketName\": \"pz-svcs-prevgen\""+
-//				             " }" +
-//					        "},"+
-//					        "\"metadata\": {" +
-//					            "\"name\": \"External Crop Raster Service\""+
-//					        "}" +
-//					    "}";  
-			        // Does not Work - BLOCKS FOREVER
-			        String tempString = "{" +
-					        "\"dataType\": {" +
-					           "\"type\": \"raster\","+
-					        "\"location\": {"+
-				                "\"type\": \"s3\""+
-				             " }" +
-					        "},"+
-					        "\"metadata\": {" +
-					       "\"name\": \"External Crop Raster Service\""+
-					        "}" +
-					    "}";
-			        // Works
-//			        String tempString = "{" +
-//					        "\"dataType\": {" +
-//					           "\"type\": \"raster\""+
-//					        "},"+
-//					        "\"metadata\": {" +
-//					            "\"name\": \"External Crop Raster Service\""+
-//					        "}" +
-//					    "}";
-			        LOGGER.debug("Temp String " + tempString);
-			        // Works Too
-			        //String tempString = "{\"dataType\":{\"type\":\"text\",\"type\":\"text\"}}";
-			     
 			        ObjectMapper tempMapper = new ObjectMapper();
 				    DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
 			        
@@ -672,7 +615,7 @@ public class ServiceMessageWorker implements Runnable {
 		            dataResource.dataId = uuidFactory.getUUID();
 		            LOGGER.debug("dataId" + dataResource.dataId);
 		            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
-		            pjr.apiKey = "pz-sc-ingest-raster-test";
+		            pjr.userName = "pz-sc-ingest-raster-test";
 		            
 		            IngestJob ingestJob = new IngestJob();
 		            ingestJob.data=dataResource;

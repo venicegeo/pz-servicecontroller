@@ -466,7 +466,7 @@ public class ServiceMessageWorker implements Runnable {
         // Now produce a new record
         PiazzaJobRequest pjr  =  new PiazzaJobRequest();
         // TODO read from properties file
-        pjr.apiKey = "pz-sc-ingest-test";
+        pjr.userName = "pz-sc-ingest-test";
         IngestJob ingestJob = new IngestJob();
         DataResource data = new DataResource();
         //TODO  MML UUIDGen
@@ -615,7 +615,7 @@ public class ServiceMessageWorker implements Runnable {
 		            dataResource.dataId = uuidFactory.getUUID();
 		            LOGGER.debug("dataId" + dataResource.dataId);
 		            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
-		            pjr.apiKey = "pz-sc-ingest-raster-test";
+		            pjr.userName = "pz-sc-ingest-raster-test";
 		            
 		            IngestJob ingestJob = new IngestJob();
 		            ingestJob.data=dataResource;

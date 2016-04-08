@@ -81,6 +81,10 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 				   		criteria.getField() + 
 				   		" and search criteria " + 
 				   		criteria.getPattern(), PiazzaLogger.INFO);
+		   LOGGER.info("No results were returned searching for field " + 
+				   		criteria.getField() + 
+				   		" and search criteria " + 
+				   		criteria.getPattern());
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.NO_CONTENT);
 
 		}
@@ -91,6 +95,7 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 			} catch (JsonProcessingException jpe) {
 				coreLogger.log("There was a problem generating the Json response", PiazzaLogger.ERROR);
+				LOGGER.error("There was a problem generating the Json response");
 			}
 		}
 

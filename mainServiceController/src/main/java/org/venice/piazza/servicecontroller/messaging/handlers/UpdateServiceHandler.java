@@ -84,6 +84,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 			}
 			else {
 				LOGGER.error("No result response from the handler, something went wrong");
+				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("UpdateServiceHandler handle didn't work");
 				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
@@ -104,14 +105,17 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	public String handle (Service sMetadata) {
 
         coreLogger.log("about to update a registered service.", PiazzaLogger.INFO);
+        LOGGER.info("about to update a registered service.");
 
 		
 		String result = accessor.update(sMetadata);
 		LOGGER.debug("The result of the update is " + result);
 		if (result.length() > 0) {
 		   coreLogger.log("The service " + sMetadata.getName() + " was updated with id " + result, PiazzaLogger.INFO);
+		   LOGGER.info("The service " + sMetadata.getName() + " was updated with id " + result);
 		} else {
 			   coreLogger.log("The service " + sMetadata.getName() + " was NOT updated", PiazzaLogger.INFO);
+			   LOGGER.info("The service " + sMetadata.getName() + " was NOT updated");
 		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

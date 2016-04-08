@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -97,12 +98,12 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
 		
 		LOGGER.debug("Executing a service");
+		ArrayList<String> resultList = new ArrayList<String>();
 		if (job != null)  {
 			// Get the ResourceMetadata
 			ExecuteServiceData esData = job.data;
 
 			ResponseEntity<String> handleResult = handle(esData);
-			ArrayList<String> resultList = new ArrayList<String>();
 			resultList.add(handleResult.getBody());
 			ResponseEntity<List<String>> result = new ResponseEntity<List<String>>(resultList,handleResult.getStatusCode());
 			
@@ -114,10 +115,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		
 		}
 		else {
-			return null;
+			LOGGER.error("Job is null" );
+			coreLogger.log("Job is null", coreLogger.ERROR);
+			resultList.add("Job is null");
+			return new ResponseEntity<List<String>>(resultList,HttpStatus.BAD_REQUEST);
 		}
 		
 	}//handle
+	
 	
 	/**
 	 * Handles requests to execute a service.  T
@@ -130,6 +135,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		ResponseEntity<String> responseEntity = null;
 		// Get the id from the data
 		String serviceId = data.getServiceId();
+		//Accessor throws exception if can't find service
 		Service sMetadata = accessor.getServiceById(serviceId);
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
@@ -163,14 +169,20 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				}
 				else {
 					LOGGER.error("URL parameter value has to be specified in TextDataType" );
-					//TODO make ResponseEntity with error
-					return null;
+					coreLogger.log("URL parameter value has to be specified in TextDataType", coreLogger.ERROR);
+					return new ResponseEntity<String>("URL parameter value has to be specified in TextDataType",HttpStatus.BAD_REQUEST);
+					
 				}
 			}
 			else if (entry.getValue() instanceof BodyDataType){
 				BodyDataType bdt = (BodyDataType)entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
+			    if (requestMimeType == null) {
+			    	LOGGER.error("Body mime type not specified" );
+					coreLogger.log("Body mime type not specified", coreLogger.ERROR);
+					return new ResponseEntity<String>("Body mime type not specified",HttpStatus.BAD_REQUEST);
+			    }
 			}
 			//Default behavior for other inputs, put them in list of objects
 			// which are transformed into JSON consistent with default requestMimeType
@@ -180,15 +192,17 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		}
 		if (postString.length() > 0 && postObjects.size() > 0) {
 			LOGGER.error("String Input not consistent with other Inputs");
-			return null;
+			coreLogger.log("String Input not consistent with other Inputs", coreLogger.ERROR);
+			return new ResponseEntity<String>("String Input not consistent with other Inputs",HttpStatus.BAD_REQUEST);
 		}
 		else if (postObjects.size() > 0){
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				postString = mapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				LOGGER.error(e.getMessage());
+				coreLogger.log(e.getMessage(),coreLogger.ERROR);
+				return new ResponseEntity<String>(e.getMessage(),HttpStatus.BAD_REQUEST);
 			}
 		}
 		URI url = URI.create(builder.toUriString());

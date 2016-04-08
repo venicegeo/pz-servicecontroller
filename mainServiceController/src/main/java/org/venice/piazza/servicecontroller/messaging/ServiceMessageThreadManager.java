@@ -451,7 +451,7 @@ public class ServiceMessageThreadManager {
 			            dataResource.dataId = uuidFactory.getUUID();
 			            LOGGER.debug("dataId" + dataResource.dataId);
 			            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
-			            pjr.apiKey = "pz-sc-ingest-raster-test";
+			            pjr.userName = "pz-sc-ingest-raster-test";
 			            
 			            IngestJob ingestJob = new IngestJob();
 			            ingestJob.data=dataResource;

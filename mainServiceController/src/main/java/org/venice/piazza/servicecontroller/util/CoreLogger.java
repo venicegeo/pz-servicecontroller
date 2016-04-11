@@ -102,7 +102,9 @@ public class CoreLogger {
 				
 				logRequest.setAddress(address);
 				logRequest.setSeverity(severity);
-				logRequest.setTime(currentDate);
+                                // TODO Need to remove this class 
+
+				//logRequest.
 				logRequest.setService(appname);
 				logRequest.setMessage(logMessage);
 				// Now see if the object can be written to a string, if it

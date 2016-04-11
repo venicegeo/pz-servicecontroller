@@ -132,6 +132,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * @return the Response as a String
 	 */
 	public ResponseEntity<String> handle (ExecuteServiceData data) {
+		LOGGER.info("executeService serviceId=" + data.getServiceId());
+		coreLogger.log("executeService serviceId=" + data.getServiceId(), coreLogger.INFO);
 		ResponseEntity<String> responseEntity = null;
 		// Get the id from the data
 		String serviceId = data.getServiceId();

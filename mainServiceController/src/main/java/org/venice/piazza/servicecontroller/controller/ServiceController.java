@@ -126,8 +126,7 @@ public class ServiceController {
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String registerService(@RequestBody Service serviceMetadata) {
 
-		LOGGER.info("serviceMetadata received is " + serviceMetadata);
-		logger.log("serviceMetadata received is " + serviceMetadata, logger.INFO);
+		
 	    String result = rsHandler.handle(serviceMetadata);
 	    
 	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
@@ -150,8 +149,7 @@ public class ServiceController {
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
 
-		LOGGER.info("serviceMetadata received is " + serviceMetadata);
-		logger.log("serviceMetadata received is " + serviceMetadata, logger.INFO);
+		
 	    String result = usHandler.handle(serviceMetadata);
 	    
 	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
@@ -174,8 +172,7 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers="Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
-		LOGGER.info("executeService serviceId=" + data.getServiceId());
-		logger.log("executeService serviceId=" + data.getServiceId(), logger.INFO);
+		
 
 		for (Map.Entry<String,DataType> entry : data.dataInputs.entrySet()) {
 			  String key = entry.getKey();
@@ -216,8 +213,7 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/describeService", method = RequestMethod.GET, headers="Accept=application/json")
 	public ResponseEntity<String> describeService(@ModelAttribute("resourceId") String resourceId) {
-		LOGGER.info("describeService resourceId=" + resourceId);
-		logger.log("describeService resourceId=" + resourceId, logger.INFO);
+		
 	
 			
 	    ResponseEntity<String> result = dsHandler.handle(resourceId);

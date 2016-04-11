@@ -68,11 +68,15 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
      */
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
+		
+		
 		LOGGER.debug("Updating a service");
 		DeleteServiceJob job = (DeleteServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the ResourceMetadata
 			String resourceId = job.serviceID;
+			LOGGER.info("describeService serviceId=" + resourceId);
+			coreLogger.log("describeService serviceId=" + resourceId, coreLogger.INFO);
 
 			String result = handle(resourceId);
 			if (result.length() > 0) {

@@ -55,7 +55,8 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 	//TODO needs to be implemented
 	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
 		
-		LOGGER.debug("Describing a service");
+		LOGGER.info("Describing a service");
+		coreLogger.log("Describing a service", coreLogger.INFO);
 		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob)jobRequest;
         ArrayList<String> retVal = new ArrayList<String>();
         ResponseEntity<String> handleResourceReturn = handle(job.serviceID);

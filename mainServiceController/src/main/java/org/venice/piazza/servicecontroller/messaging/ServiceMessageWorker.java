@@ -493,11 +493,25 @@ public class ServiceMessageWorker implements Runnable {
         pjr.userName = "pz-sc-ingest-test";
         IngestJob ingestJob = new IngestJob();
         DataResource data = new DataResource();
-        //TODO  MML UUIDGen
-        data.dataId = uuidFactory.getUUID();
-        TextDataType tr = new TextDataType();
-        tr.content = serviceControlString;
-        data.dataType = tr;
+        ObjectMapper tempMapper = new ObjectMapper(); 
+        try {
+        	
+        
+        	 data = tempMapper.readValue(serviceControlString, DataResource.class);
+        
+        } catch (JsonProcessingException jpe) {
+			jpe.printStackTrace();
+			//TODO  MML UUIDGen
+	        data.dataId = uuidFactory.getUUID();
+	        TextDataType tr = new TextDataType();
+	        tr.content = serviceControlString;
+	        data.dataType = tr;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+        
+        LOGGER.info("The content of the result is " + serviceControlString);
+        
         ingestJob.data=data;
         ingestJob.host = true;
 
@@ -511,7 +525,7 @@ public class ServiceMessageWorker implements Runnable {
 
         StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 
-    // Create a text result and update status
+        // Create a text result and update status
         DataResult textResult = new DataResult(data.dataId);
 
         statusUpdate.setResult(textResult);

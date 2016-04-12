@@ -159,14 +159,18 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			Entry<String,DataType> entry = it.next();
 			
 			String inputName = entry.getKey();
+			LOGGER.debug(" parameter is "  + inputName);
 			if (parameterNames.contains(inputName)) {
 				if (entry.getValue() instanceof TextDataType) {
 					String paramValue = ((TextDataType)entry.getValue()).getContent();
 					if (inputName.length() == 0) {
+						LOGGER.debug("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata());
+
 						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
 					}
 					else {
 						 builder.queryParam(inputName,paramValue);
+						 LOGGER.debug("Input Name=" + inputName + " paramValue=" + paramValue);
 					}
 				}
 				else {
@@ -192,6 +196,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				postObjects.put(inputName, entry.getValue());
 			}
 		}
+		
+		LOGGER.debug("Bulder is " + builder.toString());
 		if (postString.length() > 0 && postObjects.size() > 0) {
 			LOGGER.error("String Input not consistent with other Inputs");
 			coreLogger.log("String Input not consistent with other Inputs", coreLogger.ERROR);

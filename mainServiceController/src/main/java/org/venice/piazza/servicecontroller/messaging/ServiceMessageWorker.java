@@ -488,6 +488,7 @@ public class ServiceMessageWorker implements Runnable {
         ObjectMapper mapper = new ObjectMapper();
         
         LOGGER.debug("The result provided from service is " + handleResult.getBody());
+        LOGGER.debug("==============================================================");
         String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
         LOGGER.debug("The service controller string is " + serviceControlString);
         // Now produce a new record

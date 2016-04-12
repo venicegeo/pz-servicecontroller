@@ -104,6 +104,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			ExecuteServiceData esData = job.data;
 
 			ResponseEntity<String> handleResult = handle(esData);
+			LOGGER.debug("Result back from service" + handleResult.getBody());
 			resultList.add(handleResult.getBody());
 			ResponseEntity<List<String>> result = new ResponseEntity<List<String>>(resultList,handleResult.getStatusCode());
 			

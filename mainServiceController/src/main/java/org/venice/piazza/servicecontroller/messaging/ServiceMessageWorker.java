@@ -486,22 +486,23 @@ public class ServiceMessageWorker implements Runnable {
 	 */
 	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException, IOException {
         ObjectMapper mapper = new ObjectMapper();
+        
+        LOGGER.debug("The result provided from service is " + handleResult.getBody());
         String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
+        LOGGER.debug("The service controller string is " + serviceControlString);
         // Now produce a new record
         PiazzaJobRequest pjr  =  new PiazzaJobRequest();
         // TODO read from properties file
-        pjr.userName = "pz-sc-ingest-test";
+        pjr.userName = "pz-sc-ingest";
         IngestJob ingestJob = new IngestJob();
         DataResource data = new DataResource();
         ObjectMapper tempMapper = new ObjectMapper(); 
         try {
         	
-        
         	 data = tempMapper.readValue(serviceControlString, DataResource.class);
         
         } catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
-			//TODO  MML UUIDGen
 	        data.dataId = uuidFactory.getUUID();
 	        TextDataType tr = new TextDataType();
 	        tr.content = serviceControlString;

@@ -513,7 +513,7 @@ public class ServiceMessageWorker implements Runnable {
 			ex.printStackTrace();
 		}
         
-        LOGGER.info("The content of the result is " + serviceControlString);
+        //LOGGER.info("The content of the result is " + serviceControlString);
         
         ingestJob.data=data;
         ingestJob.host = true;

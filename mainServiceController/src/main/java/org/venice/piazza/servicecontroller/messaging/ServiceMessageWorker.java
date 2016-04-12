@@ -497,6 +497,8 @@ public class ServiceMessageWorker implements Runnable {
         pjr.userName = "pz-sc-ingest";
         IngestJob ingestJob = new IngestJob();
         DataResource data = new DataResource();
+        data.dataId = uuidFactory.getUUID();
+
         ObjectMapper tempMapper = new ObjectMapper(); 
         try {
         	
@@ -504,7 +506,6 @@ public class ServiceMessageWorker implements Runnable {
         
         } catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
-	        data.dataId = uuidFactory.getUUID();
 	        TextDataType tr = new TextDataType();
 	        tr.content = serviceControlString;
 	        data.dataType = tr;
@@ -520,10 +521,12 @@ public class ServiceMessageWorker implements Runnable {
         pjr.jobType  = ingestJob;
 
         // TODO Generate 123-456 with UUIDGen
+        String jobId = uuidFactory.getUUID();
         ProducerRecord<String,String> newProdRecord =
-        JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
-
+        JobMessageFactory.getRequestJobMessage(pjr, jobId);
+      
         producer.send(newProdRecord);
+        coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(), data.getDataType().getType()), PiazzaLogger.INFO);
 
         StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 

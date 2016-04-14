@@ -25,6 +25,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.data.DataType;
@@ -34,6 +35,7 @@ import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
 import model.job.type.SearchServiceJob;
+import model.job.type.UpdateServiceJob;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Format;
@@ -276,5 +278,137 @@ public class HandlerLoggingTest {
 	     assertTrue(logString.contains("serviceMetadata received"));
 		
 	}
+	
+	@Test
+	public void TestUpdateServiceHandlerSuccessLogging() {
+		UUIDFactory uuidFactory = mock(UUIDFactory.class);
+	    when(uuidFactory.getUUID()).thenReturn("NoDoz");
+		template = mock(RestTemplate.class);
+		try {
+			whenNew(RestTemplate.class).withNoArguments().thenReturn(template);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		rm = new ResourceMetadata();
+		rm.name = "toUpper Params";
+		rm.description = "Service to convert string to uppercase";
+		rm.url = "http://localhost:8082/string/toUpper";
+		rm.method = "POST";
+		service.setResourceMetadata(rm);
+		service.setId("8");
+		ParamDataItem pitem = new ParamDataItem();
+		DataType dataType1 = new URLParameterDataType();
+		pitem.setDataType(dataType1);
+		pitem.setName("aString");
+		pitem.setMinOccurs(1);
+		pitem.setMaxOccurs(1);
+		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
+		inputs.add(pitem);
+		service.setInputs(inputs);
+		ParamDataItem output1 = new ParamDataItem();
+		TextDataType dataType3 = new TextDataType();
+		output1.setDataType(dataType3);
+		output1.setMaxOccurs(1);
+		output1.setMinOccurs(1);
+		output1.setName("Upper Case message");
+		
+		Format format1 = new Format();
+		format1.setMimeType("application/json");
+		List<Format> formats1 = new ArrayList<Format>();
+		formats1.add(format1);
+		output1.setFormats(formats1);
+		MetadataType outMetadata = new MetadataType();
+		outMetadata.setTitle("Upper Case Text");
+		outMetadata.setAbout("ConvertToUpperCase");
+		output1.setMetadata(outMetadata);
+		List<ParamDataItem> outputs = new ArrayList<ParamDataItem>();
+		outputs.add(output1);
+		service.setOutputs(outputs);
+		UpdateServiceJob rjob = new UpdateServiceJob();
+		rjob.data = service;
+		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,props,logger,uuidFactory);
+		
+		doAnswer(new Answer() {
+			
+		    public Object answer(InvocationOnMock invocation) {
+		
+		        Object[] args = invocation.getArguments();
+		        logString = args[0].toString();
+		        return null;
+		
+		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+	
+		when(mockMongo.update(service)).thenReturn("8");
+	     handler.handle(rjob);
+	     assertTrue(logString.contains("was updated"));
+		
+	}
+	@Test
+	public void TestUpdateServiceHandlerFailLogging() {
+		UUIDFactory uuidFactory = mock(UUIDFactory.class);
+	    when(uuidFactory.getUUID()).thenReturn("NoDoz");
+		template = mock(RestTemplate.class);
+		try {
+			whenNew(RestTemplate.class).withNoArguments().thenReturn(template);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		rm = new ResourceMetadata();
+		rm.name = "toUpper Params";
+		rm.description = "Service to convert string to uppercase";
+		rm.url = "http://localhost:8082/string/toUpper";
+		rm.method = "POST";
+		service.setResourceMetadata(rm);
+		service.setId("8");
+		ParamDataItem pitem = new ParamDataItem();
+		DataType dataType1 = new URLParameterDataType();
+		pitem.setDataType(dataType1);
+		pitem.setName("aString");
+		pitem.setMinOccurs(1);
+		pitem.setMaxOccurs(1);
+		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
+		inputs.add(pitem);
+		service.setInputs(inputs);
+		ParamDataItem output1 = new ParamDataItem();
+		TextDataType dataType3 = new TextDataType();
+		output1.setDataType(dataType3);
+		output1.setMaxOccurs(1);
+		output1.setMinOccurs(1);
+		output1.setName("Upper Case message");
+		
+		Format format1 = new Format();
+		format1.setMimeType("application/json");
+		List<Format> formats1 = new ArrayList<Format>();
+		formats1.add(format1);
+		output1.setFormats(formats1);
+		MetadataType outMetadata = new MetadataType();
+		outMetadata.setTitle("Upper Case Text");
+		outMetadata.setAbout("ConvertToUpperCase");
+		output1.setMetadata(outMetadata);
+		List<ParamDataItem> outputs = new ArrayList<ParamDataItem>();
+		outputs.add(output1);
+		service.setOutputs(outputs);
+		UpdateServiceJob rjob = new UpdateServiceJob();
+		rjob.data = service;
+		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,props,logger,uuidFactory);
+		
+		doAnswer(new Answer() {
+			
+		    public Object answer(InvocationOnMock invocation) {
+		
+		        Object[] args = invocation.getArguments();
+		        logString = args[0].toString();
+		        return null;
+		
+		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+	
+		when(mockMongo.update(service)).thenReturn("");
+	     handler.handle(rjob);
+	     assertTrue(logString.contains("something went wrong"));
+		
+	}
+
 
 }

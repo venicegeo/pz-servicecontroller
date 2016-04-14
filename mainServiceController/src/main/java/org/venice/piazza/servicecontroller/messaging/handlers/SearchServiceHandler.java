@@ -76,7 +76,7 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 	public ResponseEntity<String> handle (SearchCriteria criteria) {
 		ResponseEntity<String> responseEntity = null;
         String result = null;
-        coreLogger.log("About to search using criteria " + criteria, PiazzaLogger.INFO);
+        coreLogger.log("About to search using criteria" + criteria, PiazzaLogger.INFO);
 
 		List <Service> results = accessor.search(criteria);
 		if (results.size() <= 0) {
@@ -97,6 +97,7 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 			result = mapper.writeValueAsString(results);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 			} catch (JsonProcessingException jpe) {
+				//This should never happen, but still have to catch it
 				coreLogger.log("There was a problem generating the Json response", PiazzaLogger.ERROR);
 				LOGGER.error("There was a problem generating the Json response");
 			}

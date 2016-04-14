@@ -167,6 +167,7 @@ public class HandlerLoggingTest {
 		criteria.setField("description");
 		criteria.setPattern("*bird*");
 		sjob.data = criteria;
+		logString = "";
 		
 		SearchServiceHandler searchHandler = new SearchServiceHandler(mockMongo,props,logger);
 		doAnswer(new Answer() {
@@ -178,6 +179,36 @@ public class HandlerLoggingTest {
 				        return null;
 				
 		}}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+		ArrayList<Service> services = new ArrayList<Service>();
+		services.add(service);
+		when(mockMongo.search(criteria)).thenReturn(services);
+		searchHandler.handle(sjob);
+		assertTrue(logString.contains("About to search using criteria"));
+				
+	}
+	@Test
+	public void TestSearchServiceHandlerNoResultsLogging() {
+		
+		SearchServiceJob sjob = new SearchServiceJob();
+		SearchCriteria criteria = new SearchCriteria();
+		criteria.setField("description");
+		criteria.setPattern("*bird*");
+		sjob.data = criteria;
+		logString = "";
+		
+		SearchServiceHandler searchHandler = new SearchServiceHandler(mockMongo,props,logger);
+		doAnswer(new Answer() {
+					
+				    public Object answer(InvocationOnMock invocation) {
+				
+				        Object[] args = invocation.getArguments();
+				        logString = args[0].toString();
+				        return null;
+				
+		}}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+		when(mockMongo.search(criteria)).thenReturn(new ArrayList<Service>());
+		searchHandler.handle(sjob);
+		assertTrue(logString.contains("No results"));
 				
 	}
 

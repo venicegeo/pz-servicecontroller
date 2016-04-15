@@ -22,7 +22,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
+import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
@@ -33,6 +35,8 @@ import model.data.type.BodyDataType;
 import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
+import model.job.type.DescribeServiceMetadataJob;
+import model.job.type.ListServicesJob;
 import model.job.type.RegisterServiceJob;
 import model.job.type.SearchServiceJob;
 import model.job.type.UpdateServiceJob;
@@ -212,6 +216,92 @@ public class HandlerLoggingTest {
 		searchHandler.handle(sjob);
 		assertTrue(logString.contains("No results"));
 				
+	}
+	
+	@Test
+	public void TestDescribeServiceHandlerSuccessLogging() {
+		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
+		dsmJob.serviceID = "8";
+		DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
+		doAnswer(new Answer() {
+			
+		    public Object answer(InvocationOnMock invocation) {
+		
+		        Object[] args = invocation.getArguments();
+		        logString = args[0].toString();
+		        return null;
+		
+		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+		 when(mockMongo.getServiceById("8")).thenReturn(service);
+		 handler.handle(dsmJob);
+		 assertTrue(logString.contains("Describing a service"));
+		 
+		
+	}
+	
+	@Test
+	public void TestListServiceHandlerFailLogging() {
+		ListServicesJob lsj = new ListServicesJob();
+		ListServiceHandler handler = new ListServiceHandler(mockMongo,props,logger);
+		ArrayList<Service> services = new ArrayList<Service>();
+		services.add(service);
+		doAnswer(new Answer() {
+			
+		    public Object answer(InvocationOnMock invocation) {
+		
+		        Object[] args = invocation.getArguments();
+		        logString = args[0].toString();
+		        return null;
+		
+		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+		NullPointerException ex = new NullPointerException("Test Error");
+		when(mockMongo.list()).thenThrow(ex);
+		handler.handle(lsj);
+		assertTrue(logString.contains(ex.getMessage()));
+		
+		
+	}
+	@Test
+	public void TestListServiceHandlerLogging() {
+		ListServicesJob lsj = new ListServicesJob();
+		ListServiceHandler handler = new ListServiceHandler(mockMongo,props,logger);
+		ArrayList<Service> services = new ArrayList<Service>();
+		services.add(service);
+		doAnswer(new Answer() {
+			
+		    public Object answer(InvocationOnMock invocation) {
+		
+		        Object[] args = invocation.getArguments();
+		        logString = args[0].toString();
+		        return null;
+		
+		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+		when(mockMongo.list()).thenReturn(services);
+		handler.handle(lsj);
+		assertTrue(logString.contains("listing service"));
+		
+		
+	}
+	@Test
+	public void TestDescribeServiceHandlerFailLogging() {
+		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
+		dsmJob.serviceID = "8";
+		DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
+		doAnswer(new Answer() {
+			
+		    public Object answer(InvocationOnMock invocation) {
+		
+		        Object[] args = invocation.getArguments();
+		        logString = args[0].toString();
+		        return null;
+		
+		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+		NullPointerException ex = new NullPointerException();
+		 when(mockMongo.getServiceById("8")).thenThrow(ex);
+		 handler.handle(dsmJob);
+		 assertTrue(logString.contains("Could not retrieve resourceId"));
+		 
+		
 	}
 
 	@Test

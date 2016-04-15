@@ -41,7 +41,7 @@ import util.PiazzaLogger;
 
 
 @RunWith(PowerMockRunner.class)
-public class TestExecuteServiceHandler {
+public class ExecuteServiceHandlerTest {
 	ResourceMetadata rm = null;
 	Service service = null;
 	RestTemplate template = null;
@@ -189,7 +189,7 @@ public class TestExecuteServiceHandler {
 			e.printStackTrace();
 		}
 		rm.method = "GET";
-	    URI uri = URI.create("http://localhost:8085/string/toUpper?aString=Marge");
+	    URI uri = URI.create("http://localhost:8085/string/toUpper?aString=The%20rain%20in%20Spain");
 		when(template.getForEntity(Mockito.eq(uri),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
 		when(mockMongo.getServiceById("a842aae2-bd74-4c4b-9a65-c45e8cd9060f")).thenReturn(service);

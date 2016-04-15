@@ -33,7 +33,7 @@ import util.PiazzaLogger;
 import util.UUIDFactory;
 
 @RunWith(PowerMockRunner.class)
-public class TestRegistryServiceHandler {
+public class RegistryServiceHandlerTest {
 	RestTemplate template = null;
 	Service service = null;
 	ResourceMetadata rm  = null;

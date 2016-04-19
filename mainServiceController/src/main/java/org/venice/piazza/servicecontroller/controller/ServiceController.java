@@ -17,6 +17,7 @@ package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -27,10 +28,14 @@ import model.data.type.TextDataType;
 import model.job.type.RegisterServiceJob;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
+import model.response.ServiceResponse;
+import model.response.ServiceListResponse;
+import model.response.Pagination;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 
+import org.mongojack.DBCursor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +49,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -96,6 +102,9 @@ public class ServiceController {
 	@Autowired
 	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
+	
+	private static final String DEFAULT_PAGE_SIZE = "10";
+	private static final String DEFAULT_PAGE = "0";
 	
 	public ServiceController() {
 		
@@ -150,6 +159,31 @@ public class ServiceController {
 			return new ServiceResponse(service);
 		} catch (Exception exception) {
 			return new ErrorResponse(null, String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()), "Service Controller");
+		}
+	}
+	
+	/**
+	 * Gets the list of services currently registered.
+	 * @return The list of registered services.
+	 */
+	@RequestMapping(value="/service", method=RequestMethod.GET)
+	public PiazzaResponse getServices(
+			@RequestParam(value = "page", required = false, defaultValue = DEFAULT_PAGE) Integer page,
+			@RequestParam(value = "per_page", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize) {
+		try {
+			// Get a DB Cursor to the query for general data
+			DBCursor<Service> cursor = accessor.getServiceCollection().find();
+			Integer size = new Integer(cursor.size());
+			// Filter the data by pages
+			List<Service> data = cursor.skip(page * pageSize).limit(pageSize).toArray();
+			// Attach pagination information
+			Pagination pagination = new Pagination(size, page, pageSize);
+			// Create the Response and send back
+			return new ServiceListResponse(data, pagination);
+		} catch (Exception exception) {
+			String error = String.format("Error Listing Services: %s", exception.getMessage());
+			logger.log(error, PiazzaLogger.ERROR);
+			return new ErrorResponse(null, error, "Service Controller");
 		}
 	}
 	

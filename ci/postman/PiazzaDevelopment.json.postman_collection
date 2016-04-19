@@ -22,7 +22,7 @@
 		{
 			"id": "12c254b2-d00e-fa1e-ceef-cbe1d0ced2ff",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -48,7 +48,7 @@
 		{
 			"id": "2e0589d0-2409-462c-dc09-a39024699c19",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -80,7 +80,7 @@
 		{
 			"id": "3d04bdbf-5ee0-ac6f-c2fe-d22bc2e8c64b",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -105,7 +105,7 @@
 		{
 			"id": "3fd4ea0a-1ddb-fc14-b0ce-e910497f05e2",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -131,7 +131,7 @@
 		{
 			"id": "58e7098e-f5dd-3337-7a73-2985b13fe8e7",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -157,7 +157,7 @@
 		{
 			"id": "8a8bae8f-818f-f578-3b99-f20f15a5a179",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -183,7 +183,7 @@
 		{
 			"id": "a30a4181-f512-1a25-bd52-353b7b0689a2",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -209,7 +209,7 @@
 		{
 			"id": "d2372d63-fac4-3be6-45d1-bf16ad12acb2",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -241,7 +241,7 @@
 		{
 			"id": "d85bae54-3867-ca33-636e-aa7b4fd0c8ab",
 			"headers": "",
-			"url": "http://pz-gateway.stage.geointservices.io/job",
+			"url": "http://pz-gateway.{{domain}}/job",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",

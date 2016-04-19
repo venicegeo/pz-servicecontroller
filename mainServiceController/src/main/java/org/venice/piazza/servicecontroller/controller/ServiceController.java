@@ -188,6 +188,23 @@ public class ServiceController {
 	}
 	
 	/**
+	 * Deletes a registered service.
+	 * @param serviceId The ID of the service to delete.
+	 * @return Null if service is deleted without error, or error if an exception occurs..
+	 */
+	@RequestMapping(value="/service/{serviceId}", method=RequestMethod.DELETE)
+	public PiazzaResponse unregisterService(@PathVariable(value="serviceId") String serviceId) {
+		try {
+			dlHandler.handle(serviceId);
+			return null;
+		} catch (Exception exception) {
+			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
+			logger.log(error, PiazzaLogger.ERROR);
+			return new ErrorResponse(null, error, "Service Controller");
+		}
+	}
+	
+	/**
 	 * Updates metadata about an existing service registered in the ServiceController.
 	 * 
 	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration

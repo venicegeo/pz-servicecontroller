@@ -17,11 +17,25 @@ package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 
+import model.data.DataType;
+import model.data.type.TextDataType;
+import model.job.type.RegisterServiceJob;
+import model.response.ErrorResponse;
+import model.response.PiazzaResponse;
+import model.response.ServiceResponse;
+import model.response.ServiceListResponse;
+import model.response.Pagination;
+import model.service.SearchCriteria;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.Service;
+
+import org.mongojack.DBCursor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +45,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -44,20 +60,14 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import model.data.DataType;
-import model.data.type.TextDataType;
-import model.service.SearchCriteria;
-import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.Service;
-import util.PiazzaLogger;
-import util.UUIDFactory;
 
 /** 
  * Purpose of this controller is to handle service requests for registerin
@@ -93,6 +103,9 @@ public class ServiceController {
 	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
 	
+	private static final String DEFAULT_PAGE_SIZE = "10";
+	private static final String DEFAULT_PAGE = "0";
+	
 	public ServiceController() {
 		
 	}
@@ -124,16 +137,93 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String registerService(@RequestBody Service serviceMetadata) {
-
-		
-	    String result = rsHandler.handle(serviceMetadata);
-	    
-	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
-	    String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
-	    
-		return responseString;
-
+	public PiazzaResponse registerService(@RequestBody RegisterServiceJob serviceJob) {
+		try {
+		    String serviceId = rsHandler.handle(serviceJob.data);
+		    return new ServiceResponse(serviceId);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return new ErrorResponse(null, String.format("Error Registering Service: %s", exception.getMessage()), "Service Controller");
+		}
+	}
+	
+	/**
+	 * Gets service metadata, based on its ID.
+	 * @param serviceId The ID of the service.
+	 * @return The service metadata or appropriate error
+	 */
+	@RequestMapping(value="/service/{serviceId}", method=RequestMethod.GET)
+	public PiazzaResponse getServiceInfo(@PathVariable(value="serviceId") String serviceId) {
+		try {
+			Service service = accessor.getServiceById(serviceId);
+			return new ServiceResponse(service);
+		} catch (Exception exception) {
+			return new ErrorResponse(null, String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()), "Service Controller");
+		}
+	}
+	
+	/**
+	 * Gets the list of services currently registered.
+	 * @return The list of registered services.
+	 */
+	@RequestMapping(value="/service", method=RequestMethod.GET)
+	public PiazzaResponse getServices(
+			@RequestParam(value = "page", required = false, defaultValue = DEFAULT_PAGE) Integer page,
+			@RequestParam(value = "per_page", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize) {
+		try {
+			// Get a DB Cursor to the query for general data
+			DBCursor<Service> cursor = accessor.getServiceCollection().find();
+			Integer size = new Integer(cursor.size());
+			// Filter the data by pages
+			List<Service> data = cursor.skip(page * pageSize).limit(pageSize).toArray();
+			// Attach pagination information
+			Pagination pagination = new Pagination(size, page, pageSize);
+			// Create the Response and send back
+			return new ServiceListResponse(data, pagination);
+		} catch (Exception exception) {
+			String error = String.format("Error Listing Services: %s", exception.getMessage());
+			logger.log(error, PiazzaLogger.ERROR);
+			return new ErrorResponse(null, error, "Service Controller");
+		}
+	}
+	
+	/**
+	 * Deletes a registered service.
+	 * @param serviceId The ID of the service to delete.
+	 * @return Null if service is deleted without error, or error if an exception occurs..
+	 */
+	@RequestMapping(value="/service/{serviceId}", method=RequestMethod.DELETE)
+	public PiazzaResponse unregisterService(@PathVariable(value="serviceId") String serviceId) {
+		try {
+			dlHandler.handle(serviceId);
+			return null;
+		} catch (Exception exception) {
+			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
+			logger.log(error, PiazzaLogger.ERROR);
+			return new ErrorResponse(null, error, "Service Controller");
+		}
+	}
+	
+	/**
+	 * Updates a service with new Metadata.
+	 * @param serviceId Service ID to delete.
+	 * @param serviceData The data of the service to update.
+	 * @return Null if the service has been updated, or an appropriate error if there is one.
+	 */
+	@RequestMapping(value="/service/{serviceId}", method=RequestMethod.PUT)
+	public PiazzaResponse updateServiceMetadata(@PathVariable(value="serviceId") String serviceId, @RequestBody Service serviceData) {
+		try {
+			if (serviceId.equalsIgnoreCase(serviceData.getId())) {
+				usHandler.handle(serviceData);
+				return null;	
+			} else {
+				throw new Exception(String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)", serviceData.getId(), serviceId));
+			}
+		} catch (Exception exception) {
+			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
+			logger.log(error, PiazzaLogger.ERROR);
+			return new ErrorResponse(null, error, "Service Controller");
+		}
 	}
 	
 	/**

@@ -108,7 +108,7 @@ public class RegistryServiceHandlerTest {
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,props,logger,uuidFactory);
         String retVal = handler.handle(service);
-        assertTrue(retVal.contains("8"));
+        assertTrue(retVal.contains("NoDoz"));
         assertTrue(service.getId().contains("NoDoz"));
 		
 	}

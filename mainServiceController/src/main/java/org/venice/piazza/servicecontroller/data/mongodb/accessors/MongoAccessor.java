@@ -44,6 +44,7 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
+import model.data.DataResource;
 import model.service.SearchCriteria;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -236,6 +237,15 @@ public class MongoAccessor {
 		}
 			
 		return result;
+	}
+	
+	/**
+	 * Gets the Resource collection that contains the Services.
+	 * @return Service Resource Collection
+	 */
+	public JacksonDBCollection<Service, String> getServicesCollection() {
+		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
+		return JacksonDBCollection.wrap(collection, Service.class, String.class);
 	}
 	
 

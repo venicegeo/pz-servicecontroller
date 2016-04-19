@@ -205,6 +205,28 @@ public class ServiceController {
 	}
 	
 	/**
+	 * Updates a service with new Metadata.
+	 * @param serviceId Service ID to delete.
+	 * @param serviceData The data of the service to update.
+	 * @return Null if the service has been updated, or an appropriate error if there is one.
+	 */
+	@RequestMapping(value="/service/{serviceId}", method=RequestMethod.PUT)
+	public PiazzaResponse updateServiceMetadata(@PathVariable(value="serviceId") String serviceId, @RequestBody Service serviceData) {
+		try {
+			if (serviceId.equalsIgnoreCase(serviceData.getId())) {
+				usHandler.handle(serviceData);
+				return null;	
+			} else {
+				throw new Exception(String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)", serviceData.getId(), serviceId));
+			}
+		} catch (Exception exception) {
+			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
+			logger.log(error, PiazzaLogger.ERROR);
+			return new ErrorResponse(null, error, "Service Controller");
+		}
+	}
+	
+	/**
 	 * Updates metadata about an existing service registered in the ServiceController.
 	 * 
 	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration

@@ -135,8 +135,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID
-		return result;
-				
+		return sMetadata.getId();
 	}
 	
 

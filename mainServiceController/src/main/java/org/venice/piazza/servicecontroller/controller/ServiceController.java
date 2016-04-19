@@ -22,6 +22,16 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 
+import model.data.DataType;
+import model.data.type.TextDataType;
+import model.job.type.RegisterServiceJob;
+import model.response.ErrorResponse;
+import model.response.PiazzaResponse;
+import model.response.ServiceResponse;
+import model.service.SearchCriteria;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.Service;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,20 +54,14 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreLogger;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import model.data.DataType;
-import model.data.type.TextDataType;
-import model.service.SearchCriteria;
-import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.Service;
-import util.PiazzaLogger;
-import util.UUIDFactory;
 
 /** 
  * Purpose of this controller is to handle service requests for registerin
@@ -124,16 +128,14 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String registerService(@RequestBody Service serviceMetadata) {
-
-		
-	    String result = rsHandler.handle(serviceMetadata);
-	    
-	    LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
-	    String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
-	    
-		return responseString;
-
+	public PiazzaResponse registerService(@RequestBody RegisterServiceJob serviceJob) {
+		try {
+		    String serviceId = rsHandler.handle(serviceJob.data);
+		    return new ServiceResponse(serviceId);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return new ErrorResponse(null, String.format("Error Registering Service: %s", exception.getMessage()), "Service Controller");
+		}
 	}
 	
 	/**

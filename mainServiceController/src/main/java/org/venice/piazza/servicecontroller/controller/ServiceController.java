@@ -27,7 +27,6 @@ import model.data.type.TextDataType;
 import model.job.type.RegisterServiceJob;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
-import model.response.ServiceResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
@@ -41,6 +40,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -135,6 +135,21 @@ public class ServiceController {
 		} catch (Exception exception) {
 			exception.printStackTrace();
 			return new ErrorResponse(null, String.format("Error Registering Service: %s", exception.getMessage()), "Service Controller");
+		}
+	}
+	
+	/**
+	 * Gets service metadata, based on its ID.
+	 * @param serviceId The ID of the service.
+	 * @return The service metadata or appropriate error
+	 */
+	@RequestMapping(value="/service/{serviceId}", method=RequestMethod.GET)
+	public PiazzaResponse getServiceInfo(@PathVariable(value="serviceId") String serviceId) {
+		try {
+			Service service = accessor.getServiceById(serviceId);
+			return new ServiceResponse(service);
+		} catch (Exception exception) {
+			return new ErrorResponse(null, String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()), "Service Controller");
 		}
 	}
 	

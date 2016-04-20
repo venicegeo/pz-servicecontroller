@@ -130,6 +130,8 @@ public class ServiceController {
 	/**
 	 * Registers a service with the piazza service controller. 
 	 * 
+	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/post_service"
+	 * 
 	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK) administration
 	 * and for testing of the serviceController.  
 	 * @param serviceMetadata 
@@ -149,6 +151,9 @@ public class ServiceController {
 	
 	/**
 	 * Gets service metadata, based on its ID.
+	 * 
+	 * @see "@see "http://pz-swagger.stage.geointservices.io/#!/Service/post_service"
+	 * 
 	 * @param serviceId The ID of the service.
 	 * @return The service metadata or appropriate error
 	 */
@@ -164,6 +169,9 @@ public class ServiceController {
 	
 	/**
 	 * Gets the list of services currently registered.
+	 * 
+	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/get_service"
+	 * 
 	 * @return The list of registered services.
 	 */
 	@RequestMapping(value="/service", method=RequestMethod.GET)
@@ -189,6 +197,9 @@ public class ServiceController {
 	
 	/**
 	 * Deletes a registered service.
+	 * 
+	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/delete_service_serviceId"
+	 * 
 	 * @param serviceId The ID of the service to delete.
 	 * @return Null if service is deleted without error, or error if an exception occurs..
 	 */
@@ -206,6 +217,9 @@ public class ServiceController {
 	
 	/**
 	 * Updates a service with new Metadata.
+	 * 
+	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/put_service_serviceId"
+	 * 
 	 * @param serviceId Service ID to delete.
 	 * @param serviceData The data of the service to update.
 	 * @return Null if the service has been updated, or an appropriate error if there is one.

@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import model.data.DataType;
 import model.data.type.TextDataType;
 import model.job.type.RegisterServiceJob;
+import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
 import model.response.ServiceResponse;
@@ -139,8 +140,9 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
-	public PiazzaResponse registerService(@RequestBody RegisterServiceJob serviceJob) {
+	public PiazzaResponse registerService(@RequestBody PiazzaJobRequest jobRequest) {
 		try {
+			RegisterServiceJob serviceJob = (RegisterServiceJob) jobRequest.jobType;
 		    String serviceId = rsHandler.handle(serviceJob.data);
 		    return new ServiceResponse(serviceId);
 		} catch (Exception exception) {

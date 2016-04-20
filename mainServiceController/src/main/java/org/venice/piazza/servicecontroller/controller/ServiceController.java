@@ -138,7 +138,7 @@ public class ServiceController {
 	 * 		     metadata about the service
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
-	@RequestMapping(value = "/registerService", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/registerService", method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
 	public PiazzaResponse registerService(@RequestBody RegisterServiceJob serviceJob) {
 		try {
 		    String serviceId = rsHandler.handle(serviceJob.data);

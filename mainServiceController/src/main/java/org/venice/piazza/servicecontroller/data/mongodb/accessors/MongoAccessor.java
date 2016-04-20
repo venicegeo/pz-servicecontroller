@@ -123,11 +123,13 @@ public class MongoAccessor {
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class,
 			        String.class);
 			
-			Query query = DBQuery.is("id",sMetadata.getId());
+			
+			
+			Query query = DBQuery.is("serviceId",sMetadata.getServiceId());
 			
 			WriteResult<Service, String> writeResult = coll.update(query,sMetadata);
 			// Return the id that was used
-			return sMetadata.getId().toString();
+			return sMetadata.getServiceId().toString();
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
@@ -193,7 +195,7 @@ public class MongoAccessor {
 			
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
 			// Return the id that was used
-			return sMetadata.getId().toString();
+			return sMetadata.getServiceId().toString();
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());
@@ -314,7 +316,7 @@ public class MongoAccessor {
 				cursor = getServiceCollection().find(query);		
 				while (cursor.hasNext()) {
 					Service serviceItem = cursor.next();
-					if (!exists(results, serviceItem.getId()))
+					if (!exists(results, serviceItem.getServiceId()))
 						results.add(serviceItem);
 				}
 				
@@ -335,7 +337,7 @@ public class MongoAccessor {
 		boolean doesExist = false;
 		
 		for (int i = 0; i < serviceResults.size(); i++) {
-			String serviceItemId = serviceResults.get(i).getId();
+			String serviceItemId = serviceResults.get(i).getServiceId();
 			if (serviceItemId.equals(id))
 				doesExist = true;
 		}

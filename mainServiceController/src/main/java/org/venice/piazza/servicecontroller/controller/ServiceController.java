@@ -213,11 +213,11 @@ public class ServiceController {
 	@RequestMapping(value="/service/{serviceId}", method=RequestMethod.PUT)
 	public PiazzaResponse updateServiceMetadata(@PathVariable(value="serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
-			if (serviceId.equalsIgnoreCase(serviceData.getId())) {
+			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
 				usHandler.handle(serviceData);
 				return null;	
 			} else {
-				throw new Exception(String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)", serviceData.getId(), serviceId));
+				throw new Exception(String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)", serviceData.getServiceId(), serviceId));
 			}
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());

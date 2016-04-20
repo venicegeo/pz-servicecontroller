@@ -144,15 +144,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		String requestMimeType = "application/json";
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
 	
-		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url);
-		Set<String> parameterNames = new HashSet<String>();
-		if (sMetadata.getInputs() != null && sMetadata.getInputs().size() > 0) {
-			for (ParamDataItem pdataItem : sMetadata.getInputs()) {
-				if (pdataItem.getDataType() instanceof URLParameterDataType) {
-					parameterNames.add(pdataItem.getName());
-				}
-			}
-		}
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
+		
 		Map<String,DataType> postObjects = new HashMap<String,DataType>();
 		Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
 		String postString = "";
@@ -161,26 +154,21 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			
 			String inputName = entry.getKey();
 			LOGGER.debug(" parameter is "  + inputName);
-			if (parameterNames.contains(inputName)) {
-				if (entry.getValue() instanceof TextDataType) {
-					String paramValue = ((TextDataType)entry.getValue()).getContent();
-					if (inputName.length() == 0) {
-						LOGGER.debug("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata());
+			
+			if (entry.getValue() instanceof URLParameterDataType) {
+				String paramValue = ((URLParameterDataType)entry.getValue()).getContent();
+				if (inputName.length() == 0) {
+					LOGGER.debug("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata());
 
-						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
-					}
-					else {
-						 builder.queryParam(inputName,paramValue);
-						 LOGGER.debug("Input Name=" + inputName + " paramValue=" + paramValue);
-					}
+					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
 				}
 				else {
-					LOGGER.error("URL parameter value has to be specified in TextDataType" );
-					coreLogger.log("URL parameter value has to be specified in TextDataType", coreLogger.ERROR);
-					return new ResponseEntity<String>("URL parameter value has to be specified in TextDataType",HttpStatus.BAD_REQUEST);
-					
+					 builder.queryParam(inputName,paramValue);
+					 LOGGER.debug("Input Name=" + inputName + " paramValue=" + paramValue);
 				}
 			}
+				
+			
 			else if (entry.getValue() instanceof BodyDataType){
 				BodyDataType bdt = (BodyDataType)entry.getValue();
 				postString = bdt.getContent();

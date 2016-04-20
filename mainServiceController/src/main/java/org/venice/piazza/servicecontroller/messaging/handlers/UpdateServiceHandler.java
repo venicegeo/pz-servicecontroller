@@ -79,7 +79,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				// and jobId
 				ArrayList<String> resultList = new ArrayList<String>();
 				resultList.add(jobId);
-				resultList.add(sMetadata.getId());
+				resultList.add(sMetadata.getServiceId());
 				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
 				return handleResult;
 				
@@ -113,11 +113,11 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		String result = accessor.update(sMetadata);
 		LOGGER.debug("The result of the update is " + result);
 		if (result.length() > 0) {
-		   coreLogger.log("The service " + sMetadata.getName() + " was updated with id " + result, PiazzaLogger.INFO);
-		   LOGGER.info("The service " + sMetadata.getName() + " was updated with id " + result);
+		   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, PiazzaLogger.INFO);
+		   LOGGER.info("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result);
 		} else {
-			   coreLogger.log("The service " + sMetadata.getName() + " was NOT updated", PiazzaLogger.INFO);
-			   LOGGER.info("The service " + sMetadata.getName() + " was NOT updated");
+			   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", PiazzaLogger.INFO);
+			   LOGGER.info("The service " + sMetadata.getResourceMetadata().name + " was NOT updated");
 		}
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID

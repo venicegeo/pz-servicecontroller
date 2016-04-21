@@ -274,7 +274,7 @@ public class MongoAccessor {
 	public Service getServiceById(String serviceId) throws ResourceAccessException {
 	
 		
-		BasicDBObject query = new BasicDBObject("id", serviceId);
+		BasicDBObject query = new BasicDBObject("serviceId", serviceId);
 		Service service;
 
 		try {

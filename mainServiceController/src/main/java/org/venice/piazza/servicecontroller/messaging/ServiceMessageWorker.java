@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -38,14 +36,9 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
@@ -70,7 +63,6 @@ import model.job.type.SearchServiceJob;
 import model.job.type.UpdateServiceJob;
 import model.request.PiazzaJobRequest;
 import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.ParamDataItem;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
@@ -78,8 +70,7 @@ import util.UUIDFactory;
 
 public class ServiceMessageWorker implements Runnable {
 	
-	private final static String TEXT_TYPE="text";
-	private final static String RASTER_TYPE="raster";
+
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
@@ -89,8 +80,9 @@ public class ServiceMessageWorker implements Runnable {
 	private Producer<String, String> producer;
 	private WorkerCallback callback;
 	private UUIDFactory uuidFactory;
-	private CoreUUIDGen uuidGenerator;
+
 	private String space;
+
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the jobRequest
 	 * @param consumerRecord
@@ -110,10 +102,9 @@ public class ServiceMessageWorker implements Runnable {
 		this.accessor = accessor;
 		this.callback = callback;
 		this.coreLogger = logger;
-		this.uuidFactory = uuidFactory;
-		this.uuidGenerator = uuidGenerator;
+
 		this.space = space;
-		
+		this.uuidFactory = uuidFactory;		
 		
 	}
 	
@@ -231,7 +222,6 @@ public class ServiceMessageWorker implements Runnable {
 				errorResult.setMessage(handleTextUpdate);
 				
 				su.setResult(errorResult);
-	
 				
 				ProducerRecord<String,String> prodRecord =
 						new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
@@ -611,10 +601,9 @@ public class ServiceMessageWorker implements Runnable {
 			headers.setContentType(mediaType);
 			// Set the mimeType of the request
 			//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
-			HttpEntity<String> requestEntity = null;
+
 			if (postString.length() > 0) {
 				LOGGER.debug("The postString is " + postString);
-				//requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
 				HttpHeaders theHeaders = new HttpHeaders();
 				//headers.add("Authorization", "Basic " + credentials);
 				theHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -628,13 +617,10 @@ public class ServiceMessageWorker implements Runnable {
 					
 				    LOGGER.debug("About to call special service");
 				    LOGGER.debug("URL calling" + url);
-                    // COMMENT OUT CALLING SERVICE
+
 				    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 				    LOGGER.debug("The Response is " + response.getBody());
-				    // DOES NOT RETURN!!!!!!
-		            //DataResource dataResource = response.getBody();
-				    
-				    ObjectMapper mapper = new ObjectMapper();
+
 
 				    String serviceControlString = response.getBody();
 			        LOGGER.debug("Service Control String" + serviceControlString); 
@@ -645,7 +631,6 @@ public class ServiceMessageWorker implements Runnable {
 			        LOGGER.debug("This is a test");
 			        LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());
 
-				    //DataResource dataResource = new DataResource();
 		            dataResource.dataId = uuidFactory.getUUID();
 		            LOGGER.debug("dataId" + dataResource.dataId);
 		            PiazzaJobRequest pjr  =  new PiazzaJobRequest();

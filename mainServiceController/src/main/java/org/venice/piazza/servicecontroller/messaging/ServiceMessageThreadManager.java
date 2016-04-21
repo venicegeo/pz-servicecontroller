@@ -1,16 +1,11 @@
 package org.venice.piazza.servicecontroller.messaging;
 
-import java.net.URI;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -27,50 +22,24 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.CoreUUIDGen;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import org.springframework.stereotype.Component;
+
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
+
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
-import model.data.DataResource;
-import model.data.DataType;
-import model.data.type.BodyDataType;
-import model.data.type.RasterDataType;
-import model.data.type.TextDataType;
-import model.data.type.URLParameterDataType;
+
 import model.job.Job;
 import model.job.PiazzaJobType;
-import model.job.result.type.DataResult;
-import model.job.type.ExecuteServiceJob;
-import model.job.type.IngestJob;
-import model.request.PiazzaJobRequest;
-import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.ParamDataItem;
-import model.service.metadata.Service;
+import model.job.result.type.ErrorResult;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -105,13 +74,6 @@ public class ServiceMessageThreadManager {
 				   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
 				   UPDATE_SERVICE_JOB_TOPIC_NAME,LIST_SERVICE_JOB_TOPIC_NAME, SEARCH_SERVICE_JOB_TOPIC_NAME);;
 		private final AtomicBoolean closed = new AtomicBoolean(false);
-		private RegisterServiceHandler rsHandler;
-		private ExecuteServiceHandler esHandler;
-		private UpdateServiceHandler usHandler;
-		private DescribeServiceHandler dsHandler;
-		private DeleteServiceHandler dlHandler;
-		private ListServiceHandler lsHandler;
-		private SearchServiceHandler ssHandler;
 		
 		
 		private ThreadPoolExecutor executor;
@@ -208,14 +170,25 @@ public class ServiceMessageThreadManager {
 					for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
 						LOGGER.info("Received topic: " + consumerRecord.topic() + " with key "
 								+ consumerRecord.key());
-						//coreLogger.log("Received topic: " + consumerRecord.topic() + " with key "
-						//		+ consumerRecord.key(), coreLogger.INFO);
+						
+						coreLogger.log("Received topic: " + consumerRecord.topic() + " with key "
+								+ consumerRecord.key(), coreLogger.INFO);
 												
 						// Wrap the JobRequest in the Job object
 						try {
 							job = mapper.readValue(consumerRecord.value(), Job.class);	
 							
 							if (job != null) {
+								// Update the status to say the job is in progress
+								StatusUpdate su = new StatusUpdate();
+								su.setStatus("In Progress");
+
+								ProducerRecord<String,String> prodRecord =
+										new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+												mapper.writeValueAsString(su));
+								producer.send(prodRecord);
+								
+								// Now get the job type and process the request
 								PiazzaJobType jobType = job.getJobType();
 
 
@@ -236,8 +209,8 @@ public class ServiceMessageThreadManager {
 					}// for loop
 				}// while loop
 			} catch (Exception ex) {
-				//coreLogger.log(String.format("There was a problem.", ex.getMessage()),
-				//		PiazzaLogger.FATAL);
+				coreLogger.log(String.format("There was a problem.", ex.getMessage()),
+						PiazzaLogger.FATAL);
 				
 			}
 			

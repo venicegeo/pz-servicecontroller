@@ -199,9 +199,10 @@ public class ServiceMessageThreadManager {
 								StatusUpdate su = new StatusUpdate();
 								su.setStatus("In Progress");
 
+								
 								ProducerRecord<String,String> prodRecord =
-										new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
-												mapper.writeValueAsString(su));
+                                        new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
+                                                mapper.writeValueAsString(su));
 								producer.send(prodRecord);
 								
 								// Now get the job type and process the request

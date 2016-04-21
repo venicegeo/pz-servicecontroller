@@ -22,12 +22,11 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
 
 
 
@@ -36,7 +35,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
-
 import model.job.Job;
 import model.job.PiazzaJobType;
 import model.job.result.type.ErrorResult;

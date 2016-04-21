@@ -226,7 +226,8 @@ public class ServiceMessageThreadManager {
 					}// for loop
 				}// while loop
 			} catch (Exception ex) {
-				coreLogger.log(String.format("There was a problem.", ex.getMessage()),
+				LOGGER.error(ex.toString());
+				coreLogger.log(String.format("There was a problem.", ex.toString()),
 						PiazzaLogger.FATAL);
 				
 			}

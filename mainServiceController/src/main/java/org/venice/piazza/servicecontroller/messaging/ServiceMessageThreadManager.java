@@ -47,13 +47,13 @@ public class ServiceMessageThreadManager {
 	// Jobs to listen to
 		@Value("${space}")
 		private String space;
-		private final String DELETE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "delete-service", space);
-		private final String EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "execute-service", space);
-		private final String READ_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "read-service", space);
-		private final String REGISTER_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "register-service", space);
-		private final String UPDATE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "update-service", space);
-		private final String LIST_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "list-service", space);
-		private final String SEARCH_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "search-service", space);
+		private String DELETE_SERVICE_JOB_TOPIC_NAME;
+		private String EXECUTE_SERVICE_JOB_TOPIC_NAME;
+		private String READ_SERVICE_JOB_TOPIC_NAME;
+		private String REGISTER_SERVICE_JOB_TOPIC_NAME;
+		private String UPDATE_SERVICE_JOB_TOPIC_NAME;
+		private String LIST_SERVICE_JOB_TOPIC_NAME;
+		private String SEARCH_SERVICE_JOB_TOPIC_NAME;
 
 		private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
 		
@@ -101,6 +101,15 @@ public class ServiceMessageThreadManager {
 		 */
 		@PostConstruct
 		public void initialize() {
+			// Initialize dynamic topic names
+			DELETE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "delete-service", space);
+			EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "execute-service", space);
+			READ_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "read-service", space);
+			REGISTER_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "register-service", space);
+			UPDATE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "update-service", space);
+			LIST_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "list-service", space);
+			SEARCH_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "search-service", space);
+			
 			// Initialize the Kafka consumer/producer
 
 			String kafkaHostFull = coreServiceProperties.getKafkaHost();

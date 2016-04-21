@@ -147,7 +147,7 @@ public class ServiceMessageWorker implements Runnable {
 						// Get the ResourceMetadata
 						ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
 						ExecuteServiceData esData = jobItem.data;
-						DataType dataType= esData.getDataOutput();
+						DataType dataType= esData.dataOutput.get(0);
 						if ((dataType != null) && (dataType instanceof RasterDataType)) {
 							// Call special method to call and send
 							handleRasterType(jobItem);
@@ -557,15 +557,8 @@ public class ServiceMessageWorker implements Runnable {
 			String requestMimeType = "application/json";
 			MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
 		
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url);
-			Set<String> parameterNames = new HashSet<String>();
-			if (sMetadata.getInputs() != null && sMetadata.getInputs().size() > 0) {
-				for (ParamDataItem pdataItem : sMetadata.getInputs()) {
-					if (pdataItem.getDataType() instanceof URLParameterDataType) {
-						parameterNames.add(pdataItem.getName());
-					}
-				}
-			}
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
+			
 			Map<String,DataType> postObjects = new HashMap<String,DataType>();
 			Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
 			String postString = "";
@@ -573,21 +566,17 @@ public class ServiceMessageWorker implements Runnable {
 				Entry<String,DataType> entry = it.next();
 				
 				String inputName = entry.getKey();
-				if (parameterNames.contains(inputName)) {
-					if (entry.getValue() instanceof TextDataType) {
-						String paramValue = ((TextDataType)entry.getValue()).getContent();
-						if (inputName.length() == 0) {
-							builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getResourceMetadata().url + "?" + paramValue);
-						}
-						else {
-							 builder.queryParam(inputName,paramValue);
-						}
+				
+				if (entry.getValue() instanceof URLParameterDataType) {
+					String paramValue = ((TextDataType)entry.getValue()).getContent();
+					if (inputName.length() == 0) {
+						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
 					}
 					else {
-						LOGGER.error("URL parameter value has to be specified in TextDataType" );
-						return;
+						 builder.queryParam(inputName,paramValue);
 					}
 				}
+				
 				else if (entry.getValue() instanceof BodyDataType){
 					BodyDataType bdt = (BodyDataType)entry.getValue();
 					postString = bdt.getContent();

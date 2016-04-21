@@ -57,43 +57,13 @@ public class ExecuteServiceHandlerTest {
 		rm = new ResourceMetadata();
 		rm.name = "toUpper Params";
 		rm.description = "Service to convert string to uppercase";
-		rm.url = "http://localhost:8085/string/toUpper";
 		rm.method = "POST";
-		//rm.requestMimeType = "application/json";
-		rm.id="Cheese";
 		service = new Service();
 		service.setResourceMetadata(rm);
-		service.setId("8");
-		ParamDataItem pitem = new ParamDataItem();
-		DataType dataType1 = new URLParameterDataType();
-		pitem.setDataType(dataType1);
-		pitem.setName("aString");
-		pitem.setMinOccurs(1);
-		pitem.setMaxOccurs(1);
-		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
-		inputs.add(pitem);
-		service.setInputs(inputs);
-		ParamDataItem output1 = new ParamDataItem();
-		TextDataType dataType3 = new TextDataType();
-		dataType3.mimeType = "appliction/json";
-		output1.setDataType(dataType3);
-		output1.setMaxOccurs(1);
-		output1.setMinOccurs(1);
-		output1.setName("Upper Case message");
+		service.setServiceId("8");
+		service.setUrl("http://localhost:8082/string/toUpper");
 		
-		Format format1 = new Format();
-		format1.setMimeType("application/json");
-		List<Format> formats1 = new ArrayList<Format>();
-		formats1.add(format1);
-		output1.setFormats(formats1);
-		MetadataType outMetadata = new MetadataType();
-		outMetadata.setTitle("Upper Case Text");
-		outMetadata.setAbout("ConvertToUpperCase");
-		output1.setMetadata(outMetadata);
 		
-		List<ParamDataItem> outputs = new ArrayList<ParamDataItem>();
-		outputs.add(output1);
-		service.setOutputs(outputs);
     	
     }
 	@PrepareForTest({ExecuteServiceHandler.class})
@@ -121,8 +91,7 @@ public class ExecuteServiceHandlerTest {
 		edata.setDataInputs(dataInputs);
 		
 		
-		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
-		service.setInputs(inputs);
+		
 		URI uri = URI.create("http://localhost:8085//string/toUpper");
 		when(template.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
@@ -139,15 +108,9 @@ public class ExecuteServiceHandlerTest {
 	public void testHandleWithMapInputsPost() {
 		ExecuteServiceData edata = new ExecuteServiceData();
 		edata.setServiceId("8");
-		ParamDataItem pitem = new ParamDataItem();
-		TextDataType tdt = new TextDataType();
-		pitem.setDataType(tdt);
-		pitem.setName("name");
-		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
-		inputs.add(pitem);
-		service.setInputs(inputs);
-		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
 		
+		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
+		TextDataType tdt = new TextDataType();
 		tdt.content = "My name is Marge";
 		dataInputs.put("name",tdt);
 		edata.setDataInputs(dataInputs);
@@ -168,15 +131,8 @@ public class ExecuteServiceHandlerTest {
 	public void testHandleWithMapInputsGet() {
 		ExecuteServiceData edata = new ExecuteServiceData();
 		edata.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
-		ParamDataItem pitem = new ParamDataItem();
-		URLParameterDataType urlPType = new URLParameterDataType();
-		pitem.setDataType(urlPType);
-		pitem.setName("aString");
-		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
-		inputs.add(pitem);
-		service.setInputs(inputs);
 		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
-		TextDataType tdt = new TextDataType();
+		URLParameterDataType tdt = new URLParameterDataType();
 		tdt.content = "The rain in Spain";
 		dataInputs.put("aString",tdt);
 		edata.setDataInputs(dataInputs);
@@ -189,7 +145,7 @@ public class ExecuteServiceHandlerTest {
 			e.printStackTrace();
 		}
 		rm.method = "GET";
-	    URI uri = URI.create("http://localhost:8085/string/toUpper?aString=The%20rain%20in%20Spain");
+	    URI uri = URI.create("http://localhost:8082/string/toUpper?aString=The%20rain%20in%20Spain");
 		when(template.getForEntity(Mockito.eq(uri),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
 		when(mockMongo.getServiceById("a842aae2-bd74-4c4b-9a65-c45e8cd9060f")).thenReturn(service);

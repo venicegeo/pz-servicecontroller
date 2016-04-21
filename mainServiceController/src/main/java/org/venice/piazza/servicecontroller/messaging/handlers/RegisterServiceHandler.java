@@ -122,20 +122,11 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 
         //coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
 
-		sMetadata.setId(uuidFactory.getUUID());
+		sMetadata.setServiceId(uuidFactory.getUUID());
 		String result = accessor.save(sMetadata);
 		LOGGER.debug("The result of the save is " + result);
-		// Check to see if metadta for the name was provided
-		// if so, then log
-		if (sMetadata.getName() != null)
-			if (result.length() > 0) {
-			    //coreLogger.log("The service " + sMetadata.getName() + " was stored with id " + result, PiazzaLogger.INFO);
-			} else {
-			    //coreLogger.log("The service " + sMetadata.getName() + " was NOT stored", PiazzaLogger.INFO);
-			}
-		// If an ID was returned then send a kafka message back updating the job iD 
-		// with the resourceID
-		return sMetadata.getId();
+		
+		return sMetadata.getServiceId();
 	}
 	
 

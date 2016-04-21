@@ -52,39 +52,17 @@ public class RegistryServiceHandlerTest {
 		rm = new ResourceMetadata();
 		rm.name = "toUpper Params";
 		rm.description = "Service to convert string to uppercase";
-		rm.url = "http://localhost:8082/string/toUpper";
 		rm.method = "POST";
 		service = new Service();
 		service.setResourceMetadata(rm);
-		service.setId("8");
+		service.setServiceId("8");
 		ParamDataItem pitem = new ParamDataItem();
 		DataType dataType1 = new URLParameterDataType();
 		pitem.setDataType(dataType1);
 		pitem.setName("aString");
 		pitem.setMinOccurs(1);
 		pitem.setMaxOccurs(1);
-		List<ParamDataItem> inputs = new ArrayList<ParamDataItem>();
-		inputs.add(pitem);
-		service.setInputs(inputs);
-		ParamDataItem output1 = new ParamDataItem();
-		TextDataType dataType3 = new TextDataType();
-		output1.setDataType(dataType3);
-		output1.setMaxOccurs(1);
-		output1.setMinOccurs(1);
-		output1.setName("Upper Case message");
 		
-		Format format1 = new Format();
-		format1.setMimeType("application/json");
-		List<Format> formats1 = new ArrayList<Format>();
-		formats1.add(format1);
-		output1.setFormats(formats1);
-		MetadataType outMetadata = new MetadataType();
-		outMetadata.setTitle("Upper Case Text");
-		outMetadata.setAbout("ConvertToUpperCase");
-		output1.setMetadata(outMetadata);
-		List<ParamDataItem> outputs = new ArrayList<ParamDataItem>();
-		outputs.add(output1);
-		service.setOutputs(outputs);
 		
 		//DEBUGGING
 		ObjectMapper mapper = new ObjectMapper();
@@ -109,7 +87,7 @@ public class RegistryServiceHandlerTest {
 		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,props,logger,uuidFactory);
         String retVal = handler.handle(service);
         assertTrue(retVal.contains("NoDoz"));
-        assertTrue(service.getId().contains("NoDoz"));
+        assertTrue(service.getServiceId().contains("NoDoz"));
 		
 	}
 }

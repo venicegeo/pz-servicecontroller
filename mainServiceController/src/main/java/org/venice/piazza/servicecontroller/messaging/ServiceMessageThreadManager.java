@@ -128,6 +128,9 @@ public class ServiceMessageThreadManager {
 			LOGGER.info("UPDATE_SERVICE_JOB_TOPIC_NAME=" + UPDATE_SERVICE_JOB_TOPIC_NAME);
 			LOGGER.info("LIST_SERVICE_JOB_TOPIC_NAME=" + LIST_SERVICE_JOB_TOPIC_NAME);
 			LOGGER.info("SEARCH_SERVICE_JOB_TOPIC_NAME=" + SEARCH_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("KAFKA_GROUP=" + KAFKA_GROUP);
+			LOGGER.info("KAFKA_HOST=" + KAFKA_HOST);
+			LOGGER.info("KAFKA_PORT=" + KAFKA_PORT);			
 			LOGGER.info("============================================================");
 
 
@@ -226,8 +229,8 @@ public class ServiceMessageThreadManager {
 					}// for loop
 				}// while loop
 			} catch (Exception ex) {
-				LOGGER.error(ex.toString());
-				coreLogger.log(String.format("There was a problem.", ex.toString()),
+				LOGGER.error("Problem", ex);
+				coreLogger.log(String.format("There was a problem.", ex),
 						PiazzaLogger.FATAL);
 				
 			}

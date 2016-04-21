@@ -181,11 +181,11 @@ public class ServiceMessageThreadManager {
 					ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
 					// Handle new Messages on this topic.
 					for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
-						LOGGER.info("Received topic: " + consumerRecord.topic() + " with key "
-								+ consumerRecord.key());
+						//LOGGER.info("Received topic: " + consumerRecord.topic() + " with key "
+						//		+ consumerRecord.key());
 						
-						coreLogger.log("Received topic: " + consumerRecord.topic() + " with key "
-								+ consumerRecord.key(), coreLogger.INFO);
+						//coreLogger.log("Received topic: " + consumerRecord.topic() + " with key "
+						//		+ consumerRecord.key(), coreLogger.INFO);
 												
 						// Wrap the JobRequest in the Job object
 						try {
@@ -203,6 +203,10 @@ public class ServiceMessageThreadManager {
 								
 								// Now get the job type and process the request
 								PiazzaJobType jobType = job.getJobType();
+								if (jobType != null) {
+								  LOGGER.info("Received jobType: " + jobType.getType());
+								  coreLogger.log("Received jobType: " + jobType.getType(), coreLogger.INFO);
+								}
 
 
 								ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  

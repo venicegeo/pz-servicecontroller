@@ -44,9 +44,8 @@ import util.UUIDFactory;
 
 @Component
 public class ServiceMessageThreadManager {
-	// Jobs to listen to
-		@Value("${space}")
-		private String space;
+
+
 		private String DELETE_SERVICE_JOB_TOPIC_NAME;
 		private String EXECUTE_SERVICE_JOB_TOPIC_NAME;
 		private String READ_SERVICE_JOB_TOPIC_NAME;
@@ -76,6 +75,7 @@ public class ServiceMessageThreadManager {
 		
 		private ThreadPoolExecutor executor;
 		private Map<String, Future<?>> runningServiceRequests;
+		private String space;
 
 		@Autowired
 		private MongoAccessor accessor;
@@ -102,6 +102,7 @@ public class ServiceMessageThreadManager {
 		@PostConstruct
 		public void initialize() {
 			// Initialize dynamic topic names
+			space = coreServiceProperties.getSpace();
 			DELETE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "delete-service", space);
 			EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "execute-service", space);
 			READ_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "read-service", space);
@@ -118,11 +119,16 @@ public class ServiceMessageThreadManager {
 			KAFKA_HOST = kafkaHostFull.split(":")[0];
 			KAFKA_PORT = kafkaHostFull.split(":")[1];
 			
-			LOGGER.info("=================================");
+			LOGGER.info("============================================================");
 
-			LOGGER.info("The KAFKA Host Properties is " + coreServiceProperties.getKafkaHost());
-			LOGGER.info("The KAFKA Group Properties is " + coreServiceProperties.getKafkaGroup());
-			LOGGER.info("=================================");
+			LOGGER.info("DELETE_SERVICE_JOB_TOPIC_NAME=" + DELETE_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("READ_SERVICE_JOB_TOPIC_NAME=" + READ_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("REGISTER_SERVICE_JOB_TOPIC_NAME=" + REGISTER_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("UPDATE_SERVICE_JOB_TOPIC_NAME=" + UPDATE_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("LIST_SERVICE_JOB_TOPIC_NAME=" + LIST_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("SEARCH_SERVICE_JOB_TOPIC_NAME=" + SEARCH_SERVICE_JOB_TOPIC_NAME);
+			LOGGER.info("============================================================");
 
 
 			/* Initialize producer and consumer for the Kafka Queue */

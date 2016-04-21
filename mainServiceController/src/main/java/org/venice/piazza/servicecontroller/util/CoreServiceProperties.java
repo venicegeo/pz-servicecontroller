@@ -73,7 +73,8 @@ public class CoreServiceProperties {
 	@Value("${servicecontroller.port}")
 	private String port;
 	
-	
+	@Value ("${space}")
+	private String space;
 
 	public String getUuidservicehost() {
 		return uuidservicehost;
@@ -221,6 +222,14 @@ public class CoreServiceProperties {
 
 
 	
+	public String getSpace() {
+		return space;
+	}
+
+	public void setSpace(String space) {
+		this.space = space;
+	}
+
 	@Bean
 	public CoreInitDestroy coreInitDestroy() {
 		return new CoreInitDestroy();

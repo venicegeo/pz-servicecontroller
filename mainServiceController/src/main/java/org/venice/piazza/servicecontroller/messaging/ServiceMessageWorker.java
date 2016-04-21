@@ -90,6 +90,7 @@ public class ServiceMessageWorker implements Runnable {
 	private WorkerCallback callback;
 	private UUIDFactory uuidFactory;
 	private CoreUUIDGen uuidGenerator;
+	private String space;
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the jobRequest
 	 * @param consumerRecord
@@ -102,7 +103,7 @@ public class ServiceMessageWorker implements Runnable {
 	public ServiceMessageWorker (ConsumerRecord<String, String> consumerRecord,
 			Producer<String, String> producer, MongoAccessor accessor, WorkerCallback callback, 
 			CoreServiceProperties coreServiceProperties, UUIDFactory uuidFactory, 
-			PiazzaLogger logger,Job job) {
+			PiazzaLogger logger,Job job, String space) {
 		this.job = job;
 		this.consumerRecord = consumerRecord;
 		this.producer = producer;
@@ -111,6 +112,7 @@ public class ServiceMessageWorker implements Runnable {
 		this.coreLogger = logger;
 		this.uuidFactory = uuidFactory;
 		this.uuidGenerator = uuidGenerator;
+		this.space = space;
 		
 		
 	}
@@ -232,7 +234,7 @@ public class ServiceMessageWorker implements Runnable {
 	
 				
 				ProducerRecord<String,String> prodRecord =
-						new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+						new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
 								mapper.writeValueAsString(su));
 				producer.send(prodRecord);
 			}
@@ -257,7 +259,7 @@ public class ServiceMessageWorker implements Runnable {
 	
 					
 					ProducerRecord<String,String> prodRecord =
-							new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+							new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
 									mapper.writeValueAsString(su));
 					producer.send(prodRecord);
 			    }
@@ -291,14 +293,14 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
 	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
 			}
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
 	}
@@ -322,14 +324,14 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
 	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
 			}
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
 	}
@@ -355,14 +357,14 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.info("THe STATUS is " + su.getStatus());
 				LOGGER.info("THe RESULT is " + su.getResult());
 	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
 			}
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(stringList.get(0), "No Results returned from the search. HTTP Status:" + handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}else {
 			LOGGER.info("There are no search results that match");
@@ -380,7 +382,7 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.info("THe STATUS is " + su.getStatus());
 				LOGGER.info("THe RESULT is " + su.getResult());
 	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
 			}
@@ -398,7 +400,7 @@ public class ServiceMessageWorker implements Runnable {
 		StatusUpdate su = new StatusUpdate();
 		su.setStatus(serviceControlString);
 		ProducerRecord<String,String> prodRecord =
-				new ProducerRecord<String,String> (JobMessageFactory.UPDATE_JOB_TOPIC_NAME,job.getJobId(),
+				new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
 						mapper.writeValueAsString(su));
 		producer.send(prodRecord);
 	}
@@ -426,7 +428,7 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
 	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
 			}
@@ -434,7 +436,7 @@ public class ServiceMessageWorker implements Runnable {
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(stringList.get(0), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
 		
@@ -462,7 +464,7 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
 	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
 			}
@@ -470,7 +472,7 @@ public class ServiceMessageWorker implements Runnable {
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(stringList.get(0), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
 		
@@ -523,7 +525,7 @@ public class ServiceMessageWorker implements Runnable {
         // TODO Generate 123-456 with UUIDGen
         String jobId = uuidFactory.getUUID();
         ProducerRecord<String,String> newProdRecord =
-        JobMessageFactory.getRequestJobMessage(pjr, jobId);
+        JobMessageFactory.getRequestJobMessage(pjr, jobId, space);
       
         producer.send(newProdRecord);
         coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(), data.getDataType().getType()), PiazzaLogger.INFO);
@@ -536,7 +538,7 @@ public class ServiceMessageWorker implements Runnable {
         statusUpdate.setResult(textResult);
 
 
-        ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+        ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
 
         producer.send(prodRecord);
 	}
@@ -654,7 +656,7 @@ public class ServiceMessageWorker implements Runnable {
 		            ingestJob.host = true;
 		            pjr.jobType  = ingestJob;
 		            ProducerRecord<String,String> newProdRecord =
-		            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID());
+		            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), space);
 		
 		             producer.send(newProdRecord);
 		             LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
@@ -665,7 +667,7 @@ public class ServiceMessageWorker implements Runnable {
 		
 		             statusUpdate.setResult(textResult);
 		
-		             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate);
+		             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
 		
 		             producer.send(prodRecord);
 		             LOGGER.debug("prodRecord sent" + prodRecord.toString());

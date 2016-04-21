@@ -179,7 +179,8 @@ public class ServiceController {
 	@RequestMapping(value="/service", method=RequestMethod.GET)
 	public PiazzaResponse getServices(
 			@RequestParam(value = "page", required = false, defaultValue = DEFAULT_PAGE) Integer page,
-			@RequestParam(value = "per_page", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize) {
+			@RequestParam(value = "per_page", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
+			@RequestParam(value = "keyword", required = false) String keyword) {
 		try {
 			// Get a DB Cursor to the query for general data
 			DBCursor<Service> cursor = accessor.getServiceCollection().find();

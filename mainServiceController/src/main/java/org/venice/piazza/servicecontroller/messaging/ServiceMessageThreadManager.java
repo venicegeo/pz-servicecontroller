@@ -27,6 +27,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -77,13 +78,15 @@ import util.UUIDFactory;
 @Component
 public class ServiceMessageThreadManager {
 	// Jobs to listen to
-		private static final String DELETE_SERVICE_JOB_TOPIC_NAME = "delete-service";
-		private static final String EXECUTE_SERVICE_JOB_TOPIC_NAME = "execute-service";
-		private static final String READ_SERVICE_JOB_TOPIC_NAME = "read-service";
-		private static final String REGISTER_SERVICE_JOB_TOPIC_NAME = "register-service";
-		private static final String UPDATE_SERVICE_JOB_TOPIC_NAME = "update-service";
-		private static final String LIST_SERVICE_JOB_TOPIC_NAME = "list-service";
-		private static final String SEARCH_SERVICE_JOB_TOPIC_NAME = "search-service";
+		@Value("${space}")
+		private String space;
+		private final String DELETE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "delete-service", space);
+		private final String EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "execute-service", space);
+		private final String READ_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "read-service", space);
+		private final String REGISTER_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "register-service", space);
+		private final String UPDATE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "update-service", space);
+		private final String LIST_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "list-service", space);
+		private final String SEARCH_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "search-service", space);
 
 		private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
 		
@@ -217,7 +220,7 @@ public class ServiceMessageThreadManager {
 
 
 								ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
-															callback,coreServiceProperties, uuidFactory, coreLogger, job);
+															callback,coreServiceProperties, uuidFactory, coreLogger, job, space);
 	
 	
 								Future<?> workerFuture = executor.submit(serviceMessageWorker);
@@ -251,7 +254,7 @@ public class ServiceMessageThreadManager {
 				Consumer<String, String> uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT,
 
 						String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
-				uniqueConsumer.subscribe(Arrays.asList(JobMessageFactory.ABORT_JOB_TOPIC_NAME));
+				uniqueConsumer.subscribe(Arrays.asList(String.format("%s-%s", JobMessageFactory.ABORT_JOB_TOPIC_NAME, space)));
 
 				// Poll
 				while (!closed.get()) {

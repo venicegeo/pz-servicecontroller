@@ -67,9 +67,7 @@ public class ServiceMessageThreadManager {
 		 */
 		private Producer<String, String> producer;
 		private Consumer<String, String> consumer;
-		private List<String> topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
-				   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
-				   UPDATE_SERVICE_JOB_TOPIC_NAME,LIST_SERVICE_JOB_TOPIC_NAME, SEARCH_SERVICE_JOB_TOPIC_NAME);;
+		private List<String> topics;
 		private final AtomicBoolean closed = new AtomicBoolean(false);
 		
 		
@@ -110,6 +108,10 @@ public class ServiceMessageThreadManager {
 			UPDATE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "update-service", space);
 			LIST_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "list-service", space);
 			SEARCH_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "search-service", space);
+			
+			topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, 
+					   READ_SERVICE_JOB_TOPIC_NAME, REGISTER_SERVICE_JOB_TOPIC_NAME,
+					   UPDATE_SERVICE_JOB_TOPIC_NAME,LIST_SERVICE_JOB_TOPIC_NAME, SEARCH_SERVICE_JOB_TOPIC_NAME);;
 			
 			// Initialize the Kafka consumer/producer
 

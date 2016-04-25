@@ -116,6 +116,7 @@ public class ServiceMessageWorker implements Runnable {
 			String handleUpdate = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
 			ResponseEntity<List<String>> handleResult = null;
+			boolean raster=false;
 			ObjectMapper mapper = new ObjectMapper();
 	
 			try {
@@ -144,7 +145,8 @@ public class ServiceMessageWorker implements Runnable {
 						if ((dataType != null) && (dataType instanceof RasterDataType)) {
 							// Call special method to call and send
 							handleRasterType(jobItem);
-							return;
+							raster = true;
+							
 						}
 						else {
 							LOGGER.debug("ExecuteServiceJob Original Way");
@@ -214,48 +216,50 @@ public class ServiceMessageWorker implements Runnable {
 			
 		    // if there was no result set then 
 			// use the default error messages set.
-			if (handleResult == null) {
-				
-				StatusUpdate su = new StatusUpdate();
-				su.setStatus(handleUpdate);
-				// Create a text result and update status
-				ErrorResult errorResult = new ErrorResult();
-				errorResult.setMessage(handleTextUpdate);
-				
-				su.setResult(errorResult);
-				
-				ProducerRecord<String,String> prodRecord =
-						new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
-								mapper.writeValueAsString(su));
-				producer.send(prodRecord);
-			}
-			// If the status is not ok and the job is not equal to null
-			// then send an update to the job manager that there was some failure
-			else {
-				boolean eResult = ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))?false:false;
-			    if (eResult) {
-					handleUpdate =  StatusUpdate.STATUS_FAIL;
-				
-			    
-					handleResult = checkResult(handleResult);
-	
-					String serviceControlString = mapper.writeValueAsString(handleResult);
-	
+			if (raster == false ) {
+				if (handleResult == null) {
+					
 					StatusUpdate su = new StatusUpdate();
 					su.setStatus(handleUpdate);
 					// Create a text result and update status
 					ErrorResult errorResult = new ErrorResult();
-					errorResult.setMessage(serviceControlString);
+					errorResult.setMessage(handleTextUpdate);
+					
 					su.setResult(errorResult);
-	
 					
 					ProducerRecord<String,String> prodRecord =
 							new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
 									mapper.writeValueAsString(su));
 					producer.send(prodRecord);
-			    }
-	
-				
+				}
+				// If the status is not ok and the job is not equal to null
+				// then send an update to the job manager that there was some failure
+				else {
+					boolean eResult = ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))?false:false;
+				    if (eResult) {
+						handleUpdate =  StatusUpdate.STATUS_FAIL;
+					
+				    
+						handleResult = checkResult(handleResult);
+		
+						String serviceControlString = mapper.writeValueAsString(handleResult);
+		
+						StatusUpdate su = new StatusUpdate();
+						su.setStatus(handleUpdate);
+						// Create a text result and update status
+						ErrorResult errorResult = new ErrorResult();
+						errorResult.setMessage(serviceControlString);
+						su.setResult(errorResult);
+		
+						
+						ProducerRecord<String,String> prodRecord =
+								new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
+										mapper.writeValueAsString(su));
+						producer.send(prodRecord);
+				    }
+		
+					
+				}
 			}
 		} catch (WakeupException ex) {
 			LOGGER.error(ex.getMessage());

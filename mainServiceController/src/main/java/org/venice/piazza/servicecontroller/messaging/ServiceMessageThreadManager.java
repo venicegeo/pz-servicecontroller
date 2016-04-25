@@ -199,7 +199,7 @@ public class ServiceMessageThreadManager {
 							if (job != null) {
 								// Update the status to say the job is in progress
 								StatusUpdate su = new StatusUpdate();
-								su.setStatus("In Progress");
+								su.setStatus(StatusUpdate.STATUS_RUNNING);
 
 								
 								ProducerRecord<String,String> prodRecord =

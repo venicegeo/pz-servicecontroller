@@ -116,7 +116,7 @@ public class ServiceMessageWorker implements Runnable {
 			String handleUpdate = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
 			ResponseEntity<List<String>> handleResult = null;
-			boolean raster=false;
+			boolean rasterJob=false;
 			ObjectMapper mapper = new ObjectMapper();
 	
 			try {
@@ -144,8 +144,9 @@ public class ServiceMessageWorker implements Runnable {
 						DataType dataType= esData.dataOutput.get(0);
 						if ((dataType != null) && (dataType instanceof RasterDataType)) {
 							// Call special method to call and send
+							rasterJob = true;
 							handleRasterType(jobItem);
-							raster = true;
+							
 							
 						}
 						else {
@@ -216,7 +217,7 @@ public class ServiceMessageWorker implements Runnable {
 			
 		    // if there was no result set then 
 			// use the default error messages set.
-			if (raster == false ) {
+			if (!rasterJob ) {
 				if (handleResult == null) {
 					
 					StatusUpdate su = new StatusUpdate();

@@ -144,6 +144,7 @@ public class ServiceMessageWorker implements Runnable {
 						if ((dataType != null) && (dataType instanceof RasterDataType)) {
 							// Call special method to call and send
 							handleRasterType(jobItem);
+							return;
 						}
 						else {
 							LOGGER.debug("ExecuteServiceJob Original Way");
@@ -644,6 +645,7 @@ public class ServiceMessageWorker implements Runnable {
 		            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), space);
 		
 		             producer.send(newProdRecord);
+		             
 		             LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
 		             StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 		

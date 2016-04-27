@@ -108,7 +108,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			resultList.add(handleResult.getBody());
 			ResponseEntity<List<String>> result = new ResponseEntity<List<String>>(resultList,handleResult.getStatusCode());
 			
-
+            LOGGER.debug("The result is " + result);
 			// TODO Use the result, send a message with the resource ID
 			// and jobId
 			return result;
@@ -161,6 +161,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					LOGGER.debug("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata());
 
 					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
+					LOGGER.debug("Bulder URL is " + builder.toUriString());
+
 				}
 				else {
 					 builder.queryParam(inputName,paramValue);
@@ -186,7 +188,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			}
 		}
 		
-		LOGGER.debug("Bulder is " + builder.toString());
+		LOGGER.debug("Final Bulder URL is " + builder.toUriString());
 		if (postString.length() > 0 && postObjects.size() > 0) {
 			LOGGER.error("String Input not consistent with other Inputs");
 			coreLogger.log("String Input not consistent with other Inputs", coreLogger.ERROR);

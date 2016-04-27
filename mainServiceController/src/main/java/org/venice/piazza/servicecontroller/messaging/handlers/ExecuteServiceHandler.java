@@ -153,7 +153,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			Entry<String,DataType> entry = it.next();
 			
 			String inputName = entry.getKey();
-			LOGGER.debug(" parameter is "  + inputName);
+			LOGGER.debug("The parameter is "  + inputName);
 			
 			if (entry.getValue() instanceof URLParameterDataType) {
 				String paramValue = ((URLParameterDataType)entry.getValue()).getContent();

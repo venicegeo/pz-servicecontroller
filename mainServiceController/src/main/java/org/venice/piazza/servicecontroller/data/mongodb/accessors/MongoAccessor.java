@@ -156,7 +156,7 @@ public class MongoAccessor {
 			        String.class);
 			
 			
-			Query query = DBQuery.is("id",serviceId);
+			Query query = DBQuery.is("serviceId",serviceId);
 			WriteResult<Service, String> writeResult =
 					coll.update(query,DBUpdate.set("resourceMetadata.availability", "OUT OF SERVICE"));
 			int recordsChanged = writeResult.getN();

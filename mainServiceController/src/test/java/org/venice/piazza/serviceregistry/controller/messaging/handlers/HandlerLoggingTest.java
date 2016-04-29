@@ -9,7 +9,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
@@ -32,18 +32,15 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.data.DataType;
 import model.data.type.BodyDataType;
-import model.data.type.TextDataType;
-import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.DescribeServiceMetadataJob;
 import model.job.type.ListServicesJob;
 import model.job.type.RegisterServiceJob;
 import model.job.type.SearchServiceJob;
 import model.job.type.UpdateServiceJob;
+import model.response.ServiceResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.Format;
-import model.service.metadata.MetadataType;
 import model.service.metadata.ParamDataItem;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -57,6 +54,7 @@ public class HandlerLoggingTest {
 	Service service = null;
 	RestTemplate template = null;
 	MongoAccessor mockMongo = null;
+	ElasticSearchAccessor mockElasticAccessor = null;
 	PiazzaLogger logger = null;
 	CoreServiceProperties props = null;
 	@Before
@@ -82,6 +80,9 @@ public class HandlerLoggingTest {
 		when(mockMongo.getServiceById("8")).thenReturn(service);
 		logger = mock(PiazzaLogger.class);
 		props = mock(CoreServiceProperties.class);
+		mockElasticAccessor = mock(ElasticSearchAccessor.class);
+		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
+		
     	
     }
 	@Test
@@ -293,7 +294,7 @@ public class HandlerLoggingTest {
 		
 		RegisterServiceJob rjob = new RegisterServiceJob();
 		rjob.data = service;
-		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,props,logger,uuidFactory);
+		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
 		
 		doAnswer(new Answer() {
 			

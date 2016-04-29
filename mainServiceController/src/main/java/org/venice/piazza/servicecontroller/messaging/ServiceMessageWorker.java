@@ -28,6 +28,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -73,6 +74,7 @@ public class ServiceMessageWorker implements Runnable {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
 	private MongoAccessor accessor;
+	private ElasticSearchAccessor elasticAccessor;
 	private PiazzaLogger coreLogger;
 	private CoreServiceProperties coreServiceProperties;	
 	private Job job = null;
@@ -93,13 +95,14 @@ public class ServiceMessageWorker implements Runnable {
 	 * @param jobType
 	 */
 	public ServiceMessageWorker (ConsumerRecord<String, String> consumerRecord,
-			Producer<String, String> producer, MongoAccessor accessor, WorkerCallback callback, 
+			Producer<String, String> producer, MongoAccessor accessor,ElasticSearchAccessor elasticAccessor, WorkerCallback callback, 
 			CoreServiceProperties coreServiceProperties, UUIDFactory uuidFactory, 
 			PiazzaLogger logger,Job job, String space) {
 		this.job = job;
 		this.consumerRecord = consumerRecord;
 		this.producer = producer;
 		this.accessor = accessor;
+		this.elasticAccessor = elasticAccessor;
 		this.callback = callback;
 		this.coreLogger = logger;
 
@@ -130,7 +133,7 @@ public class ServiceMessageWorker implements Runnable {
 					if (jobType instanceof RegisterServiceJob) {
 					   LOGGER.debug("RegisterServiceJob Detected");
 					   // Handle Register Job
-					   RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);
+					   RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor,elasticAccessor, coreServiceProperties, coreLogger, uuidFactory);
 					   handleResult = rsHandler.handle(jobType);
 					   handleResult = checkResult(handleResult);
 					   sendRegisterStatus(job, handleUpdate, handleResult);

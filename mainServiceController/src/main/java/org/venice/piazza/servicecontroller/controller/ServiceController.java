@@ -24,20 +24,6 @@ import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 
-import model.data.DataResource;
-import model.data.DataType;
-import model.data.type.TextDataType;
-import model.job.type.RegisterServiceJob;
-import model.request.PiazzaJobRequest;
-import model.response.ErrorResponse;
-import model.response.PiazzaResponse;
-import model.response.ServiceResponse;
-import model.response.ServiceListResponse;
-import model.response.Pagination;
-import model.service.SearchCriteria;
-import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.Service;
-
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.slf4j.Logger;
@@ -57,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -66,12 +53,24 @@ import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandl
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
-import util.PiazzaLogger;
-import util.UUIDFactory;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import model.data.DataType;
+import model.data.type.TextDataType;
+import model.job.type.RegisterServiceJob;
+import model.request.PiazzaJobRequest;
+import model.response.ErrorResponse;
+import model.response.Pagination;
+import model.response.PiazzaResponse;
+import model.response.ServiceListResponse;
+import model.response.ServiceResponse;
+import model.service.SearchCriteria;
+import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.Service;
+import util.PiazzaLogger;
+import util.UUIDFactory;
 
 /**
  * Purpose of this controller is to handle service requests for registerin and
@@ -96,6 +95,8 @@ public class ServiceController {
 
 	@Autowired
 	private MongoAccessor accessor;
+	@Autowired
+	private ElasticSearchAccessor elasticAccessor;
 
 	@Autowired
 	private CoreServiceProperties coreServiceProp;
@@ -121,7 +122,7 @@ public class ServiceController {
 	public void initialize() {
 
 		// Initialize calling server
-		rsHandler = new RegisterServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
+		rsHandler = new RegisterServiceHandler(accessor,elasticAccessor, coreServiceProp, logger, uuidFactory);
 		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);

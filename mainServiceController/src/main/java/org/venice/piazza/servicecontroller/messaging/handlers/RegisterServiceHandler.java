@@ -24,10 +24,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.PiazzaJobType;
 import model.job.type.RegisterServiceJob;
+import model.response.ErrorResponse;
+import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -44,13 +47,15 @@ import util.UUIDFactory;
 
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
+	private ElasticSearchAccessor elasticAccessor;
 	private PiazzaLogger coreLogger;
 	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
 
 
-	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
+	public RegisterServiceHandler(MongoAccessor accessor, ElasticSearchAccessor elasticAccessor,CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
 		this.accessor = accessor;
+		this.elasticAccessor = elasticAccessor;
 		this.coreLogger = coreLogger;
 		this.uuidFactory = uuidFactory;
 	
@@ -125,7 +130,14 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		sMetadata.setServiceId(uuidFactory.getUUID());
 		String result = accessor.save(sMetadata);
 		LOGGER.debug("The result of the save is " + result);
-		
+		PiazzaResponse response = elasticAccessor.save(sMetadata);
+		if (ErrorResponse.class.isInstance(response)) {
+			ErrorResponse errResponse = (ErrorResponse)response;
+			LOGGER.debug("The result of the save is " + errResponse.message);
+		}
+		else {
+			LOGGER.debug("Successfully stored service " + sMetadata.getServiceId());
+		}
 		return sMetadata.getServiceId();
 	}
 	

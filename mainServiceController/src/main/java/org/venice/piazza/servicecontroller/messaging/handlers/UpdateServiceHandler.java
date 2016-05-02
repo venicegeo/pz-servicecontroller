@@ -16,6 +16,7 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
@@ -50,6 +53,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	private ElasticSearchAccessor elasticAccessor;
 	private PiazzaLogger coreLogger;
 	private UUIDFactory uuidFactory;
+	private RestTemplate template;
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
 
@@ -58,6 +62,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		this.elasticAccessor = elasticAccessor;
 		this.coreLogger = coreLogger;
 		this.uuidFactory = uuidFactory;
+		this.template = new RestTemplate();
 	
 	}
 
@@ -114,7 +119,17 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
         coreLogger.log("about to update a registered service.", PiazzaLogger.INFO);
         LOGGER.info("about to update a registered service.");
 
-		
+        if (sMetadata.getContractUrl() != null) {
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
+			URI url = URI.create(builder.toUriString());
+			ResponseEntity<String> responseEntity  = template.getForEntity(url, String.class);
+			if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.hasBody()) {
+				sMetadata.setContractData(responseEntity.getBody());
+			}
+			else {
+				LOGGER.warn("Unable to get contract data");
+			}
+		}
 		String result = accessor.update(sMetadata);
 		LOGGER.debug("The result of the update is " + result);
 		LOGGER.debug("The result of the save is " + result);

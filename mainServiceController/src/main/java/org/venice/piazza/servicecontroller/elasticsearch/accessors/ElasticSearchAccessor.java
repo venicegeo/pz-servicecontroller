@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import model.job.type.ServiceMetadataIngestJob;
@@ -28,6 +29,7 @@ import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
+@Component
 public class ElasticSearchAccessor {
 	@Value("${pz.search.protocol}")
 	private String SEARCH_PROTOCOL;

@@ -15,13 +15,17 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.elasticsearch.accessors;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.type.ServiceMetadataIngestJob;
 import model.response.ErrorResponse;
@@ -30,23 +34,35 @@ import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 @Component
+@DependsOn("coreInitDestroy")
 public class ElasticSearchAccessor {
-	@Value("${pz.search.protocol}")
+	
 	private String SEARCH_PROTOCOL;
-	@Value("${pz.search.url}")
 	private String SEARCH_URL;
-	@Value("{pz.servicemetadata.ingest.url}")
 	private String SERVICEMETADATA_INGEST_URL;
-	@Value("{pz.servicemetadata.update.url}")
 	private String SERVICEMETADATA_UPDATE_URL;
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
 	private RestTemplate restTemplate = new RestTemplate();
 	@Autowired
 	private PiazzaLogger logger;
+	@Autowired
+	private CoreServiceProperties coreServiceProperties;
 	/**
 	 * Store the new service information
 	 */
+	
+	public ElasticSearchAccessor() {}
+	@PostConstruct
+	private void initialize() {
+		SEARCH_PROTOCOL= coreServiceProperties.getPzSearchProtocol();
+		SEARCH_URL = coreServiceProperties.getPzSearchUrl();
+		SERVICEMETADATA_INGEST_URL = coreServiceProperties.getPzServicemetadataIngestUrl();
+		SERVICEMETADATA_UPDATE_URL = coreServiceProperties.getPzServicemetadataUpdateUrl();
+		
+		
+		
+	}
 	public PiazzaResponse save(Service sMetadata) {
 		
 		

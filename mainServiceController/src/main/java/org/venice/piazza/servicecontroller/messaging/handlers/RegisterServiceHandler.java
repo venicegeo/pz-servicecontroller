@@ -133,7 +133,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		PiazzaResponse response = elasticAccessor.save(sMetadata);
 		if (ErrorResponse.class.isInstance(response)) {
 			ErrorResponse errResponse = (ErrorResponse)response;
-			LOGGER.debug("The result of the save is " + errResponse.message);
+			LOGGER.error("The result of the save is " + errResponse.message);
 		}
 		else {
 			LOGGER.debug("Successfully stored service " + sMetadata.getServiceId());

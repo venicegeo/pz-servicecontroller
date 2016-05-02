@@ -123,7 +123,7 @@ public class ServiceController {
 
 		// Initialize calling server
 		rsHandler = new RegisterServiceHandler(accessor,elasticAccessor, coreServiceProp, logger, uuidFactory);
-		usHandler = new UpdateServiceHandler(accessor, coreServiceProp, logger, uuidFactory);
+		usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
 		dlHandler = new DeleteServiceHandler(accessor, coreServiceProp, logger, uuidFactory);

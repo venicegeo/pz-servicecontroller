@@ -165,7 +165,7 @@ public class ServiceMessageWorker implements Runnable {
 						}
 					} 
 					else if (jobType instanceof UpdateServiceJob) {
-						UpdateServiceHandler usHandler = new UpdateServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);
+						UpdateServiceHandler usHandler = new UpdateServiceHandler(accessor, elasticAccessor,coreServiceProperties, coreLogger, uuidFactory);
 						handleResult = usHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendUpdateStatus(job, handleUpdate, handleResult);

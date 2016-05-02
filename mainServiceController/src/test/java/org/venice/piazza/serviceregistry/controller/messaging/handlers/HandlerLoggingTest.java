@@ -332,7 +332,7 @@ public class HandlerLoggingTest {
 		
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.data = service;
-		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,props,logger,uuidFactory);
+		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
 		
 		doAnswer(new Answer() {
 			
@@ -345,6 +345,7 @@ public class HandlerLoggingTest {
 		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
 	
 		when(mockMongo.update(service)).thenReturn("8");
+		when(mockElasticAccessor.update(service)).thenReturn(new ServiceResponse());
 	     handler.handle(rjob);
 	     assertTrue(logString.contains("was updated"));
 		
@@ -371,7 +372,7 @@ public class HandlerLoggingTest {
 		
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.data = service;
-		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,props,logger,uuidFactory);
+		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
 		
 		doAnswer(new Answer() {
 			

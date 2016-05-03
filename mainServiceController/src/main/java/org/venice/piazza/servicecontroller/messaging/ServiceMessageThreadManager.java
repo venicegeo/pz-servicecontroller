@@ -22,13 +22,10 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
-
-
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -37,7 +34,6 @@ import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
 import model.job.Job;
 import model.job.PiazzaJobType;
-import model.job.result.type.ErrorResult;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -77,6 +73,8 @@ public class ServiceMessageThreadManager {
 
 		@Autowired
 		private MongoAccessor accessor;
+		@Autowired
+		private ElasticSearchAccessor elasticAccessor;
 		@Autowired
 		private CoreServiceProperties coreServiceProperties;
 		
@@ -216,7 +214,7 @@ public class ServiceMessageThreadManager {
 
 
 								ServiceMessageWorker serviceMessageWorker = new ServiceMessageWorker(consumerRecord, producer, accessor,  
-															callback,coreServiceProperties, uuidFactory, coreLogger, job, space);
+															elasticAccessor,callback,coreServiceProperties, uuidFactory, coreLogger, job, space);
 	
 	
 								Future<?> workerFuture = executor.submit(serviceMessageWorker);

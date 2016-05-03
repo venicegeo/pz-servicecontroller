@@ -16,6 +16,7 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,11 +24,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.PiazzaJobType;
 import model.job.type.RegisterServiceJob;
+import model.response.ErrorResponse;
+import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -44,15 +50,19 @@ import util.UUIDFactory;
 
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
+	private ElasticSearchAccessor elasticAccessor;
 	private PiazzaLogger coreLogger;
 	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
+	private RestTemplate template;
 
 
-	public RegisterServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
+	public RegisterServiceHandler(MongoAccessor accessor, ElasticSearchAccessor elasticAccessor,CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
 		this.accessor = accessor;
+		this.elasticAccessor = elasticAccessor;
 		this.coreLogger = coreLogger;
 		this.uuidFactory = uuidFactory;
+		this.template = new RestTemplate();
 	
 	}
 
@@ -121,11 +131,28 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	public String handle (Service sMetadata) {
 
         //coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
-
+		if (sMetadata.getContractUrl() != null) {
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
+			URI url = URI.create(builder.toUriString());
+			ResponseEntity<String> responseEntity  = template.getForEntity(url, String.class);
+			if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.hasBody()) {
+				sMetadata.setContractData(responseEntity.getBody());
+			}
+			else {
+				LOGGER.warn("Unable to get contract data");
+			}
+		}
 		sMetadata.setServiceId(uuidFactory.getUUID());
 		String result = accessor.save(sMetadata);
 		LOGGER.debug("The result of the save is " + result);
-		
+		PiazzaResponse response = elasticAccessor.save(sMetadata);
+		if (ErrorResponse.class.isInstance(response)) {
+			ErrorResponse errResponse = (ErrorResponse)response;
+			LOGGER.error("The result of the save is " + errResponse.message);
+		}
+		else {
+			LOGGER.debug("Successfully stored service " + sMetadata.getServiceId());
+		}
 		return sMetadata.getServiceId();
 	}
 	

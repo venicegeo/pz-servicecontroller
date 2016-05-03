@@ -72,7 +72,49 @@ public class CoreServiceProperties {
 	private String host;
 	@Value("${servicecontroller.port}")
 	private String port;
+	@Value("${pz.search.protocol}")
+	private String pzSearchProtocol;
+	@Value("${pz.search.url}")
+	private String pzSearchUrl;
+	@Value("${pz.servicemetadata.ingest.url}")
+	private String pzServicemetadataIngestUrl;
+	@Value("${pz.servicemetadata.update.url}")
+	private String pzServicemetadataUpdateUrl;
 	
+	
+	
+	public String getPzSearchProtocol() {
+		return pzSearchProtocol;
+	}
+
+	public void setPzSearchProtocol(String pzSearchProtocol) {
+		this.pzSearchProtocol = pzSearchProtocol;
+	}
+
+	public String getPzSearchUrl() {
+		return pzSearchUrl;
+	}
+
+	public void setPzSearchUrl(String pzSearchUrl) {
+		this.pzSearchUrl = pzSearchUrl;
+	}
+
+	public String getPzServicemetadataIngestUrl() {
+		return pzServicemetadataIngestUrl;
+	}
+
+	public void setPzServicemetadataIngestUrl(String pzServicemetadataIngestUrl) {
+		this.pzServicemetadataIngestUrl = pzServicemetadataIngestUrl;
+	}
+
+	public String getPzServicemetadataUpdateUrl() {
+		return pzServicemetadataUpdateUrl;
+	}
+
+	public void setPzServicemetadataUpdateUrl(String pzServicemetadataUpdateUrl) {
+		this.pzServicemetadataUpdateUrl = pzServicemetadataUpdateUrl;
+	}
+
 	@Value ("${space}")
 	private String space;
 

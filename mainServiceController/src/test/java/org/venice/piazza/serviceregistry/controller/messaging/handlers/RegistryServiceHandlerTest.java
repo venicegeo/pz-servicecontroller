@@ -15,6 +15,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -25,6 +26,7 @@ import model.data.DataType;
 import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
+import model.response.ServiceResponse;
 import model.service.metadata.Format;
 import model.service.metadata.MetadataType;
 import model.service.metadata.ParamDataItem;
@@ -79,12 +81,14 @@ public class RegistryServiceHandlerTest {
 	@PrepareForTest({RegisterServiceHandler.class})
 	@Test
 	public void testHandleWithData() {
+		ElasticSearchAccessor mockElasticAccessor = mock(ElasticSearchAccessor.class);
+		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
 		when(mockMongo.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		//when(props.getUuidservicehost().thenReturn("Nothing");
 		PiazzaLogger logger = mock(PiazzaLogger.class);
-		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,props,logger,uuidFactory);
+		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
         String retVal = handler.handle(service);
         assertTrue(retVal.contains("NoDoz"));
         assertTrue(service.getServiceId().contains("NoDoz"));

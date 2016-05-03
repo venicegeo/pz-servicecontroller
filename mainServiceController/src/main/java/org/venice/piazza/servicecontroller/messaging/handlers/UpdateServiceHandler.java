@@ -133,7 +133,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		String result = accessor.update(sMetadata);
 		LOGGER.debug("The result of the update is " + result);
 		LOGGER.debug("The result of the save is " + result);
-		PiazzaResponse response = elasticAccessor.update(sMetadata);
+		//TODO PiazzaResponse response = elasticAccessor.update(sMetadata);
 		if (result.length() > 0) {
 		   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, PiazzaLogger.INFO);
 		   LOGGER.info("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result);
@@ -144,14 +144,14 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		// If an ID was returned then send a kafka message back updating the job iD 
 		// with the resourceID
 		
-		if (ErrorResponse.class.isInstance(response)) {
+		/*TODO if (ErrorResponse.class.isInstance(response)) {
 			ErrorResponse errResponse = (ErrorResponse)response;
 			LOGGER.error("The result of the elasticsearch update is " + errResponse.message);
 			result = "";  // Indicates that update went wrong,  Mongo and ElasticSearch inconsistent
 		}
 		else {
 			LOGGER.debug("ElasticSearch Successfully updated service " + sMetadata.getServiceId());
-		}
+		}*/
 		return result;
 				
 	}

@@ -131,7 +131,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	public String handle (Service sMetadata) {
 
         //coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
-		if (sMetadata.getContractUrl() != null) {
+		/*TODO if ever decide to add more detailed metadata
+		 if (sMetadata.getContractUrl() != null) {
 			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
 			URI url = URI.create(builder.toUriString());
 			ResponseEntity<String> responseEntity  = template.getForEntity(url, String.class);
@@ -141,7 +142,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			else {
 				LOGGER.warn("Unable to get contract data");
 			}
-		}
+		}*/
 		sMetadata.setServiceId(uuidFactory.getUUID());
 		String result = accessor.save(sMetadata);
 		LOGGER.debug("The result of the save is " + result);

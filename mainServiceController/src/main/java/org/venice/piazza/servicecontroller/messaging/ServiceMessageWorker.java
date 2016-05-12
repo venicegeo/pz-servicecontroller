@@ -70,23 +70,21 @@ import util.PiazzaLogger;
 import util.UUIDFactory;
 
 public class ServiceMessageWorker implements Runnable {
-	
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
 	private MongoAccessor accessor;
 	private ElasticSearchAccessor elasticAccessor;
 	private PiazzaLogger coreLogger;
-	private CoreServiceProperties coreServiceProperties;	
+	private CoreServiceProperties coreServiceProperties;
 	private Job job = null;
-	private ConsumerRecord<String, String> consumerRecord;
 	private Producer<String, String> producer;
-	private WorkerCallback callback;
 	private UUIDFactory uuidFactory;
-
 	private String space;
 
 	/**
-	 * Initializes the ServiceMessageWorker which works on handling the jobRequest
+	 * Initializes the ServiceMessageWorker which works on handling the
+	 * jobRequest
+	 * 
 	 * @param consumerRecord
 	 * @param producer
 	 * @param callback
@@ -94,21 +92,17 @@ public class ServiceMessageWorker implements Runnable {
 	 * @param logger
 	 * @param jobType
 	 */
-	public ServiceMessageWorker (ConsumerRecord<String, String> consumerRecord,
-			Producer<String, String> producer, MongoAccessor accessor,ElasticSearchAccessor elasticAccessor, WorkerCallback callback, 
-			CoreServiceProperties coreServiceProperties, UUIDFactory uuidFactory, 
-			PiazzaLogger logger,Job job, String space) {
+	public ServiceMessageWorker(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, MongoAccessor accessor,
+			ElasticSearchAccessor elasticAccessor, WorkerCallback callback, CoreServiceProperties coreServiceProperties,
+			UUIDFactory uuidFactory, PiazzaLogger logger, Job job, String space) {
 		this.job = job;
-		this.consumerRecord = consumerRecord;
 		this.producer = producer;
 		this.accessor = accessor;
 		this.elasticAccessor = elasticAccessor;
-		this.callback = callback;
 		this.coreLogger = logger;
 
 		this.space = space;
-		this.uuidFactory = uuidFactory;		
-		
+		this.uuidFactory = uuidFactory;
 	}
 	
 	/**
@@ -119,40 +113,39 @@ public class ServiceMessageWorker implements Runnable {
 			String handleUpdate = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
 			ResponseEntity<List<String>> handleResult = null;
-			boolean rasterJob=false;
+			boolean rasterJob = false;
 			ObjectMapper mapper = new ObjectMapper();
-	
+
 			try {
-	
 				// if a jobType has been declared
 				if (job != null) {
-	
+
 					PiazzaJobType jobType = job.getJobType();
 					LOGGER.debug("Job ID:" + job.getJobId());
 
 					if (jobType instanceof RegisterServiceJob) {
-					   LOGGER.debug("RegisterServiceJob Detected");
-					   // Handle Register Job
-					   RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor,elasticAccessor, coreServiceProperties, coreLogger, uuidFactory);
-					   handleResult = rsHandler.handle(jobType);
-					   handleResult = checkResult(handleResult);
-					   sendRegisterStatus(job, handleUpdate, handleResult);
-							
-					} else if (jobType instanceof ExecuteServiceJob) {	
+						LOGGER.debug("RegisterServiceJob Detected");
+						// Handle Register Job
+						RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor, elasticAccessor, coreServiceProperties,
+								coreLogger, uuidFactory);
+						handleResult = rsHandler.handle(jobType);
+						handleResult = checkResult(handleResult);
+						sendRegisterStatus(job, handleUpdate, handleResult);
+
+					} else if (jobType instanceof ExecuteServiceJob) {
 						LOGGER.debug("ExecuteServiceJob Detected");
 
 						// Get the ResourceMetadata
-						ExecuteServiceJob jobItem = (ExecuteServiceJob)jobType;
+						ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
 						ExecuteServiceData esData = jobItem.data;
-						DataType dataType= esData.dataOutput.get(0);
+						DataType dataType = esData.dataOutput.get(0);
 						if ((dataType != null) && (dataType instanceof RasterDataType)) {
 							// Call special method to call and send
 							rasterJob = true;
 							handleRasterType(jobItem);
-							
-							
-						}
-						else {
+
+							sendExecuteStatus(job, handleUpdate, handleResult);
+						} else {
 							LOGGER.debug("ExecuteServiceJob Original Way");
 
 							ExecuteServiceHandler esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
@@ -163,106 +156,98 @@ public class ServiceMessageWorker implements Runnable {
 
 							sendExecuteStatus(job, handleUpdate, handleResult);
 						}
-					} 
-					else if (jobType instanceof UpdateServiceJob) {
-						UpdateServiceHandler usHandler = new UpdateServiceHandler(accessor, elasticAccessor,coreServiceProperties, coreLogger, uuidFactory);
+					} else if (jobType instanceof UpdateServiceJob) {
+						UpdateServiceHandler usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProperties,
+								coreLogger, uuidFactory);
 						handleResult = usHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendUpdateStatus(job, handleUpdate, handleResult);
-						
-					}
-					else if (jobType instanceof DeleteServiceJob) {
+
+					} else if (jobType instanceof DeleteServiceJob) {
 						DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, coreServiceProperties, coreLogger, uuidFactory);
-					    handleResult = dlHandler.handle(jobType);	
-					    handleResult = checkResult(handleResult);
-						sendDeleteStatus(job, handleUpdate, handleResult);
-		
-					}
-					else if (jobType instanceof DescribeServiceMetadataJob) {
-						DescribeServiceHandler dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
-					    handleResult = dsHandler.handle(jobType);
-					    handleResult = checkResult(handleResult);
-						sendDescribeStatus(job, handleUpdate, handleResult);
-					    
-					}
-					else if (jobType instanceof ListServicesJob) {
-					   ListServiceHandler lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);  
-					   handleResult = lsHandler.handle(jobType);
-					   handleResult = checkResult(handleResult);
-					   sendListStatus(job, handleUpdate, handleResult);
-						
-					}
-					else if (jobType instanceof SearchServiceJob) {
-					    LOGGER.debug("SearchService Job Detected");
-						SearchServiceHandler ssHandler = new SearchServiceHandler(accessor, coreServiceProperties, coreLogger);
-					   
-						handleResult = ssHandler.handle(jobType);
-						 LOGGER.debug("Performed Search Job Detected");
+						handleResult = dlHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
-					    sendSearchStatus(job, handleUpdate, handleResult);
+						sendDeleteStatus(job, handleUpdate, handleResult);
+
+					} else if (jobType instanceof DescribeServiceMetadataJob) {
+						DescribeServiceHandler dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
+						handleResult = dsHandler.handle(jobType);
+						handleResult = checkResult(handleResult);
+						sendDescribeStatus(job, handleUpdate, handleResult);
+
+					} else if (jobType instanceof ListServicesJob) {
+						ListServiceHandler lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);
+						handleResult = lsHandler.handle(jobType);
+						handleResult = checkResult(handleResult);
+						sendListStatus(job, handleUpdate, handleResult);
+
+					} else if (jobType instanceof SearchServiceJob) {
+						LOGGER.debug("SearchService Job Detected");
+						SearchServiceHandler ssHandler = new SearchServiceHandler(accessor, coreServiceProperties, coreLogger);
+
+						handleResult = ssHandler.handle(jobType);
+						LOGGER.debug("Performed Search Job Detected");
+						handleResult = checkResult(handleResult);
+						sendSearchStatus(job, handleUpdate, handleResult);
 					}
-				}// if job not null
+				} // if job not null
 			} catch (IOException ex) {
 				LOGGER.error(ex.getMessage());
 				handleUpdate = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = ex.getMessage();
-			}
-			catch (ResourceAccessException rex) {
+			} catch (ResourceAccessException rex) {
 				LOGGER.error(rex.getMessage());
 				handleTextUpdate = rex.getMessage();
 				handleUpdate = StatusUpdate.STATUS_ERROR;
-			}
-			catch (HttpClientErrorException hex) {
+			} catch (HttpClientErrorException hex) {
 				LOGGER.error(hex.getMessage());
 				handleUpdate = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = hex.getMessage();
 			}
-			
-		    // if there was no result set then 
+
+			// if there was no result set then
 			// use the default error messages set.
-			if (!rasterJob ) {
+			if (!rasterJob) {
 				if (handleResult == null) {
-					
+
 					StatusUpdate su = new StatusUpdate();
 					su.setStatus(handleUpdate);
 					// Create a text result and update status
 					ErrorResult errorResult = new ErrorResult();
 					errorResult.setMessage(handleTextUpdate);
-					
+
 					su.setResult(errorResult);
-					
-					ProducerRecord<String,String> prodRecord =
-							new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
-									mapper.writeValueAsString(su));
+
+					ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
+							String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space), job.getJobId(),
+							mapper.writeValueAsString(su));
 					producer.send(prodRecord);
 				}
 				// If the status is not ok and the job is not equal to null
-				// then send an update to the job manager that there was some failure
+				// then send an update to the job manager that there was some
+				// failure
 				else {
-					boolean eResult = ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null))?false:false;
-				    if (eResult) {
-						handleUpdate =  StatusUpdate.STATUS_FAIL;
-					
-				    
+					boolean eResult = ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null)) ? false : false;
+					if (eResult) {
+						handleUpdate = StatusUpdate.STATUS_FAIL;
+
 						handleResult = checkResult(handleResult);
-		
+
 						String serviceControlString = mapper.writeValueAsString(handleResult);
-		
+
 						StatusUpdate su = new StatusUpdate();
 						su.setStatus(handleUpdate);
 						// Create a text result and update status
 						ErrorResult errorResult = new ErrorResult();
 						errorResult.setMessage(serviceControlString);
 						su.setResult(errorResult);
-		
-						
-						ProducerRecord<String,String> prodRecord =
-								new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
-										mapper.writeValueAsString(su));
+
+						ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
+								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space), job.getJobId(),
+								mapper.writeValueAsString(su));
 						producer.send(prodRecord);
-				    }
-		
-					
+					}
+
 				}
 			}
 		} catch (WakeupException ex) {
@@ -270,12 +255,8 @@ public class ServiceMessageWorker implements Runnable {
 		} catch (JsonProcessingException ex) {
 			LOGGER.error(ex.getMessage());
 		}
-		
 	}
 
-
-
-	
 	private void sendListStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
@@ -303,6 +284,7 @@ public class ServiceMessageWorker implements Runnable {
 			}
 		}
 	}
+	
 	/** 
 	 * Sends an update for registering a job
 	 * 
@@ -441,241 +423,213 @@ public class ServiceMessageWorker implements Runnable {
 		
 	}
 	
-	/** 
-	 * Sends an update for describing the resource
-	 * Message is sent on Kafka Queue
+	/**
+	 * Sends an update for describing the resource Message is sent on Kafka
+	 * Queue
 	 * 
 	 */
-	private void sendDescribeStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {	
-		
+	private void sendDescribeStatus(Job job, String status, ResponseEntity<List<String>> handleResult) throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
-			
 			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			List <String>stringList = handleResult.getBody();
-			
+			List<String> stringList = handleResult.getBody();
 			TextResult textResult = new TextResult();
-				textResult.setText(stringList.get(0));
+			textResult.setText(stringList.get(0));
 			su.setResult(textResult);
+
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
-	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
-				
+
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				producer.send(prodRecord);
-			}
-		
-			else {
+			} else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(stringList.get(0), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+				su.setResult(new ErrorResult(stringList.get(0),
+						"Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
+				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
-		
 	}
-	
+
 	/**
-	 * Send an execute job status and the resource that was used
-	 * Message is sent on Kafka Queue
+	 * Send an execute job status and the resource that was used Message is sent
+	 * on Kafka Queue
+	 * 
 	 * @param job
 	 * @param status
 	 * @param handleResult
 	 * @throws JsonProcessingException
 	 */
-	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        
-        LOGGER.debug("The result provided from service is " + handleResult.getBody());
-        LOGGER.debug("==============================================================");
-        String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
-        LOGGER.debug("The service controller string is " + serviceControlString);
-        // Now produce a new record
-        PiazzaJobRequest pjr  =  new PiazzaJobRequest();
-        // TODO read from properties file
-        pjr.userName = "pz-sc-ingest";
-        IngestJob ingestJob = new IngestJob();
-        DataResource data = new DataResource();
-        data.dataId = uuidFactory.getUUID();
+	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)
+			throws JsonProcessingException, IOException {
+		LOGGER.debug("The result provided from service is " + handleResult.getBody());
 
-        ObjectMapper tempMapper = new ObjectMapper(); 
-        try {
-        	
-        	 data = tempMapper.readValue(serviceControlString, DataResource.class);
-        
-        } catch (JsonProcessingException jpe) {
+		String serviceControlString = handleResult.getBody().toString();
+		LOGGER.debug("The service controller string is " + serviceControlString);
+
+		// Now produce a new record
+		PiazzaJobRequest pjr = new PiazzaJobRequest();
+		pjr.userName = "pz-sc-ingest";
+		IngestJob ingestJob = new IngestJob();
+		DataResource data = new DataResource();
+		data.dataId = uuidFactory.getUUID();
+
+		ObjectMapper tempMapper = new ObjectMapper();
+		try {
+			data = tempMapper.readValue(serviceControlString, DataResource.class);
+		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
-	        TextDataType tr = new TextDataType();
-	        tr.content = serviceControlString;
-	        data.dataType = tr;
+			TextDataType tr = new TextDataType();
+			tr.content = serviceControlString;
+			data.dataType = tr;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-        
-        //LOGGER.info("The content of the result is " + serviceControlString);
-        
-        ingestJob.data=data;
-        ingestJob.host = true;
 
-        pjr.jobType  = ingestJob;
+		ingestJob.data = data;
+		ingestJob.host = true;
+		pjr.jobType = ingestJob;
 
-        // TODO Generate 123-456 with UUIDGen
-        String jobId = uuidFactory.getUUID();
-        ProducerRecord<String,String> newProdRecord =
-        JobMessageFactory.getRequestJobMessage(pjr, jobId, space);
-      
-        producer.send(newProdRecord);
-        coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(), data.getDataType().getType()), PiazzaLogger.INFO);
+		// Generate 123-456 with UUIDGen
+		String jobId = uuidFactory.getUUID();
+		ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, space);
+		producer.send(newProdRecord);
+		coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(),
+				data.getDataType().getType()), PiazzaLogger.INFO);
 
-        StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 
-        // Create a text result and update status
-        DataResult textResult = new DataResult(data.dataId);
-
-        statusUpdate.setResult(textResult);
-
-
-        ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
-
-        producer.send(prodRecord);
+		// Create a text result and update status via kafka
+		DataResult textResult = new DataResult(data.dataId);
+		statusUpdate.setResult(textResult);
+		ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
+		producer.send(prodRecord);
 	}
 	
 	/**
-	 *  This method is for demonstrating ingest of raster data
-	 *  This will be refactored once the API changes have been communicated to
-	 *  other team members
+	 * This method is for demonstrating ingest of raster data This will be
+	 * refactored once the API changes have been communicated to other team
+	 * members
 	 */
 	public void handleRasterType(ExecuteServiceJob executeJob) {
-		
 		RestTemplate restTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;
 		// Get the id from the data
-			String serviceId = data.getServiceId();
-			Service sMetadata = accessor.getServiceById(serviceId);
-			// Default request mimeType application/json
-			String requestMimeType = "application/json";
-			MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
-		
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
-			
-			Map<String,DataType> postObjects = new HashMap<String,DataType>();
-			Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
-			String postString = "";
-			while (it.hasNext()) {
-				Entry<String,DataType> entry = it.next();
-				
-				String inputName = entry.getKey();
-				
-				if (entry.getValue() instanceof URLParameterDataType) {
-					String paramValue = ((TextDataType)entry.getValue()).getContent();
-					if (inputName.length() == 0) {
-						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
-					}
-					else {
-						 builder.queryParam(inputName,paramValue);
-					}
-				}
-				
-				else if (entry.getValue() instanceof BodyDataType){
-					BodyDataType bdt = (BodyDataType)entry.getValue();
-					postString = bdt.getContent();
-					requestMimeType = bdt.getMimeType();
-				}
-				//Default behavior for other inputs, put them in list of objects
-				// which are transformed into JSON consistent with default requestMimeType
-				else {
-					postObjects.put(inputName, entry.getValue());
+		String serviceId = data.getServiceId();
+		Service sMetadata = accessor.getServiceById(serviceId);
+		// Default request mimeType application/json
+		String requestMimeType = "application/json";
+		new LinkedMultiValueMap<String, String>();
+
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
+		Map<String, DataType> postObjects = new HashMap<String, DataType>();
+		Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
+		String postString = "";
+
+		while (it.hasNext()) {
+			Entry<String, DataType> entry = it.next();
+			String inputName = entry.getKey();
+
+			if (entry.getValue() instanceof URLParameterDataType) {
+				String paramValue = ((TextDataType) entry.getValue()).getContent();
+				if (inputName.length() == 0) {
+					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
+				} else {
+					builder.queryParam(inputName, paramValue);
 				}
 			}
-			if (postString.length() > 0 && postObjects.size() > 0) {
-				LOGGER.error("String Input not consistent with other Inputs");
-				return;
+			else if (entry.getValue() instanceof BodyDataType) {
+				BodyDataType bdt = (BodyDataType) entry.getValue();
+				postString = bdt.getContent();
+				requestMimeType = bdt.getMimeType();
 			}
-			else if (postObjects.size() > 0){
-				ObjectMapper mapper = new ObjectMapper();
-				try {
-					postString = mapper.writeValueAsString(postObjects);
-				} catch (JsonProcessingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			// Default behavior for other inputs, put them in list of objects
+			// which are transformed into JSON consistent with default
+			// requestMimeType
+			else {
+				postObjects.put(inputName, entry.getValue());
 			}
-			URI url = URI.create(builder.toUriString());		
-			HttpHeaders headers = new HttpHeaders();
-			
-			// Set the mimeType of the request
-			MediaType mediaType = createMediaType(requestMimeType);
-			headers.setContentType(mediaType);
-			// Set the mimeType of the request
-			//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
-
-			if (postString.length() > 0) {
-				LOGGER.debug("The postString is " + postString);
-				HttpHeaders theHeaders = new HttpHeaders();
-				//headers.add("Authorization", "Basic " + credentials);
-				theHeaders.setContentType(MediaType.APPLICATION_JSON);
-
-				// Create the Request template and execute
-				HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
-				
-		
-			
-				try {  
-					
-				    LOGGER.debug("About to call special service");
-				    LOGGER.debug("URL calling" + url);
-
-				    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-				    LOGGER.debug("The Response is " + response.getBody());
-
-
-				    String serviceControlString = response.getBody();
-			        LOGGER.debug("Service Control String" + serviceControlString); 
-
-			        ObjectMapper tempMapper = new ObjectMapper();
-				    DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
-			        
-			        LOGGER.debug("This is a test");
-			        LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());
-
-		            dataResource.dataId = uuidFactory.getUUID();
-		            LOGGER.debug("dataId" + dataResource.dataId);
-		            PiazzaJobRequest pjr  =  new PiazzaJobRequest();
-		            pjr.userName = "pz-sc-ingest-raster-test";
-		            
-		            IngestJob ingestJob = new IngestJob();
-		            ingestJob.data=dataResource;
-		            ingestJob.host = true;
-		            pjr.jobType  = ingestJob;
-		            ProducerRecord<String,String> newProdRecord =
-		            JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), space);
-		
-		             producer.send(newProdRecord);
-		             
-		             LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
-		             StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-		
-		             // Create a text result and update status
-		             DataResult textResult = new DataResult(dataResource.dataId);
-		
-		             statusUpdate.setResult(textResult);
-		
-		             ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
-		
-		             producer.send(prodRecord);
-		             LOGGER.debug("prodRecord sent" + prodRecord.toString());
-	
-				} catch (JsonProcessingException jpe) {
-					jpe.printStackTrace();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+		}
+		if (postString.length() > 0 && postObjects.size() > 0) {
+			LOGGER.error("String Input not consistent with other Inputs");
+			return;
+		} else if (postObjects.size() > 0) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				postString = mapper.writeValueAsString(postObjects);
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		
+		}
+		URI url = URI.create(builder.toUriString());
+		HttpHeaders headers = new HttpHeaders();
+
+		// Set the mimeType of the request
+		MediaType mediaType = createMediaType(requestMimeType);
+		headers.setContentType(mediaType);
+		// Set the mimeType of the request
+		// headers.add("Content-type",
+		// sMetadata.getOutputs().get(0).getDataType().getMimeType());
+
+		if (postString.length() > 0) {
+			LOGGER.debug("The postString is " + postString);
+			HttpHeaders theHeaders = new HttpHeaders();
+			// headers.add("Authorization", "Basic " + credentials);
+			theHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+			// Create the Request template and execute
+			HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
+
+			try {
+				LOGGER.debug("About to call special service");
+				LOGGER.debug("URL calling" + url);
+
+				ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+				LOGGER.debug("The Response is " + response.getBody());
+
+				String serviceControlString = response.getBody();
+				LOGGER.debug("Service Control String" + serviceControlString);
+
+				ObjectMapper tempMapper = new ObjectMapper();
+				DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
+
+				LOGGER.debug("This is a test");
+				LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());
+
+				dataResource.dataId = uuidFactory.getUUID();
+				LOGGER.debug("dataId" + dataResource.dataId);
+				PiazzaJobRequest pjr = new PiazzaJobRequest();
+				pjr.userName = "pz-sc-ingest-raster-test";
+
+				IngestJob ingestJob = new IngestJob();
+				ingestJob.data = dataResource;
+				ingestJob.host = true;
+				pjr.jobType = ingestJob;
+
+				ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), space);
+				producer.send(newProdRecord);
+
+				LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
+				StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+
+				// Create a text result and update status
+				DataResult textResult = new DataResult(dataResource.dataId);
+				statusUpdate.setResult(textResult);
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
+
+				producer.send(prodRecord);
+				LOGGER.debug("prodRecord sent" + prodRecord.toString());
+			} catch (JsonProcessingException jpe) {
+				jpe.printStackTrace();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
-	
+
 	private MediaType createMediaType(String mimeType) {
 		MediaType mediaType;
 		String type, subtype;
@@ -684,26 +638,22 @@ public class ServiceMessageWorker implements Runnable {
 		// If a slash was found then there is a type and subtype
 		if (index != -1) {
 			type = sb.substring(0, index);
-			
-		    subtype = sb.substring(index+1, mimeType.length());
-		    mediaType = new MediaType(type, subtype);
-		    LOGGER.debug("The type is="+type);
-			LOGGER.debug("The subtype="+subtype);
-		}
-		else {
+
+			subtype = sb.substring(index + 1, mimeType.length());
+			mediaType = new MediaType(type, subtype);
+			LOGGER.debug("The type is=" + type);
+			LOGGER.debug("The subtype=" + subtype);
+		} else {
 			// Assume there is just a type for the mime, no subtype
-			mediaType = new MediaType(mimeType);			
+			mediaType = new MediaType(mimeType);
 		}
-		
+
 		return mediaType;
-	
-		
 	}
 	
 	public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
 		HttpEntity<String> requestEntity = new HttpEntity<String>(data,headers);
 		return requestEntity;
-	
 	}
 	
     /**
@@ -715,10 +665,8 @@ public class ServiceMessageWorker implements Runnable {
 	private ResponseEntity<List<String>> checkResult(ResponseEntity<List<String>> handleResult) {
 		if (handleResult == null) {
 			handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
-			
 		}
-		
+
 		return handleResult;
 	}
-
 }

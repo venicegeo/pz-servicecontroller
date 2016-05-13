@@ -9,9 +9,11 @@
 		"e0dfcdbc-0ca5-c580-e07a-06c1eab0f97b",
 		"fba43ca3-e545-7254-572b-55ee183fbcb6",
 		"0597b9ca-1255-51a3-ab15-577b67eb010b",
+		"a1ead104-1443-404b-27cd-39c60207d8e7",
 		"156a742f-cc16-d56a-e7b1-2ec4eff66c91",
 		"74b49585-bd41-4110-88f1-cf740184f7cb",
 		"1551639c-7ae5-87cd-89e5-03c2cf4cdbb0",
+		"5e01b24b-3816-4e81-10dc-7c2160d1e1f4",
 		"bea7d232-31ef-0886-5b51-6526f373293d",
 		"a930ddf8-5f1b-7cab-6da4-16c47e62205f"
 	],
@@ -24,7 +26,7 @@
 		{
 			"id": "0597b9ca-1255-51a3-ab15-577b67eb010b",
 			"headers": "Content-Type: application/json\nsize: 30\nfrom: 0\nkey: stamp\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/servicecontroller/updateService",
+			"url": "localhost:{{port}}/servicecontroller/updateService",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "PUT",
@@ -34,16 +36,16 @@
 			"tests": "var data = JSON.parse(responseBody);\n",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461680540593,
+			"time": 1463150604034,
 			"name": "UpdateService",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32",
-			"rawModeData": "{\r\n            \"serviceId\" : \"{{serviceId}}\",\r\n            \"url\" : \"https://pz-servicecontroller.{{domain}}.geointservices.io/jumpstart/string/toUpper\",\r\n            \"resourceMetadata\" : {\r\n                \"name\" : \"toUpper Params and Parrots\",\r\n                \"description\" : \"Service to convert string to uppercase\",\r\n                \"method\" : \"POST\"\r\n            }\r\n}"
+			"rawModeData": "{\r\n            \"serviceId\" : \"{{serviceId}}\",\r\n            \"url\" : \"localhost:{{port}}/servicecontroller/jumpstart/string/toUpper\",\r\n            \"resourceMetadata\" : {\r\n                \"name\" : \"toUpper Params and Parrots\",\r\n                \"description\" : \"Service to convert string to uppercase\",\r\n                \"method\" : \"POST\"\r\n            }\r\n}"
 		},
 		{
 			"id": "1551639c-7ae5-87cd-89e5-03c2cf4cdbb0",
 			"headers": "size: 30\nfrom: 0\nkey: stamp\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/servicecontroller/deleteService?resourceId={{serviceId}}",
+			"url": "localhost:{{port}}/servicecontroller/deleteService?resourceId={{serviceId}}",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "GET",
@@ -60,7 +62,7 @@
 			"tests": "",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461613889530,
+			"time": 1463150759138,
 			"name": "delete a Service",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32"
@@ -68,7 +70,7 @@
 		{
 			"id": "156a742f-cc16-d56a-e7b1-2ec4eff66c91",
 			"headers": "Content-Type: application/json\nsize: 30\nfrom: 0\nkey: stamp\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/registerService",
+			"url": "localhost:{{port}}/servicecontroller/registerService",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -78,11 +80,36 @@
 			"tests": "var data = JSON.parse(responseBody);\npostman.setEnvironmentVariable(\"serviceId\",data.serviceId)",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461608309419,
+			"time": 1463151212588,
 			"name": "registerService-toLower",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32",
-			"rawModeData": " {  \"userName\" : \"my-api-key-38n987\",  \n    \"jobType\" : {    \n        \"type\" : \"register-service\",    \n        \"data\" : {       \n             \"id\" : \"8\",\n             \"url\":\"https://pz-servicecontroller.{{domain}}.geointservices.io/jumpstart/string/toLower\",  \n             \"resourceMetadata\" : {  \n               \"name\":\"The toLower Service\",  \n               \"description\":\"Service to convert string to lower case\",  \n               \"method\":\"POST\"\n             }\n        }\n    }\n}"
+			"rawModeData": " {  \"userName\" : \"my-api-key-38n987\",  \n    \"jobType\" : {    \n        \"type\" : \"register-service\",    \n        \"data\" : {       \n             \"id\" : \"8\",\n             \"url\":\"http://localhost:{{port}}/jumpstart/string/toLower\",  \n             \"resourceMetadata\" : {  \n               \"name\":\"The toLower Service\",  \n               \"description\":\"Service to convert string to lower case\",  \n               \"method\":\"POST\"\n             }\n        }\n    }\n}"
+		},
+		{
+			"id": "5e01b24b-3816-4e81-10dc-7c2160d1e1f4",
+			"headers": "size: 30\nfrom: 0\nkey: stamp\norder: true\n",
+			"url": "localhost:{{port}}/servicecontroller/describeService?resourceId={{serviceId}}",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "GET",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"get\",         \"jobId\": \"ef87d153-c8ea-46ee-9f9a-090de8c06051\"     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "var data = JSON.parse(responseBody);\nif (data.resourceMetadata !== null && data.resourceMetadata.availability !== null) {\n    tests[\"Delete Worked\"] = data.resourceMetadata.availability.indexOf(\"OUT OF SERVICE\") > -1\n}\nelse {\n    tests[\"Delete Worked\"]  = false\n}",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1463152152075,
+			"name": "describeService after Delete",
+			"description": "",
+			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32"
 		},
 		{
 			"id": "6c76e297-c4b8-1566-4bf3-1a4d6ffbc716",
@@ -106,7 +133,7 @@
 		{
 			"id": "74b49585-bd41-4110-88f1-cf740184f7cb",
 			"headers": "Content-Type: application/json\nsize: 30\nkey: stamp\nfrom: 0\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/executeService",
+			"url": "localhost:{{port}}/servicecontroller/executeService",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -116,7 +143,7 @@
 			"tests": "var data = JSON.parse(responseBody);\ntests[\"Execute Worked\"] = data.result.indexOf(\"deep\") > -1",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461608325156,
+			"time": 1463150721083,
 			"name": "executeService - lowerCase",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32",
@@ -154,16 +181,41 @@
 			"tests": "var data = JSON.parse(responseBody);\npostman.setEnvironmentVariable(\"serviceId\",data.serviceId)",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1463079434883,
+			"time": 1463150270068,
 			"name": "registerService-toUpper",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32",
-			"rawModeData": "{\r\n    \"userName\" : \"my-api-key-38n987\",\r\n    \"jobType\" :{\r\n        \"type\":\"register-service\",\r\n        \"data\" : {\r\n            \"id\" : \"8\",\r\n            \"url\" : \"https://pz-servicecontroller.{{domain}}.geointservices.io/jumpstart/string/toUpper\",\r\n            \"resourceMetadata\" : {\r\n                \"name\" : \"toUpper Params\",\r\n                \"description\" : \"Service to convert string to uppercase\",\r\n                \"method\" : \"POST\"\r\n            }\r\n        }\r\n    }\r\n}\r\n"
+			"rawModeData": "{\r\n    \"userName\" : \"my-api-key-38n987\",\r\n    \"jobType\" :{\r\n        \"type\":\"register-service\",\r\n        \"data\" : {\r\n            \"id\" : \"8\",\r\n            \"url\" : \"http://localhost:{{port}}/jumpstart/string/toUpper\",\r\n            \"resourceMetadata\" : {\r\n                \"name\" : \"toUpper Params\",\r\n                \"description\" : \"Service to convert string to uppercase\",\r\n                \"method\" : \"POST\"\r\n            }\r\n        }\r\n    }\r\n}\r\n"
+		},
+		{
+			"id": "a1ead104-1443-404b-27cd-39c60207d8e7",
+			"headers": "size: 30\nfrom: 0\nkey: stamp\norder: true\n",
+			"url": "localhost:{{port}}/servicecontroller/describeService?resourceId={{serviceId}}",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "GET",
+			"data": [
+				{
+					"key": "body",
+					"value": "{     \"apiKey\": \"my-api-key-38n987\",     \"jobType\": {         \"type\": \"get\",         \"jobId\": \"ef87d153-c8ea-46ee-9f9a-090de8c06051\"     } }",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "var data = JSON.parse(responseBody);\nif (data.resourceMetadata !== null) {\n    tests[\"Update Worked\"] = data.resourceMetadata.name.indexOf(\"Parrots\") > -1\n}\nelse {\n    tests[\"Update Worked\"]  = false\n}",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1463151934091,
+			"name": "describeService after Update",
+			"description": "",
+			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32"
 		},
 		{
 			"id": "a930ddf8-5f1b-7cab-6da4-16c47e62205f",
 			"headers": "Content-Type: application/json\nsize: 30\nfrom: 0\nkey: stamp\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/servicecontroller/service?keyword=prevgen",
+			"url": "localhost:{{port}}/servicecontroller/service?keyword=prevgen",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "GET",
@@ -173,7 +225,7 @@
 			"tests": "",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461691640278,
+			"time": 1463150920828,
 			"name": "Search for Preview Generator",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32",
@@ -182,7 +234,7 @@
 		{
 			"id": "bea7d232-31ef-0886-5b51-6526f373293d",
 			"headers": "size: 30\nfrom: 0\nkey: stamp\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/service",
+			"url": "localhost:{{port}}/servicecontroller/service",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "GET",
@@ -199,7 +251,7 @@
 			"tests": "",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461608151203,
+			"time": 1463150903484,
 			"name": "listServices",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32"
@@ -207,7 +259,7 @@
 		{
 			"id": "e0dfcdbc-0ca5-c580-e07a-06c1eab0f97b",
 			"headers": "Content-Type: application/json\nsize: 30\nfrom: 0\nkey: stamp\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/servicecontroller/executeService",
+			"url": "localhost:{{port}}/servicecontroller/executeService",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "POST",
@@ -217,7 +269,7 @@
 			"tests": "var data = JSON.parse(responseBody);\ntests[\"Execute Worked\"] = data.result.indexOf(\"STARS\") > -1",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461608076701,
+			"time": 1463150340171,
 			"name": "executeService - upperCase",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32",
@@ -226,7 +278,7 @@
 		{
 			"id": "fba43ca3-e545-7254-572b-55ee183fbcb6",
 			"headers": "size: 30\nfrom: 0\nkey: stamp\norder: true\n",
-			"url": "https://pz-servicecontroller.{{domain}}.geointservices.io/servicecontroller/describeService?resourceId={{serviceId}}",
+			"url": "localhost:{{port}}/servicecontroller/describeService?resourceId={{serviceId}}",
 			"preRequestScript": "",
 			"pathVariables": {},
 			"method": "GET",
@@ -243,7 +295,7 @@
 			"tests": "",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1461609564134,
+			"time": 1463150438105,
 			"name": "describeService - toUpper",
 			"description": "",
 			"collectionId": "aad9cd9f-0352-11ce-fb6e-222928cacc32"

@@ -36,8 +36,6 @@ import util.PiazzaLogger;
 @Component
 @DependsOn("coreInitDestroy")
 public class ElasticSearchAccessor {
-	
-	private String SEARCH_PROTOCOL;
 	private String SEARCH_URL;
 	private String SERVICEMETADATA_INGEST_URL;
 	private String SERVICEMETADATA_UPDATE_URL;
@@ -48,33 +46,33 @@ public class ElasticSearchAccessor {
 	private PiazzaLogger logger;
 	@Autowired
 	private CoreServiceProperties coreServiceProperties;
+
 	/**
 	 * Store the new service information
 	 */
-	
-	public ElasticSearchAccessor() {}
+
+	public ElasticSearchAccessor() {
+	}
+
 	@PostConstruct
 	private void initialize() {
-		SEARCH_PROTOCOL= coreServiceProperties.getPzSearchProtocol();
 		SEARCH_URL = coreServiceProperties.getPzSearchUrl();
 		SERVICEMETADATA_INGEST_URL = coreServiceProperties.getPzServicemetadataIngestUrl();
 		SERVICEMETADATA_UPDATE_URL = coreServiceProperties.getPzServicemetadataUpdateUrl();
-		
-		
-		
+
 	}
+
 	public PiazzaResponse save(Service sMetadata) {
-		
-		
+
 		ServiceMetadataIngestJob job = new ServiceMetadataIngestJob();
 		job.setData(sMetadata);
-		
-		 try {
+
+		try {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
 			PiazzaResponse servicemetadataIngestResponse = restTemplate.postForObject(
-					String.format("%s://%s", SEARCH_PROTOCOL, SERVICEMETADATA_INGEST_URL), entity, PiazzaResponse.class);
+					String.format("%s", SERVICEMETADATA_INGEST_URL), entity, PiazzaResponse.class);
 			logger.log(String.format("Indexed ServiceMetadata from Gateway."), PiazzaLogger.INFO);
 			return servicemetadataIngestResponse;
 		} catch (Exception exception) {
@@ -83,20 +81,19 @@ public class ElasticSearchAccessor {
 			return new ErrorResponse(null, "Error connecting toServiceMetadata Ingest Service: "
 					+ exception.getMessage(), "ServiceController");
 		}
-		 
-		
+
 	}
-	
+
 	public PiazzaResponse update(Service sMetadata) {
 		ServiceMetadataIngestJob job = new ServiceMetadataIngestJob();
 		job.setData(sMetadata);
-		
-		 try {
+
+		try {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
 			PiazzaResponse servicemetadataIngestResponse = restTemplate.postForObject(
-					String.format("%s://%s", SEARCH_PROTOCOL, SERVICEMETADATA_UPDATE_URL), entity, PiazzaResponse.class);
+					String.format("%s", SERVICEMETADATA_UPDATE_URL), entity, PiazzaResponse.class);
 			logger.log(String.format("Indexed ServiceMetadata from Gateway."), PiazzaLogger.INFO);
 			return servicemetadataIngestResponse;
 		} catch (Exception exception) {
@@ -105,12 +102,13 @@ public class ElasticSearchAccessor {
 			return new ErrorResponse(null, "Error connecting toServiceMetadata Update Service: "
 					+ exception.getMessage(), "ServiceController");
 		}
-		
+
 	}
-	//TODO - Need to create a delete service Job and new elasticsearch endpoint for it
+
+	// TODO - Need to create a delete service Job and new elasticsearch endpoint
+	// for it
 	public void delete(String serviceId) {
-		
+
 	}
-	
 
 }

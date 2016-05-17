@@ -17,7 +17,6 @@ package org.venice.piazza.servicecontroller.util;
 
 import javax.validation.constraints.NotNull;
 
-import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,8 +25,10 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Properties for the ServiceController.  Loaded in from application.properties file.  Properties defined in the 
- * application.properties file will be superseded by values retrieved from the pz-discover service.
+ * Properties for the ServiceController. Loaded in from application.properties
+ * file. Properties defined in the application.properties file will be
+ * superseded by values retrieved from the pz-discover service.
+ * 
  * @author mlynum
  * @version 1.0
  */
@@ -36,14 +37,11 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan({ "MY_NAMESPACE, util" })
 @ConfigurationProperties(locations = "classpath:application.properties", ignoreUnknownFields = false, prefix = "core")
 public class CoreServiceProperties {
-	
-	
-	@Value("${pz.uuid.url}")
-	private String uuidservicehost;
+
 	private String logservice;
 	private String logservicehost;
 	private String appname;
-	
+
 	@NotNull
 	private String discoverapi;
 	@NotNull
@@ -52,44 +50,32 @@ public class CoreServiceProperties {
 	private String kafka;
 	@NotNull
 	private String uuid;
-	@Value("${pz.logger.url}")
-	private String logger;
+
 	@NotNull
 	private String discoverservice;
-	@Value ("${vcap.services.pz-kafka.credentials.host}")
+	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String kafkaHost;
-	@Value ("${kafka.group}")
+	@Value("#{'${kafka.group}' + '-' + '${SPACE}'}")
 	private String kafkaGroup;
-	@Value ("${server.port}")
+	@Value("${server.port}")
 	private int serverPort;
-	@Value ("${vcap.services.pz-mongodb.credentials.uri}")
+	@Value("${vcap.services.pz-mongodb.credentials.uri}")
 	private String mongoHost;
-	@Value ("${vcap.services.pz-mongodb.credentials.database}")
+	@Value("${vcap.services.pz-mongodb.credentials.database}")
 	private String mongoDBName;
-	@Value ("${mongo.db.collection.name}")
+	@Value("${mongo.db.collection.name}")
 	private String mongoCollectionName;
 	@Value("${servicecontroller.host}")
 	private String host;
 	@Value("${servicecontroller.port}")
 	private String port;
-	@Value("${pz.search.protocol}")
-	private String pzSearchProtocol;
-	@Value("${pz.search.url}")
-	private String pzSearchUrl;
-	@Value("${pz.servicemetadata.ingest.url}")
-	private String pzServicemetadataIngestUrl;
-	@Value("${pz.servicemetadata.update.url}")
-	private String pzServicemetadataUpdateUrl;
-	
-	
-	
-	public String getPzSearchProtocol() {
-		return pzSearchProtocol;
-	}
 
-	public void setPzSearchProtocol(String pzSearchProtocol) {
-		this.pzSearchProtocol = pzSearchProtocol;
-	}
+	@Value("#{'${search.protocol}' + '://' + '${search.prefix}' + '.' + '${DOMAIN}' + ':' + '${search.port}' + '/' + '${search.endpoint}'}")
+	private String pzSearchUrl;
+	@Value("#{'${metadata.ingest.protocol}' + '://' + '${metadata.ingest.prefix}' + '.' + '${DOMAIN}' + ':' + '${metadata.ingest.port}' + '/' + '${metadata.ingest.endpoint}'}")
+	private String pzServicemetadataIngestUrl;
+	@Value("#{'${metadata.ingest.protocol}' + '://' + '${metadata.ingest.prefix}' + '.' + '${DOMAIN}' + ':' + '${metadata.ingest.port}' + '/' + '${metadata.update.endpoint}'}")
+	private String pzServicemetadataUpdateUrl;
 
 	public String getPzSearchUrl() {
 		return pzSearchUrl;
@@ -115,16 +101,8 @@ public class CoreServiceProperties {
 		this.pzServicemetadataUpdateUrl = pzServicemetadataUpdateUrl;
 	}
 
-	@Value ("${space}")
+	@Value("${SPACE}")
 	private String space;
-
-	public String getUuidservicehost() {
-		return uuidservicehost;
-	}
-
-	public void setUuidservicehost(String uuidservicehost) {
-		this.uuidservicehost = uuidservicehost;
-	}
 
 	public String getLogservicehost() {
 		return logservicehost;
@@ -148,14 +126,6 @@ public class CoreServiceProperties {
 
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
-	}
-
-	public String getLogger() {
-		return logger;
-	}
-
-	public void setLogger(String logger) {
-		this.logger = logger;
 	}
 
 	public String getDiscoverapi() {
@@ -204,7 +174,8 @@ public class CoreServiceProperties {
 
 	public void setDiscoverservice(String discoverservice) {
 		this.discoverservice = discoverservice;
-	}	
+	}
+
 	public String getKafkaHost() {
 		return kafkaHost;
 	}
@@ -252,7 +223,6 @@ public class CoreServiceProperties {
 	public void setMongoCollectionName(String mongoCollectionName) {
 		this.mongoCollectionName = mongoCollectionName;
 	}
-	
 
 	public String getLogservice() {
 		return logservice;
@@ -262,8 +232,6 @@ public class CoreServiceProperties {
 		this.logservice = logservice;
 	}
 
-
-	
 	public String getSpace() {
 		return space;
 	}

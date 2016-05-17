@@ -173,8 +173,8 @@ public class ServiceController {
 			Service service = accessor.getServiceById(serviceId);
 			return new ServiceResponse(service);
 		} catch (Exception exception) {
-			return new ErrorResponse(null, String.format("Could not look up Service %s information: %s", serviceId,
-					exception.getMessage()), "Service Controller");
+			return new ErrorResponse(null, String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
+					"Service Controller");
 		}
 	}
 
@@ -224,9 +224,9 @@ public class ServiceController {
 	 *         exception occurs..
 	 */
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.DELETE)
-	public PiazzaResponse unregisterService(@PathVariable(value = "serviceId") String serviceId) {
+	public PiazzaResponse unregisterService(@PathVariable(value = "serviceId") String serviceId, @RequestParam(value = "softDelete", required = false) boolean softDelete) {
 		try {
-			dlHandler.handle(serviceId);
+			dlHandler.handle(serviceId, softDelete);
 			return null;
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
@@ -234,7 +234,7 @@ public class ServiceController {
 			return new ErrorResponse(null, error, "Service Controller");
 		}
 	}
-
+	
 	/**
 	 * Updates a service with new Metadata.
 	 * 
@@ -364,7 +364,7 @@ public class ServiceController {
 		LOGGER.info("deleteService resourceId=" + resourceId);
 		logger.log("deleteService resourceId=" + resourceId, logger.INFO);
 
-		String result = dlHandler.handle(resourceId);
+		String result = dlHandler.handle(resourceId, false);
 		LOGGER.debug("Result is" + result);
 		// TODO Remove System.out
 

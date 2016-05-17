@@ -143,45 +143,51 @@ public class MongoAccessor {
 		return result;
 	}
 	
-	
 	/**
-	 * deleteservice 
+	 * Deletes existing registered service from mongoDB
+	 * 
+	 * @param serviceId
+	 *            Service id to be deleted
+	 * @param softDelete
+	 *            If softDelete is true, updates status instead of deleting.
+	 *
+	 * @return message string containing result
 	 */
-	public String delete(String serviceId) {
-		String result = "";
+	public String delete(String serviceId, boolean softDelete) {
+		String result = " service " + serviceId + " NOT deleted ";
 		try {
 			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
-			
-			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class,
-			        String.class);
-			
-			
-			Query query = DBQuery.is("serviceId",serviceId);
-			WriteResult<Service, String> writeResult =
-					coll.update(query,DBUpdate.set("resourceMetadata.availability", "OUT OF SERVICE"));
-			int recordsChanged = writeResult.getN();
-			// Return the id that was used
-			if (recordsChanged == 1) {
+
+			if (softDelete) {
+				JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
+				Query query = DBQuery.is("serviceId", serviceId);
+				WriteResult<Service, String> writeResult = coll.update(query, DBUpdate.set("resourceMetadata.availability", "OUT OF SERVICE"));
+				int recordsChanged = writeResult.getN();
+
+				// Return the id that was used
+				if (recordsChanged == 1) {
+					result = " service " + serviceId + " deleted ";
+				}
+			} else {
+				// Delete the existing entry for the Job
+				BasicDBObject deleteQuery = new BasicDBObject();
+				deleteQuery.append("serviceId", serviceId);
+				collection.remove(deleteQuery);
 				result = " service " + serviceId + " deleted ";
 			}
-			else {
-				result = " service " + serviceId + " NOT deleted ";
-			}
-			
+
 			return result;
-			
 		} catch (MongoException ex) {
+
 			LOGGER.debug(ex.toString());
 			LOGGER.error(ex.getMessage());
-			String message = String.format("Error Deleting Mongo Service entry : %s",ex.getMessage());
+			String message = String.format("Error Deleting Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
-			
 		}
-			
+
 		return result;
 	}
 
-	
 	/**
 	 * Store the new service information
 	 */

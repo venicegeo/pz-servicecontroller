@@ -50,91 +50,88 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	private UUIDFactory uuidFactory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeleteServiceHandler.class);
 
+	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger,
+			UUIDFactory uuidFactory)
 
-	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger  coreLogger, UUIDFactory uuidFactory)
-
-	{ 
+	{
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
 		this.uuidFactory = uuidFactory;
-	
+
 	}
 
-    /*
-     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in
-     * MongoDB
-     * (non-Javadoc)
-     * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
-     */
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
-		
-		
-		
+	/**
+	 * Handler for the RegisterServiceJob that was submitted. Stores the
+	 * metadata in MongoDB (non-Javadoc)
+	 * 
+	 * @see
+	 * org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(
+	 * model.job.PiazzaJobType)
+	 */
+	public ResponseEntity<List<String>> handle(PiazzaJobType jobRequest) {
+
 		LOGGER.debug("Updating a service");
-		DeleteServiceJob job = (DeleteServiceJob)jobRequest;
-		if (job != null)  {
+		DeleteServiceJob job = (DeleteServiceJob) jobRequest;
+		if (job != null) {
 			// Get the ResourceMetadata
 			String resourceId = job.serviceID;
 			LOGGER.info("describeService serviceId=" + resourceId);
 			coreLogger.log("describeService serviceId=" + resourceId, coreLogger.INFO);
 
-			String result = handle(resourceId);
+			String result = handle(resourceId, false);
 			if (result.length() > 0) {
 				String jobId = job.getJobId();
 				ArrayList<String> resultList = new ArrayList<String>();
 				resultList.add(jobId);
 				resultList.add(resourceId);
-				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
+				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList, HttpStatus.OK);
 				return handleResult;
-				
-			}
-			else {
+
+			} else {
 				LOGGER.error("No result response from the handler, something went wrong");
 				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
 				ArrayList<String> errorList = new ArrayList<String>();
 				errorList.add("DeleteServiceHandler handle didn't work");
-				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.NOT_FOUND);
-				
+				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList, HttpStatus.NOT_FOUND);
+
 				return errorResult;
 			}
-		}
-		else {
+		} else {
 			return null;
 		}
-	}//handle
-	
+	}// handle
+
 	/**
 	 * 
 	 * @param rMetadata
 	 * @return resourceID of the registered service
 	 */
-	public String handle (String resourceId) {
+	public String handle(String resourceId, boolean softDelete) {
 
-        coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
-        LOGGER.info("about to delete a registered service.");
-     
-        ObjectMapper mapper = new ObjectMapper();
-		
-		String result= "";
+		coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
+		LOGGER.info("about to delete a registered service.");
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		String result = "";
 		try {
-			result = mapper.writeValueAsString(accessor.delete(resourceId));
+			result = mapper.writeValueAsString(accessor.delete(resourceId, softDelete));
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
-		LOGGER.debug("The result of the delete is " + result);
+		
+		LOGGER.debug("------------------The result of the delete is " + result);
 		if (result.length() > 0) {
-		   coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);
-		   LOGGER.info("The service with id " + resourceId + " was deleted " + result);
+			coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);
+			LOGGER.info("The service with id " + resourceId + " was deleted " + result);
 		} else {
-			   coreLogger.log("The service with id " + resourceId + " was NOT deleted", PiazzaLogger.INFO);
-			   LOGGER.info("The service with id " + resourceId + " was NOT deleted");
+			coreLogger.log("The service with id " + resourceId + " was NOT deleted", PiazzaLogger.INFO);
+			LOGGER.info("The service with id " + resourceId + " was NOT deleted");
 		}
-		// If an ID was returned then send a kafka message back updating the job iD 
+		// If an ID was returned then send a kafka message back updating the job
+		// iD
 		// with the resourceID
 		return result;
-				
+
 	}
-	
-
-
 }

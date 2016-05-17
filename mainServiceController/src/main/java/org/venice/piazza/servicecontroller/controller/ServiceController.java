@@ -224,17 +224,17 @@ public class ServiceController {
 	 *         exception occurs..
 	 */
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.DELETE)
-	public ResponseEntity<?> unregisterService(@PathVariable(value = "serviceId") String serviceId, @RequestParam(value = "softDelete", required = false) boolean softDelete) {
+	public PiazzaResponse unregisterService(@PathVariable(value = "serviceId") String serviceId, @RequestParam(value = "softDelete", required = false) boolean softDelete) {
 		try {
 			dlHandler.handle(serviceId, softDelete);
-			return new ResponseEntity<PiazzaResponse>(new ServiceResponse(serviceId), HttpStatus.OK);
+			return null;
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
-			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(null, error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ErrorResponse(null, error, "Service Controller");
 		}
 	}
-
+	
 	/**
 	 * Updates a service with new Metadata.
 	 * 

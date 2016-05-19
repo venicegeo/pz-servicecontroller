@@ -38,21 +38,8 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(locations = "classpath:application.properties", ignoreUnknownFields = false, prefix = "core")
 public class CoreServiceProperties {
 
-	private String logservice;
-	private String logservicehost;
 	private String appname;
 
-	@NotNull
-	private String discoverapi;
-	@NotNull
-	private String db;
-	@NotNull
-	private String kafka;
-	@NotNull
-	private String uuid;
-
-	@NotNull
-	private String discoverservice;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String kafkaHost;
 	@Value("#{'${kafka.group}' + '-' + '${SPACE}'}")
@@ -104,45 +91,6 @@ public class CoreServiceProperties {
 	@Value("${SPACE}")
 	private String space;
 
-	public String getLogservicehost() {
-		return logservicehost;
-	}
-
-	public void setLogservicehost(String logservicehost) {
-		this.logservicehost = logservicehost;
-	}
-
-	public String getKafka() {
-		return kafka;
-	}
-
-	public void setKafka(String kafka) {
-		this.kafka = kafka;
-	}
-
-	public String getUuid() {
-		return uuid;
-	}
-
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-
-	public String getDiscoverapi() {
-		return discoverapi;
-	}
-
-	public void setDiscoverapi(String discoverapi) {
-		this.discoverapi = discoverapi;
-	}
-
-	public String getDb() {
-		return db;
-	}
-
-	public void setDb(String db) {
-		this.db = db;
-	}
 
 	public String getAppname() {
 		return appname;
@@ -168,13 +116,6 @@ public class CoreServiceProperties {
 		this.port = port;
 	}
 
-	public String getDiscoverservice() {
-		return discoverservice;
-	}
-
-	public void setDiscoverservice(String discoverservice) {
-		this.discoverservice = discoverservice;
-	}
 
 	public String getKafkaHost() {
 		return kafkaHost;
@@ -224,13 +165,6 @@ public class CoreServiceProperties {
 		this.mongoCollectionName = mongoCollectionName;
 	}
 
-	public String getLogservice() {
-		return logservice;
-	}
-
-	public void setLogservice(String logservice) {
-		this.logservice = logservice;
-	}
 
 	public String getSpace() {
 		return space;

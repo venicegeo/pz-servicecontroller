@@ -493,7 +493,9 @@ public class ServiceMessageWorker implements Runnable {
 			// Now check to see if the conversin is actually a proper DataResource
 			// if it is not time to create a TextDataType and return
 			if ((data == null) || (data.getDataType() == null)) {
-				LOGGER.debug("The DataResource is not in a valid format, creating manually a TextDataType");
+				LOGGER.debug("The DataResource is not in a valid format, creating a new DataResource and TextDataType");
+				data = new DataResource();
+				data.dataId = uuidFactory.getUUID();
 				TextDataType tr = new TextDataType();
 				tr.content = serviceControlString;
 				data.dataType = tr;

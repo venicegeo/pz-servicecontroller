@@ -464,9 +464,10 @@ public class ServiceMessageWorker implements Runnable {
 	 */
 	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)
 			throws JsonProcessingException, IOException {
-		LOGGER.debug("The result provided from service is " + handleResult.getBody());
+		LOGGER.debug("The result provided from service is " + handleResult.getBody().get(0));
+		
 
-		String serviceControlString = handleResult.getBody().toString();
+		String serviceControlString = handleResult.getBody().get(0).toString();
 		LOGGER.debug("The service controller string is " + serviceControlString);
 
 		// Now produce a new record

@@ -46,6 +46,7 @@ import messaging.job.WorkerCallback;
 import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
+import model.data.type.GeoJsonDataType;
 import model.data.type.RasterDataType;
 import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
@@ -467,6 +468,11 @@ public class ServiceMessageWorker implements Runnable {
 		LOGGER.debug("The result provided from service is " + handleResult.getBody());
 
 		String serviceControlString = handleResult.getBody().toString();
+
+		PiazzaJobType jobType = job.getJobType();
+		ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
+		String type = jobItem.data.dataOutput.get(0).getType();
+		
 		LOGGER.debug("The service controller string is " + serviceControlString);
 
 		// Now produce a new record
@@ -479,11 +485,19 @@ public class ServiceMessageWorker implements Runnable {
 		ObjectMapper tempMapper = new ObjectMapper();
 		try {
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
-		} catch (JsonProcessingException jpe) {
-			jpe.printStackTrace();
-			TextDataType tr = new TextDataType();
-			tr.content = serviceControlString;
-			data.dataType = tr;
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+
+			// Checking payload type and settings the correct type
+			if (type.equals(TextDataType.type)) {
+				TextDataType newDataType = new TextDataType();
+				newDataType.content = serviceControlString;
+				data.dataType = newDataType;
+			} else if (type.equals(GeoJsonDataType.type)) {
+				GeoJsonDataType newDataType = new GeoJsonDataType();
+				newDataType.setGeoJsonContent(serviceControlString);
+				data.dataType = newDataType;
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

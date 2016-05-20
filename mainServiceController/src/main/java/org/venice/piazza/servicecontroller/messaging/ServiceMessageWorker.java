@@ -490,6 +490,9 @@ public class ServiceMessageWorker implements Runnable {
 			ObjectMapper tempMapper = new ObjectMapper();
 		    LOGGER.debug("Created a new mapper");
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
+			LOGGER.debug("The data type converted is " + data.getDataType().getType());
+			LOGGER.debug("The data type converted is " + data.getDataType().getMimeType());
+           
 			LOGGER.debug("Try to convert to mapper");
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
@@ -502,7 +505,6 @@ public class ServiceMessageWorker implements Runnable {
 			tr.content = serviceControlString;
 			data.dataType = tr;
 		}
-		LOGGER.debug("The data is " + data.toString());
 		ingestJob.data = data;
 		ingestJob.host = true;
 		pjr.jobType = ingestJob;

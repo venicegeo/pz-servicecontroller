@@ -490,8 +490,15 @@ public class ServiceMessageWorker implements Runnable {
 			ObjectMapper tempMapper = new ObjectMapper();
 		    LOGGER.debug("Created a new mapper");
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
-			LOGGER.debug("The data type converted is " + data.getDataType().getType());
-			LOGGER.debug("The data type converted is " + data.getDataType().getMimeType());
+			// Now check to see if the conversin is actually a proper DataResource
+			// if it is not time to create a TextDataType and return
+			if (data.getDataType().getType() == null) {
+				LOGGER.debug("The DataResource is not in a valid format, creating manually a TextDataType");
+				TextDataType tr = new TextDataType();
+				tr.content = serviceControlString;
+				data.dataType = tr;
+			}
+			
            
 			LOGGER.debug("Try to convert to mapper");
 		} catch (JsonProcessingException jpe) {

@@ -492,7 +492,7 @@ public class ServiceMessageWorker implements Runnable {
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
 			// Now check to see if the conversin is actually a proper DataResource
 			// if it is not time to create a TextDataType and return
-			if (data.getDataType().getType() == null) {
+			if ((data == null) || (data.getDataType() == null)) {
 				LOGGER.debug("The DataResource is not in a valid format, creating manually a TextDataType");
 				TextDataType tr = new TextDataType();
 				tr.content = serviceControlString;

@@ -486,17 +486,16 @@ public class ServiceMessageWorker implements Runnable {
 		LOGGER.debug("Instantiated new IngestJob Object");
 
 		try {
-		// Now produce a new record
-			LOGGER.debug("The about to set the userName for ingest");
-		pjr.userName = "pz-sc-ingest";
-			
+			// Now produce a new record
+			pjr.userName = "pz-sc-ingest";
 			LOGGER.debug("About to get the UUID");
-		data.dataId = uuidFactory.getUUID();
+			data.dataId = uuidFactory.getUUID();
 			LOGGER.debug("dataId is " + data.dataId);
-		ObjectMapper tempMapper = new ObjectMapper();
-		    LOGGER.debug("Created a new mapper");
+			ObjectMapper tempMapper = new ObjectMapper();
+			LOGGER.debug("Created a new mapper");
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
-			// Now check to see if the conversin is actually a proper DataResource
+
+			// Now check to see if the conversion is actually a proper DataResource
 			// if it is not time to create a TextDataType and return
 			if ((data == null) || (data.getDataType() == null)) {
 				LOGGER.debug("The DataResource is not in a valid format, creating a new DataResource and TextDataType");
@@ -507,24 +506,23 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("The data being sent is " + tr.content);
 				data.dataType = tr;
 			}
-			
-           
-			LOGGER.debug("Try to convert to mapper");
-		} catch (JsonProcessingException jpe) {
-			jpe.printStackTrace();
-			TextDataType tr = new TextDataType();
-			tr.content = serviceControlString;
-			data.dataType = tr;
-			LOGGER.debug("The data being sent is " + tr.content);
 
+			LOGGER.debug("Try to convert to mapper");
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			TextDataType tr = new TextDataType();
-			tr.content = serviceControlString;
-			data.dataType = tr;
-			LOGGER.debug("The data being sent is " + tr.content);
 
+			// Checking payload type and settings the correct type
+			if (type.equals(TextDataType.type)) {
+				TextDataType newDataType = new TextDataType();
+				newDataType.content = serviceControlString;
+				data.dataType = newDataType;
+			} else if (type.equals(GeoJsonDataType.type)) {
+				GeoJsonDataType newDataType = new GeoJsonDataType();
+				newDataType.setGeoJsonContent(serviceControlString);
+				data.dataType = newDataType;
+			}
 		}
+
 		ingestJob.data = data;
 		ingestJob.host = true;
 		pjr.jobType = ingestJob;

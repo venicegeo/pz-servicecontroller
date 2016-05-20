@@ -472,17 +472,25 @@ public class ServiceMessageWorker implements Runnable {
 		
 		// Initialize ingest job items
 		DataResource data = new DataResource();
+		LOGGER.debug("Instantiated new DataResource Object");
 		PiazzaJobRequest pjr = new PiazzaJobRequest();
+		LOGGER.debug("Instantiated new PiazzaJobRequest Object");
+
 		IngestJob ingestJob = new IngestJob();
+		LOGGER.debug("Instantiated new IngestJob Object");
 
 		try {
 		// Now produce a new record
+			LOGGER.debug("The about to set the userName for ingest");
 			pjr.userName = "pz-sc-ingest";
+			
+			LOGGER.debug("About to get the UUID");
 			data.dataId = uuidFactory.getUUID();
-	
+			LOGGER.debug("dataId is " + data.dataId);
 			ObjectMapper tempMapper = new ObjectMapper();
-		
+		    LOGGER.debug("Created a new mapper");
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
+			LOGGER.debug("Try to convert to mapper");
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
 			TextDataType tr = new TextDataType();

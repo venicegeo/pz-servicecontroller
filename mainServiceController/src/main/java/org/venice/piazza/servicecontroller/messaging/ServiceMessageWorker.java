@@ -465,9 +465,10 @@ public class ServiceMessageWorker implements Runnable {
 	 */
 	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)
 			throws JsonProcessingException, IOException {
-		LOGGER.debug("The result provided from service is " + handleResult.getBody());
+		LOGGER.debug("The result provided from service is " + handleResult.getBody().get(0));
 
-		String serviceControlString = handleResult.getBody().toString();
+
+		String serviceControlString = handleResult.getBody().get(0).toString();
 
 		PiazzaJobType jobType = job.getJobType();
 		ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
@@ -475,33 +476,55 @@ public class ServiceMessageWorker implements Runnable {
 		
 		LOGGER.debug("The service controller string is " + serviceControlString);
 
-		// Now produce a new record
-		PiazzaJobRequest pjr = new PiazzaJobRequest();
-		pjr.userName = "pz-sc-ingest";
-		IngestJob ingestJob = new IngestJob();
+		// Initialize ingest job items
 		DataResource data = new DataResource();
-		data.dataId = uuidFactory.getUUID();
+		LOGGER.debug("Instantiated new DataResource Object");
+		PiazzaJobRequest pjr = new PiazzaJobRequest();
+		LOGGER.debug("Instantiated new PiazzaJobRequest Object");
 
-		ObjectMapper tempMapper = new ObjectMapper();
+		IngestJob ingestJob = new IngestJob();
+		LOGGER.debug("Instantiated new IngestJob Object");
+
 		try {
+		// Now produce a new record
+			LOGGER.debug("The about to set the userName for ingest");
+		pjr.userName = "pz-sc-ingest";
+			
+			LOGGER.debug("About to get the UUID");
+		data.dataId = uuidFactory.getUUID();
+			LOGGER.debug("dataId is " + data.dataId);
+		ObjectMapper tempMapper = new ObjectMapper();
+		    LOGGER.debug("Created a new mapper");
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-
-			// Checking payload type and settings the correct type
-			if (type.equals(TextDataType.type)) {
-				TextDataType newDataType = new TextDataType();
-				newDataType.content = serviceControlString;
-				data.dataType = newDataType;
-			} else if (type.equals(GeoJsonDataType.type)) {
-				GeoJsonDataType newDataType = new GeoJsonDataType();
-				newDataType.setGeoJsonContent(serviceControlString);
-				data.dataType = newDataType;
+			// Now check to see if the conversin is actually a proper DataResource
+			// if it is not time to create a TextDataType and return
+			if ((data == null) || (data.getDataType() == null)) {
+				LOGGER.debug("The DataResource is not in a valid format, creating a new DataResource and TextDataType");
+				data = new DataResource();
+				data.dataId = uuidFactory.getUUID();
+				TextDataType tr = new TextDataType();
+				tr.content = serviceControlString;
+				LOGGER.debug("The data being sent is " + tr.content);
+				data.dataType = tr;
 			}
+			
+           
+			LOGGER.debug("Try to convert to mapper");
+		} catch (JsonProcessingException jpe) {
+			jpe.printStackTrace();
+			TextDataType tr = new TextDataType();
+			tr.content = serviceControlString;
+			data.dataType = tr;
+			LOGGER.debug("The data being sent is " + tr.content);
+
 		} catch (Exception ex) {
 			ex.printStackTrace();
-		}
+			TextDataType tr = new TextDataType();
+			tr.content = serviceControlString;
+			data.dataType = tr;
+			LOGGER.debug("The data being sent is " + tr.content);
 
+		}
 		ingestJob.data = data;
 		ingestJob.host = true;
 		pjr.jobType = ingestJob;
@@ -510,6 +533,7 @@ public class ServiceMessageWorker implements Runnable {
 		String jobId = uuidFactory.getUUID();
 		ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, space);
 		producer.send(newProdRecord);
+		
 		coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(),
 				data.getDataType().getType()), PiazzaLogger.INFO);
 

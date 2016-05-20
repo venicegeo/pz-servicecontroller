@@ -469,16 +469,19 @@ public class ServiceMessageWorker implements Runnable {
 
 		String serviceControlString = handleResult.getBody().get(0).toString();
 		LOGGER.debug("The service controller string is " + serviceControlString);
-
-		// Now produce a new record
-		PiazzaJobRequest pjr = new PiazzaJobRequest();
-		pjr.userName = "pz-sc-ingest";
-		IngestJob ingestJob = new IngestJob();
+		
+		// Initialize ingest job items
 		DataResource data = new DataResource();
-		data.dataId = uuidFactory.getUUID();
+		PiazzaJobRequest pjr = new PiazzaJobRequest();
+		IngestJob ingestJob = new IngestJob();
 
-		ObjectMapper tempMapper = new ObjectMapper();
 		try {
+		// Now produce a new record
+			pjr.userName = "pz-sc-ingest";
+			data.dataId = uuidFactory.getUUID();
+	
+			ObjectMapper tempMapper = new ObjectMapper();
+		
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();

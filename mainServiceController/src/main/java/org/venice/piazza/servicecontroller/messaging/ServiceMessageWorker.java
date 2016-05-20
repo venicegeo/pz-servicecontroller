@@ -487,6 +487,9 @@ public class ServiceMessageWorker implements Runnable {
 			data.dataType = tr;
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			TextDataType tr = new TextDataType();
+			tr.content = serviceControlString;
+			data.dataType = tr;
 		}
 
 		ingestJob.data = data;

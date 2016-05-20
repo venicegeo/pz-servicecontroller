@@ -498,6 +498,7 @@ public class ServiceMessageWorker implements Runnable {
 				data.dataId = uuidFactory.getUUID();
 				TextDataType tr = new TextDataType();
 				tr.content = serviceControlString;
+				LOGGER.debug("The data being sent is " + tr.content);
 				data.dataType = tr;
 			}
 			
@@ -508,11 +509,15 @@ public class ServiceMessageWorker implements Runnable {
 			TextDataType tr = new TextDataType();
 			tr.content = serviceControlString;
 			data.dataType = tr;
+			LOGGER.debug("The data being sent is " + tr.content);
+
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			TextDataType tr = new TextDataType();
 			tr.content = serviceControlString;
 			data.dataType = tr;
+			LOGGER.debug("The data being sent is " + tr.content);
+
 		}
 		ingestJob.data = data;
 		ingestJob.host = true;
@@ -522,6 +527,7 @@ public class ServiceMessageWorker implements Runnable {
 		String jobId = uuidFactory.getUUID();
 		ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, space);
 		producer.send(newProdRecord);
+		
 		coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(),
 				data.getDataType().getType()), PiazzaLogger.INFO);
 

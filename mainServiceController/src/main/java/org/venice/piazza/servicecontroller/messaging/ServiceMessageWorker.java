@@ -46,6 +46,7 @@ import messaging.job.WorkerCallback;
 import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
+import model.data.type.GeoJsonDataType;
 import model.data.type.RasterDataType;
 import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
@@ -465,11 +466,16 @@ public class ServiceMessageWorker implements Runnable {
 	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)
 			throws JsonProcessingException, IOException {
 		LOGGER.debug("The result provided from service is " + handleResult.getBody().get(0));
-		
+
 
 		String serviceControlString = handleResult.getBody().get(0).toString();
-		LOGGER.debug("The service controller string is " + serviceControlString);
+
+		PiazzaJobType jobType = job.getJobType();
+		ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
+		String type = jobItem.data.dataOutput.get(0).getType();
 		
+		LOGGER.debug("The service controller string is " + serviceControlString);
+
 		// Initialize ingest job items
 		DataResource data = new DataResource();
 		LOGGER.debug("Instantiated new DataResource Object");
@@ -480,17 +486,16 @@ public class ServiceMessageWorker implements Runnable {
 		LOGGER.debug("Instantiated new IngestJob Object");
 
 		try {
-		// Now produce a new record
-			LOGGER.debug("The about to set the userName for ingest");
+			// Now produce a new record
 			pjr.userName = "pz-sc-ingest";
-			
 			LOGGER.debug("About to get the UUID");
 			data.dataId = uuidFactory.getUUID();
 			LOGGER.debug("dataId is " + data.dataId);
 			ObjectMapper tempMapper = new ObjectMapper();
-		    LOGGER.debug("Created a new mapper");
+			LOGGER.debug("Created a new mapper");
 			data = tempMapper.readValue(serviceControlString, DataResource.class);
-			// Now check to see if the conversin is actually a proper DataResource
+
+			// Now check to see if the conversion is actually a proper DataResource
 			// if it is not time to create a TextDataType and return
 			if ((data == null) || (data.getDataType() == null)) {
 				LOGGER.debug("The DataResource is not in a valid format, creating a new DataResource and TextDataType");
@@ -501,24 +506,23 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("The data being sent is " + tr.content);
 				data.dataType = tr;
 			}
-			
-           
-			LOGGER.debug("Try to convert to mapper");
-		} catch (JsonProcessingException jpe) {
-			jpe.printStackTrace();
-			TextDataType tr = new TextDataType();
-			tr.content = serviceControlString;
-			data.dataType = tr;
-			LOGGER.debug("The data being sent is " + tr.content);
 
+			LOGGER.debug("Try to convert to mapper");
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			TextDataType tr = new TextDataType();
-			tr.content = serviceControlString;
-			data.dataType = tr;
-			LOGGER.debug("The data being sent is " + tr.content);
 
+			// Checking payload type and settings the correct type
+			if (type.equals(TextDataType.type)) {
+				TextDataType newDataType = new TextDataType();
+				newDataType.content = serviceControlString;
+				data.dataType = newDataType;
+			} else if (type.equals(GeoJsonDataType.type)) {
+				GeoJsonDataType newDataType = new GeoJsonDataType();
+				newDataType.setGeoJsonContent(serviceControlString);
+				data.dataType = newDataType;
+			}
 		}
+
 		ingestJob.data = data;
 		ingestJob.host = true;
 		pjr.jobType = ingestJob;

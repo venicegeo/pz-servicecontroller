@@ -107,7 +107,6 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 * @return resourceID of the registered service
 	 */
 	public String handle(String resourceId, boolean softDelete) {
-
 		coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
 		LOGGER.info("about to delete a registered service.");
 
@@ -119,8 +118,8 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
-		
-		LOGGER.debug("------------------The result of the delete is " + result);
+
+		LOGGER.debug("The result of the delete is " + result);
 		if (result.length() > 0) {
 			coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);
 			LOGGER.info("The service with id " + resourceId + " was deleted " + result);
@@ -128,10 +127,8 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 			coreLogger.log("The service with id " + resourceId + " was NOT deleted", PiazzaLogger.INFO);
 			LOGGER.info("The service with id " + resourceId + " was NOT deleted");
 		}
-		// If an ID was returned then send a kafka message back updating the job
-		// iD
-		// with the resourceID
-		return result;
 
+		// If an ID was returned then send a kafka message back updating the job iD with the resourceID
+		return result;
 	}
 }

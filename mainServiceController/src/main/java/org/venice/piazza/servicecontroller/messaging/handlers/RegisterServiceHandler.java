@@ -66,63 +66,38 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	
 	}
 
-    /*
-     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in
-     * MongoDB
-     * (non-Javadoc)
+    /**
+     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in MongoDB
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
-		
-		//coreLogger.log("Registering a Service", coreLogger.INFO);
-		RegisterServiceJob job = (RegisterServiceJob)jobRequest;
-		if (job != null)  {
+	@SuppressWarnings("deprecation")
+	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
+		coreLogger.log("Registering a Service", PiazzaLogger.INFO);
+		RegisterServiceJob job = (RegisterServiceJob) jobRequest;
+
+		if (job != null) {
 			// Get the Service metadata
 			Service serviceMetadata = job.data;
 			LOGGER.info("serviceMetadata received is " + serviceMetadata);
-			coreLogger.log("serviceMetadata received is " + serviceMetadata, coreLogger.INFO);
+			coreLogger.log("serviceMetadata received is " + serviceMetadata, PiazzaLogger.INFO);
 
 			String result = handle(serviceMetadata);
 			if (result.length() > 0) {
-				//String jobId = job.getJobId();
-				// TODO Use the result, send a message with the resource ID
-				// and jobId
-				//ArrayList<String> resultList = new ArrayList<String>();
-				//resultList.add(jobId);
-				//resultList.add(rMetadata.id);
-				
-				
-				//ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
-				
 				String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
-				ArrayList<String> resultList = new ArrayList<String>();
-				resultList.add(responseString);
-				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList,HttpStatus.OK);
-
-				return handleResult;
-				
-			}
-			else {
+				return new ResponseEntity<String>(responseString, HttpStatus.OK);
+			} else {
 				LOGGER.error("No result response from the handler, something went wrong");
-				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
-				ArrayList<String> errorList = new ArrayList<String>();
-				errorList.add("RegisterServiceHandler handle didn't work");
-				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
-				
-				return errorResult;
+				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
+				return new ResponseEntity<String>("RegisterServiceHandler handle didn't work", HttpStatus.METHOD_FAILURE);
 			}
-		}
-		else {
+
+		} else {
 			LOGGER.error("No RegisterServiceJob");
-			coreLogger.log("No RegisterServiceJob", coreLogger.ERROR);
-			ArrayList<String> errorList = new ArrayList<String>();
-			errorList.add("No RegisterServiceJob");
-			ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList,HttpStatus.METHOD_FAILURE);
-			
-			return errorResult;
+			coreLogger.log("No RegisterServiceJob", PiazzaLogger.ERROR);
+			return new ResponseEntity<String>("No RegisterServiceJob", HttpStatus.METHOD_FAILURE);
 		}
-	}//handle
-	
+	}
+
 	/**
 	 * 
 	 * @param rMetadata

@@ -61,9 +61,8 @@ import util.PiazzaLogger;
  * Handler for handling executeService requests.  This handler is used 
  * when execute-service kafka topics are received or when clients utilize the 
  * ServiceController service.
- * @author mlynum
+ * @author mlynum & Sonny.Saniev
  * @version 1.0
- *
  */
 
 public class ExecuteServiceHandler implements PiazzaJobHandler {
@@ -86,44 +85,35 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	
 	}
 
-    /*
-     * Handler for handling execute service requets.  This
+    /**
+     * Handler for handling execute service requests.  This
      * method will execute a service given the resourceId and return a response to
      * the job manager.
      * MongoDB
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
-		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
-		
+	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
 		LOGGER.debug("Executing a service");
-		ArrayList<String> resultList = new ArrayList<String>();
+
+		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
 		if (job != null)  {
 			// Get the ResourceMetadata
 			ExecuteServiceData esData = job.data;
-
 			ResponseEntity<String> handleResult = handle(esData);
-			resultList.add(handleResult.getBody());
-			ResponseEntity<List<String>> result = new ResponseEntity<List<String>>(resultList,handleResult.getStatusCode());
-			
+			ResponseEntity<String> result = new ResponseEntity<String>(handleResult.getBody(), handleResult.getStatusCode());
             LOGGER.debug("The result is " + result);
-			// TODO Use the result, send a message with the resource ID
-			// and jobId
+
+			// TODO Use the result, send a message with the resource ID and jobId
 			return result;
-				
-		
 		}
 		else {
 			LOGGER.error("Job is null" );
 			coreLogger.log("Job is null", coreLogger.ERROR);
-			resultList.add("Job is null");
-			return new ResponseEntity<List<String>>(resultList,HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<String>("Job is null", HttpStatus.BAD_REQUEST);
 		}
-		
-	}//handle
-	
-	
+	}
+
 	/**
 	 * Handles requests to execute a service.  T
 	 * TODO this needs to change to levarage pz-jbcommon ExecuteServiceMessage

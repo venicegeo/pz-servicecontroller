@@ -70,6 +70,11 @@ import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
+/**
+ * 
+ * @author mlynum & Sonny.Saniev
+ *
+ */
 public class ServiceMessageWorker implements Runnable {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
@@ -113,7 +118,7 @@ public class ServiceMessageWorker implements Runnable {
 		try {
 			String handleUpdate = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
-			ResponseEntity<List<String>> handleResult = null;
+			ResponseEntity<String> handleResult = null;
 			boolean rasterJob = false;
 			ObjectMapper mapper = new ObjectMapper();
 
@@ -127,8 +132,7 @@ public class ServiceMessageWorker implements Runnable {
 					if (jobType instanceof RegisterServiceJob) {
 						LOGGER.debug("RegisterServiceJob Detected");
 						// Handle Register Job
-						RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor, elasticAccessor, coreServiceProperties,
-								coreLogger, uuidFactory);
+						RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger, uuidFactory);
 						handleResult = rsHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendRegisterStatus(job, handleUpdate, handleResult);
@@ -258,30 +262,35 @@ public class ServiceMessageWorker implements Runnable {
 		}
 	}
 
-	private void sendListStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+	/**
+	 * Kafka message sending status update
+	 * 
+	 * @param job
+	 * @param status
+	 * @param handleResult
+	 * @throws JsonProcessingException
+	 */
+	private void sendListStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
-			
 			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			List <String>stringList = handleResult.getBody();
-			
+
 			TextResult textResult = new TextResult();
-				textResult.setText(stringList.get(0));
+			textResult.setText(handleResult.getBody());
 			su.setResult(textResult);
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				
+
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
-	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
-				
+
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+
 				producer.send(prodRecord);
-			}
-			else {
+			} else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+				su.setResult(new ErrorResult(handleResult.getBody(), handleResult.getStatusCode().toString()));
+				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
 	}
@@ -290,82 +299,76 @@ public class ServiceMessageWorker implements Runnable {
 	 * Sends an update for registering a job
 	 * 
 	 */
-	private void sendRegisterStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+	private void sendRegisterStatus(Job job, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
 			
 			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			List <String>stringList = handleResult.getBody();
 			
 			TextResult textResult = new TextResult();
-				textResult.setText(stringList.get(0));
+			textResult.setText(handleResult.getBody());
 			su.setResult(textResult);
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
-	
 				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
 			}
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(stringList.get(0), handleResult.getStatusCode().toString()));
+				su.setResult(new ErrorResult(handleResult.getBody(), handleResult.getStatusCode().toString()));
 	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
 	}
 	
 	/**
-	 * Sends the list of services to the job
+	 * Kafka message sending results of the search.
+	 * 
+	 * @param job
+	 * @param status
+	 * @param handleResult
+	 * @throws JsonProcessingException
 	 */
-	
-	private void sendSearchStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+	private void sendSearchStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		LOGGER.info("sendSearchStatus to jobmanager");
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
-			
 			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			List <String>stringList = handleResult.getBody();
-			
+
 			TextResult textResult = new TextResult();
-				textResult.setText(stringList.get(0));
+			textResult.setText(handleResult.getBody());
 			su.setResult(textResult);
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				
 				LOGGER.info("THe STATUS is " + su.getStatus());
 				LOGGER.info("THe RESULT is " + su.getResult());
-	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
-				
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+
 				producer.send(prodRecord);
-			}
-			else {
+			} else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(stringList.get(0), "No Results returned from the search. HTTP Status:" + handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+				su.setResult(new ErrorResult(handleResult.getBody(), "No Results returned from the search. HTTP Status:" + handleResult.getStatusCode().toString()));
+				
+				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
-		}else {
+		} else {
 			LOGGER.info("There are no search results that match");
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
-			
 			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			
-			
+
 			TextResult textResult = new TextResult();
-				textResult.setText("");
+			textResult.setText("");
 			su.setResult(textResult);
+			
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				
 				LOGGER.info("THe STATUS is " + su.getStatus());
 				LOGGER.info("THe RESULT is " + su.getResult());
-	
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
-				
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+
 				producer.send(prodRecord);
 			}
 		}
@@ -376,14 +379,13 @@ public class ServiceMessageWorker implements Runnable {
 	 * Message is sent on Kafka Queue
 	 * 
 	 */
-	private void sendUpdateStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {
+	private void sendUpdateStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
 		StatusUpdate su = new StatusUpdate();
 		su.setStatus(serviceControlString);
-		ProducerRecord<String,String> prodRecord =
-				new ProducerRecord<String,String> (String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space),job.getJobId(),
-						mapper.writeValueAsString(su));
+		ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
+				String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space), job.getJobId(), mapper.writeValueAsString(su));
 		producer.send(prodRecord);
 	}
 	
@@ -393,23 +395,20 @@ public class ServiceMessageWorker implements Runnable {
 	 * Message is sent on Kafka Queue
 	 * 
 	 */
-	private void sendDeleteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)  throws JsonProcessingException {	
+	private void sendDeleteStatus(Job job, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {	
 		
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
-			
 			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			List <String>stringList = handleResult.getBody();
-			TextResult textResult = new TextResult();
+
 			// Get the resource ID and set it as the result
-			textResult.setText(stringList.get(1));
+			TextResult textResult = new TextResult();
+			textResult.setText(handleResult.getBody());
 			su.setResult(textResult);
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
-	
 				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
 				
 				producer.send(prodRecord);
@@ -417,7 +416,7 @@ public class ServiceMessageWorker implements Runnable {
 		
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(stringList.get(0), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
+				su.setResult(new ErrorResult(handleResult.getBody(), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
 	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
 		}
@@ -429,14 +428,13 @@ public class ServiceMessageWorker implements Runnable {
 	 * Queue
 	 * 
 	 */
-	private void sendDescribeStatus(Job job, String status, ResponseEntity<List<String>> handleResult) throws JsonProcessingException {
+	private void sendDescribeStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
 			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			List<String> stringList = handleResult.getBody();
 			TextResult textResult = new TextResult();
-			textResult.setText(stringList.get(0));
+			textResult.setText(handleResult.getBody());
 			su.setResult(textResult);
 
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
@@ -447,7 +445,7 @@ public class ServiceMessageWorker implements Runnable {
 				producer.send(prodRecord);
 			} else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(stringList.get(0),
+				su.setResult(new ErrorResult(handleResult.getBody(),
 						"Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
 				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
 			}
@@ -463,12 +461,13 @@ public class ServiceMessageWorker implements Runnable {
 	 * @param handleResult
 	 * @throws JsonProcessingException
 	 */
-	private void sendExecuteStatus(Job job, String status, ResponseEntity<List<String>> handleResult)
+	private void sendExecuteStatus(Job job, String status, ResponseEntity<String> handleResult)
 			throws JsonProcessingException, IOException {
-		LOGGER.debug("The result provided from service is " + handleResult.getBody().get(0));
+		LOGGER.debug("The result provided from service is " + handleResult.getBody());
 
 
-		String serviceControlString = handleResult.getBody().get(0).toString();
+		//String serviceControlString = handleResult.getBody().get(0).toString();
+		String serviceControlString = handleResult.getBody().toString();
 
 		PiazzaJobType jobType = job.getJobType();
 		ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
@@ -698,9 +697,9 @@ public class ServiceMessageWorker implements Runnable {
      * @param handleResult
      * @return handleResult - Created if the result is not valid
      */
-	private ResponseEntity<List<String>> checkResult(ResponseEntity<List<String>> handleResult) {
+	private ResponseEntity<String> checkResult(ResponseEntity<String> handleResult) {
 		if (handleResult == null) {
-			handleResult = new ResponseEntity<List<String>>(new ArrayList<String>(),HttpStatus.NO_CONTENT);
+			handleResult = new ResponseEntity<String>("",HttpStatus.NO_CONTENT);
 		}
 
 		return handleResult;

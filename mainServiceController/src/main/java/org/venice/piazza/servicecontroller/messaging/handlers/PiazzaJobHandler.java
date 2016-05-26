@@ -14,7 +14,6 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
-import java.util.List;
 
 import model.job.PiazzaJobType;
 
@@ -22,13 +21,18 @@ import org.springframework.http.ResponseEntity;
 
 /**
  * Interface for pz-servicecontroller message handlers
+ * 
  * @author mlynum
  * @version 1.0
- *
  */
 public interface PiazzaJobHandler {
-	
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest );
-	
+
+	/**
+	 * Handler for every type of service.
+	 * 
+	 * @param jobRequest
+	 * @return
+	 */
+	public ResponseEntity<String> handle(PiazzaJobType jobRequest);
 
 }

@@ -51,18 +51,16 @@ public class ListServiceHandler implements PiazzaJobHandler {
 		this.coreLogger = coreLogger;
 	
 	}
-	//TODO needs to be implemented
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
-		
+	
+	/**
+	 * ListService handler
+	 */
+	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
 		LOGGER.info("Listing services");
 		coreLogger.log("listing service", coreLogger.INFO);
-		
-        ArrayList<String> retVal = new ArrayList<String>();
         ResponseEntity<String> handleResourceReturn = handle();
-        retVal.add(handleResourceReturn.getBody());
         
-		return new ResponseEntity<List<String>>(retVal,handleResourceReturn.getStatusCode());
-		
+		return new ResponseEntity<String>(handleResourceReturn.getBody(),handleResourceReturn.getStatusCode());
 	}
 	
 	public ResponseEntity<String> handle () {

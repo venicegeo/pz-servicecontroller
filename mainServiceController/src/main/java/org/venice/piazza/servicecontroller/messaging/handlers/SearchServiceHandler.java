@@ -48,26 +48,19 @@ public class SearchServiceHandler implements PiazzaJobHandler {
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
-		
+	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 		LOGGER.debug("Search a service");
-		
-		SearchServiceJob job = (SearchServiceJob)jobRequest;
+		SearchServiceJob job = (SearchServiceJob) jobRequest;
 
-		ArrayList<String> retVal = new ArrayList<String>();
 		// Get the criteria to use for the search
 		SearchCriteria criteria = job.data;
 		LOGGER.info("search " + " " + criteria.field + "->" + criteria.pattern);
-		coreLogger.log("search " + " " + criteria.field + "->" + criteria.pattern,coreLogger.INFO);
-		
-        ResponseEntity<String> response = handle(criteria);
+		coreLogger.log("search " + " " + criteria.field + "->" + criteria.pattern, coreLogger.INFO);
 
-		retVal.add(response.getBody());
-		        
-		return new ResponseEntity<List<String>>(retVal,response.getStatusCode());
+		ResponseEntity<String> response = handle(criteria);
+		return new ResponseEntity<String>(response.getBody(), response.getStatusCode());
+	}
 
-	}//handle
-	
 	/**
 	 * 
 	 * @param criteria to search.  field and regex expression

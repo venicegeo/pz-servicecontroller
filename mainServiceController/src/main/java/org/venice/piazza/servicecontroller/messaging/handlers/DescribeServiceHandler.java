@@ -14,9 +14,6 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -52,18 +49,16 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 		this.coreLogger = coreLogger;
 	
 	}
-	//TODO needs to be implemented
-	public ResponseEntity<List<String>> handle (PiazzaJobType jobRequest ) {
-		
+
+	/**
+	 * Describe service handler
+	 */
+	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 		LOGGER.info("Describing a service");
 		coreLogger.log("Describing a service", coreLogger.INFO);
-		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob)jobRequest;
-        ArrayList<String> retVal = new ArrayList<String>();
-        ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
-        retVal.add(handleResourceReturn.getBody());
-        
-		return new ResponseEntity<List<String>>(retVal,handleResourceReturn.getStatusCode());
-		
+		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob) jobRequest;
+		ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
+		return new ResponseEntity<String>(handleResourceReturn.getBody(), handleResourceReturn.getStatusCode());
 	}
 	
 	public ResponseEntity<String> handle (String serviceId) {

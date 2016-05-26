@@ -68,7 +68,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 * org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(
 	 * model.job.PiazzaJobType)
 	 */
-	public ResponseEntity<List<String>> handle(PiazzaJobType jobRequest) {
+	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 
 		LOGGER.debug("Updating a service");
 		DeleteServiceJob job = (DeleteServiceJob) jobRequest;
@@ -84,17 +84,12 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 				ArrayList<String> resultList = new ArrayList<String>();
 				resultList.add(jobId);
 				resultList.add(resourceId);
-				ResponseEntity<List<String>> handleResult = new ResponseEntity<List<String>>(resultList, HttpStatus.OK);
-				return handleResult;
+				return new ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
 
 			} else {
 				LOGGER.error("No result response from the handler, something went wrong");
 				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
-				ArrayList<String> errorList = new ArrayList<String>();
-				errorList.add("DeleteServiceHandler handle didn't work");
-				ResponseEntity<List<String>> errorResult = new ResponseEntity<List<String>>(errorList, HttpStatus.NOT_FOUND);
-
-				return errorResult;
+				return new ResponseEntity<String>("DeleteServiceHandler handle didn't work", HttpStatus.NOT_FOUND);
 			}
 		} else {
 			return null;

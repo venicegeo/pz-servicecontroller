@@ -18,7 +18,6 @@ package org.venice.piazza.servicecontroller.elasticsearch.accessors;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -33,12 +32,19 @@ import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
+/**
+ * 
+ * @author mlynum & Sonny.Saniev
+ *
+ */
 @Component
 @DependsOn("coreInitDestroy")
 public class ElasticSearchAccessor {
 	private String SEARCH_URL;
 	private String SERVICEMETADATA_INGEST_URL;
 	private String SERVICEMETADATA_UPDATE_URL;
+	private String SERVICEMETADATA_DELETE_URL;
+	
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
 	private RestTemplate restTemplate = new RestTemplate();
@@ -46,10 +52,6 @@ public class ElasticSearchAccessor {
 	private PiazzaLogger logger;
 	@Autowired
 	private CoreServiceProperties coreServiceProperties;
-
-	/**
-	 * Store the new service information
-	 */
 
 	public ElasticSearchAccessor() {
 	}
@@ -59,56 +61,67 @@ public class ElasticSearchAccessor {
 		SEARCH_URL = coreServiceProperties.getPzSearchUrl();
 		SERVICEMETADATA_INGEST_URL = coreServiceProperties.getPzServicemetadataIngestUrl();
 		SERVICEMETADATA_UPDATE_URL = coreServiceProperties.getPzServicemetadataUpdateUrl();
-
+		SERVICEMETADATA_DELETE_URL = coreServiceProperties.getPzServicemetadataDeleteUrl();
 	}
 
-	public PiazzaResponse save(Service sMetadata) {
+	/**
+	 * Dispatches request to elastic search for service updates
+	 * 
+	 * @param service
+	 *            Service object
+	 * @return PiazzaResponse
+	 */
+	public PiazzaResponse save(Service service) {
+		return dispatchElasticSearch(service, SERVICEMETADATA_INGEST_URL);
+	}
 
-		ServiceMetadataIngestJob job = new ServiceMetadataIngestJob();
-		job.setData(sMetadata);
-
+	/**
+	 * Dispatches request to elastic search for service updates
+	 * 
+	 * @param service
+	 *            Service object
+	 * @return PiazzaResponse
+	 */
+	public PiazzaResponse update(Service service) {
+		return dispatchElasticSearch(service, SERVICEMETADATA_UPDATE_URL);
+	}
+	
+	/**
+	 * Dispatches request to elastic search for service updates
+	 * 
+	 * @param service
+	 *            Service object
+	 * @return PiazzaResponse
+	 */
+	public PiazzaResponse delete(Service service) {
+		return dispatchElasticSearch(service, SERVICEMETADATA_DELETE_URL);
+	}
+	
+	/**
+	 * Private method to post requests to elastic search for
+	 * registering / updating / deleting the service metadata.
+	 * 
+	 * @param Service object
+	 * @param url
+	 *            elastic search endpoints to post to
+	 * @return PiazzaResponse response
+	 */
+	private PiazzaResponse dispatchElasticSearch(Service service, String url) {
 		try {
+			ServiceMetadataIngestJob job = new ServiceMetadataIngestJob();
+			job.setData(service);
+
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
-			PiazzaResponse servicemetadataIngestResponse = restTemplate.postForObject(
-					String.format("%s", SERVICEMETADATA_INGEST_URL), entity, PiazzaResponse.class);
+
+			PiazzaResponse response = restTemplate.postForObject(url, entity, PiazzaResponse.class);
 			logger.log(String.format("Indexed ServiceMetadata from Gateway."), PiazzaLogger.INFO);
-			return servicemetadataIngestResponse;
+			
+			return response;
 		} catch (Exception exception) {
-			logger.log(String.format("Could not Index ServiceMetaData to Service: %s", exception.getMessage()),
-					PiazzaLogger.ERROR);
-			return new ErrorResponse(null, "Error connecting toServiceMetadata Ingest Service: "
-					+ exception.getMessage(), "ServiceController");
+			logger.log(String.format("Could not Index ServiceMetaData to Service: %s", exception.getMessage()), PiazzaLogger.ERROR);
+			return new ErrorResponse(null, "Error connecting to ServiceMetadata Service: " + exception.getMessage(), "ServiceController");
 		}
-
 	}
-
-	public PiazzaResponse update(Service sMetadata) {
-		ServiceMetadataIngestJob job = new ServiceMetadataIngestJob();
-		job.setData(sMetadata);
-
-		try {
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_JSON);
-			HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
-			PiazzaResponse servicemetadataIngestResponse = restTemplate.postForObject(
-					String.format("%s", SERVICEMETADATA_UPDATE_URL), entity, PiazzaResponse.class);
-			logger.log(String.format("Indexed ServiceMetadata from Gateway."), PiazzaLogger.INFO);
-			return servicemetadataIngestResponse;
-		} catch (Exception exception) {
-			logger.log(String.format("Could not Index ServiceMetaData to Service: %s", exception.getMessage()),
-					PiazzaLogger.ERROR);
-			return new ErrorResponse(null, "Error connecting toServiceMetadata Update Service: "
-					+ exception.getMessage(), "ServiceController");
-		}
-
-	}
-
-	// TODO - Need to create a delete service Job and new elasticsearch endpoint
-	// for it
-	public void delete(String serviceId) {
-
-	}
-
 }

@@ -189,9 +189,11 @@ public class ServiceController {
 	public PiazzaResponse getServices(
 			@RequestParam(value = "page", required = false, defaultValue = DEFAULT_PAGE) Integer page,
 			@RequestParam(value = "per_page", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
-			@RequestParam(value = "keyword", required = false) String keyword) {
+			@RequestParam(value = "keyword", required = false) String keyword,
+			@RequestParam(value = "userName", required = false) String userName) {
 		try {
 			Pattern regex = Pattern.compile(String.format("(?i)%s", keyword != null ? keyword : ""));
+			
 			// Get a DB Cursor to the query for general data
 			DBCursor<Service> cursor = accessor
 					.getServiceCollection()
@@ -199,6 +201,9 @@ public class ServiceController {
 					.or(DBQuery.regex("resourceMetadata.name", regex),
 							DBQuery.regex("resourceMetadata.description", regex), DBQuery.regex("url", regex),
 							DBQuery.regex("serviceId", regex));
+			if ((userName != null) && !(userName.isEmpty())) {
+				cursor.and(DBQuery.is("resourceMetadata.createdBy", userName));
+			}
 			Integer size = new Integer(cursor.size());
 			// Filter the data by pages
 			List<Service> data = cursor.skip(page * pageSize).limit(pageSize).toArray();

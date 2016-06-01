@@ -49,7 +49,7 @@ import util.UUIDFactory;
  */
 
 public class RegisterServiceHandler implements PiazzaJobHandler {
-	private MongoAccessor accessor;
+	private MongoAccessor mongoAccessor;
 	private ElasticSearchAccessor elasticAccessor;
 	private PiazzaLogger coreLogger;
 	private UUIDFactory uuidFactory;
@@ -57,8 +57,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	private RestTemplate template;
 
 
-	public RegisterServiceHandler(MongoAccessor accessor, ElasticSearchAccessor elasticAccessor,CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
-		this.accessor = accessor;
+	public RegisterServiceHandler(MongoAccessor mongoAccessor, ElasticSearchAccessor elasticAccessor,CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
+		this.mongoAccessor = mongoAccessor;
 		this.elasticAccessor = elasticAccessor;
 		this.coreLogger = coreLogger;
 		this.uuidFactory = uuidFactory;
@@ -119,7 +119,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			}
 		}*/
 		sMetadata.setServiceId(uuidFactory.getUUID());
-		String result = accessor.save(sMetadata);
+		String result = mongoAccessor.save(sMetadata);
 		LOGGER.debug("The result of the save is " + result);
 		PiazzaResponse response = elasticAccessor.save(sMetadata);
 		if (ErrorResponse.class.isInstance(response)) {

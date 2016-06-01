@@ -21,14 +21,17 @@ import java.util.List;
 
 import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
+import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,16 +51,16 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
 	private UUIDFactory uuidFactory;
+	private ElasticSearchAccessor elasticAccessor;
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeleteServiceHandler.class);
 
-	public DeleteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger,
+	public DeleteServiceHandler(MongoAccessor accessor, ElasticSearchAccessor elasticAccessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger,
 			UUIDFactory uuidFactory)
-
 	{
 		this.accessor = accessor;
 		this.coreLogger = coreLogger;
 		this.uuidFactory = uuidFactory;
-
+		this.elasticAccessor = elasticAccessor;
 	}
 
 	/**
@@ -97,6 +100,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	}// handle
 
 	/**
+	 * Deletes resource by removing from mongo, and sends delete request to elastic search
 	 * 
 	 * @param rMetadata
 	 * @return resourceID of the registered service
@@ -105,8 +109,10 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
 		LOGGER.info("about to delete a registered service.");
 
-		ObjectMapper mapper = new ObjectMapper();
+		Service service = accessor.getServiceById(resourceId);
+		elasticAccessor.delete(service);
 
+		ObjectMapper mapper = new ObjectMapper();
 		String result = "";
 		try {
 			result = mapper.writeValueAsString(accessor.delete(resourceId, softDelete));
@@ -115,6 +121,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		}
 
 		LOGGER.debug("The result of the delete is " + result);
+
 		if (result.length() > 0) {
 			coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);
 			LOGGER.info("The service with id " + resourceId + " was deleted " + result);
@@ -123,7 +130,6 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 			LOGGER.info("The service with id " + resourceId + " was NOT deleted");
 		}
 
-		// If an ID was returned then send a kafka message back updating the job iD with the resourceID
 		return result;
 	}
 }

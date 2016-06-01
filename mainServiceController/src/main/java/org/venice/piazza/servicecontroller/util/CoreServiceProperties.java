@@ -15,8 +15,6 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.util;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -63,6 +61,11 @@ public class CoreServiceProperties {
 	private String pzServicemetadataIngestUrl;
 	@Value("#{'${metadata.ingest.protocol}' + '://' + '${metadata.ingest.prefix}' + '.' + '${DOMAIN}' + ':' + '${metadata.ingest.port}' + '/' + '${metadata.update.endpoint}'}")
 	private String pzServicemetadataUpdateUrl;
+	@Value("#{'${metadata.ingest.protocol}' + '://' + '${metadata.ingest.prefix}' + '.' + '${DOMAIN}' + ':' + '${metadata.ingest.port}' + '/' + '${metadata.delete.endpoint}'}")
+	private String pzServicemetadataDeleteUrl;
+	
+	@Value("${SPACE}")
+	private String space;
 
 	public String getPzSearchUrl() {
 		return pzSearchUrl;
@@ -87,10 +90,14 @@ public class CoreServiceProperties {
 	public void setPzServicemetadataUpdateUrl(String pzServicemetadataUpdateUrl) {
 		this.pzServicemetadataUpdateUrl = pzServicemetadataUpdateUrl;
 	}
+	
+	public String getPzServicemetadataDeleteUrl() {
+		return pzServicemetadataDeleteUrl;
+	}
 
-	@Value("${SPACE}")
-	private String space;
-
+	public void setPzServicemetadataDeleteUrl(String pzServicemetadataDeleteUrl) {
+		this.pzServicemetadataDeleteUrl = pzServicemetadataDeleteUrl;
+	}
 
 	public String getAppname() {
 		return appname;
@@ -165,7 +172,6 @@ public class CoreServiceProperties {
 		this.mongoCollectionName = mongoCollectionName;
 	}
 
-
 	public String getSpace() {
 		return space;
 	}
@@ -178,5 +184,4 @@ public class CoreServiceProperties {
 	public CoreInitDestroy coreInitDestroy() {
 		return new CoreInitDestroy();
 	}
-
 }

@@ -75,7 +75,6 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		LOGGER.debug("Updating a service");
 		UpdateServiceJob job = (UpdateServiceJob) jobRequest;
 		if (job != null) {
-
 			// Get the ResourceMetadata
 			Service sMetadata = job.data;
 			LOGGER.info("serviceMetadata received is " + sMetadata);
@@ -84,8 +83,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 
 			if (result.length() > 0) {
 				String jobId = job.getJobId();
-				// TODO Use the result, send a message with the resource ID and
-				// jobId
+				// TODO Use the result, send a message with the resource ID and jobId
 				ArrayList<String> resultList = new ArrayList<String>();
 				resultList.add(jobId);
 				resultList.add(sMetadata.getServiceId());
@@ -126,7 +124,9 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		String result = accessor.update(sMetadata);
 		LOGGER.debug("The result of the update is " + result);
 		LOGGER.debug("The result of the save is " + result);
-		//TODO PiazzaResponse response = elasticAccessor.update(sMetadata);
+		
+		// Send update to elastic search
+		PiazzaResponse response = elasticAccessor.update(sMetadata);
 		if (result.length() > 0) {
 		   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, PiazzaLogger.INFO);
 		   LOGGER.info("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result);

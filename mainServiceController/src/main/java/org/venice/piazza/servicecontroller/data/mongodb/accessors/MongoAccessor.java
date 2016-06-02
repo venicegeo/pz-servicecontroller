@@ -154,7 +154,7 @@ public class MongoAccessor {
 	 * @return message string containing result
 	 */
 	public String delete(String serviceId, boolean softDelete) {
-		String result = " service " + serviceId + " NOT deleted ";
+		String result = "service " + serviceId + " NOT deleted ";
 		try {
 			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 

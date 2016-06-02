@@ -62,6 +62,7 @@ import model.data.type.TextDataType;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
+import model.response.SuccessResponse;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
@@ -228,7 +229,7 @@ public class ServiceController {
 		try {
 			// remove from elastic search as well....
 			dlHandler.handle(serviceId, softDelete);
-			return null;
+			return new SuccessResponse(null, "Service was deleted successfully.", "ServiceController");
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);

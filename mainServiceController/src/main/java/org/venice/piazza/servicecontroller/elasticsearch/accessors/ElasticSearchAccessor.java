@@ -40,13 +40,10 @@ import util.PiazzaLogger;
 @Component
 @DependsOn("coreInitDestroy")
 public class ElasticSearchAccessor {
-	private String SEARCH_URL;
 	private String SERVICEMETADATA_INGEST_URL;
 	private String SERVICEMETADATA_UPDATE_URL;
 	private String SERVICEMETADATA_DELETE_URL;
 	
-	private static final String DEFAULT_PAGE_SIZE = "10";
-	private static final String DEFAULT_PAGE = "0";
 	private RestTemplate restTemplate = new RestTemplate();
 	@Autowired
 	private PiazzaLogger logger;
@@ -58,7 +55,6 @@ public class ElasticSearchAccessor {
 
 	@PostConstruct
 	private void initialize() {
-		SEARCH_URL = coreServiceProperties.getPzSearchUrl();
 		SERVICEMETADATA_INGEST_URL = coreServiceProperties.getPzServicemetadataIngestUrl();
 		SERVICEMETADATA_UPDATE_URL = coreServiceProperties.getPzServicemetadataUpdateUrl();
 		SERVICEMETADATA_DELETE_URL = coreServiceProperties.getPzServicemetadataDeleteUrl();
@@ -110,15 +106,11 @@ public class ElasticSearchAccessor {
 		try {
 			ServiceMetadataIngestJob job = new ServiceMetadataIngestJob();
 			job.setData(service);
-
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
 
-			PiazzaResponse response = restTemplate.postForObject(url, entity, PiazzaResponse.class);
-			logger.log(String.format("Indexed ServiceMetadata from Gateway."), PiazzaLogger.INFO);
-			
-			return response;
+			return restTemplate.postForObject(url, entity, PiazzaResponse.class);
 		} catch (Exception exception) {
 			logger.log(String.format("Could not Index ServiceMetaData to Service: %s", exception.getMessage()), PiazzaLogger.ERROR);
 			return new ErrorResponse(null, "Error connecting to ServiceMetadata Service: " + exception.getMessage(), "ServiceController");

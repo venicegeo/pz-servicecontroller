@@ -99,39 +99,25 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
+	 * Handler for registering the new service with mongo and elastic search.
 	 * 
 	 * @param rMetadata
 	 * @return resourceID of the registered service
 	 */
-	public String handle (Service sMetadata) {
-
-        //coreLogger.log("about to save a registered service.", PiazzaLogger.INFO);
-		/*TODO if ever decide to add more detailed metadata
-		 if (sMetadata.getContractUrl() != null) {
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
-			URI url = URI.create(builder.toUriString());
-			ResponseEntity<String> responseEntity  = template.getForEntity(url, String.class);
-			if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.hasBody()) {
-				sMetadata.setContractData(responseEntity.getBody());
-			}
-			else {
-				LOGGER.warn("Unable to get contract data");
-			}
-		}*/
-		sMetadata.setServiceId(uuidFactory.getUUID());
-		String result = mongoAccessor.save(sMetadata);
+	public String handle(Service service) {
+		service.setServiceId(uuidFactory.getUUID());
+		String result = mongoAccessor.save(service);
 		LOGGER.debug("The result of the save is " + result);
-		PiazzaResponse response = elasticAccessor.save(sMetadata);
+
+		PiazzaResponse response = elasticAccessor.save(service);
+
 		if (ErrorResponse.class.isInstance(response)) {
-			ErrorResponse errResponse = (ErrorResponse)response;
+			ErrorResponse errResponse = (ErrorResponse) response;
 			LOGGER.error("The result of the save is " + errResponse.message);
+		} else {
+			LOGGER.debug("Successfully stored service " + service.getServiceId());
 		}
-		else {
-			LOGGER.debug("Successfully stored service " + sMetadata.getServiceId());
-		}
-		return sMetadata.getServiceId();
+
+		return service.getServiceId();
 	}
-	
-
-
 }

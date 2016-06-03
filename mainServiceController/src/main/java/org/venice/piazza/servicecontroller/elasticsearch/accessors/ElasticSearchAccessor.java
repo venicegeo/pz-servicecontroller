@@ -17,6 +17,8 @@ package org.venice.piazza.servicecontroller.elasticsearch.accessors;
 
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpEntity;
@@ -24,6 +26,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.venice.piazza.servicecontroller.messaging.ServiceMessageWorker;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.type.ServiceMetadataIngestJob;
@@ -47,8 +50,11 @@ public class ElasticSearchAccessor {
 	private RestTemplate restTemplate = new RestTemplate();
 	@Autowired
 	private PiazzaLogger logger;
+	
 	@Autowired
 	private CoreServiceProperties coreServiceProperties;
+
+	private final static Logger LOGGER = LoggerFactory.getLogger(ElasticSearchAccessor.class);
 
 	public ElasticSearchAccessor() {
 	}
@@ -58,6 +64,9 @@ public class ElasticSearchAccessor {
 		SERVICEMETADATA_INGEST_URL = coreServiceProperties.getPzServicemetadataIngestUrl();
 		SERVICEMETADATA_UPDATE_URL = coreServiceProperties.getPzServicemetadataUpdateUrl();
 		SERVICEMETADATA_DELETE_URL = coreServiceProperties.getPzServicemetadataDeleteUrl();
+		logger.log("Search endpoint is " + SERVICEMETADATA_INGEST_URL, logger.DEBUG);
+		LOGGER.debug("Search endpoint is " + SERVICEMETADATA_INGEST_URL);
+
 	}
 
 	/**
@@ -68,6 +77,8 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse save(Service service) {
+		logger.log("Saving service " + service.getServiceId() + SERVICEMETADATA_INGEST_URL, logger.DEBUG);
+		LOGGER.debug("Search endpoint is " + service.getServiceId() + SERVICEMETADATA_INGEST_URL);
 		return dispatchElasticSearch(service, SERVICEMETADATA_INGEST_URL);
 	}
 

@@ -65,7 +65,6 @@ public class ElasticSearchAccessor {
 		SERVICEMETADATA_UPDATE_URL = coreServiceProperties.getPzServicemetadataUpdateUrl();
 		SERVICEMETADATA_DELETE_URL = coreServiceProperties.getPzServicemetadataDeleteUrl();
 		logger.log("Search endpoint is " + SERVICEMETADATA_INGEST_URL, logger.DEBUG);
-		LOGGER.debug("Search endpoint is " + SERVICEMETADATA_INGEST_URL);
 
 	}
 
@@ -78,7 +77,6 @@ public class ElasticSearchAccessor {
 	 */
 	public PiazzaResponse save(Service service) {
 		logger.log("Saving service " + service.getServiceId() + SERVICEMETADATA_INGEST_URL, logger.DEBUG);
-		LOGGER.debug("Search endpoint is " + service.getServiceId() + SERVICEMETADATA_INGEST_URL);
 		return dispatchElasticSearch(service, SERVICEMETADATA_INGEST_URL);
 	}
 
@@ -90,6 +88,8 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse update(Service service) {
+		logger.log("Saving service " + service.getServiceId() + SERVICEMETADATA_UPDATE_URL, logger.DEBUG);
+
 		return dispatchElasticSearch(service, SERVICEMETADATA_UPDATE_URL);
 	}
 	
@@ -101,6 +101,7 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse delete(Service service) {
+		logger.log("Saving service " + service.getServiceId() + SERVICEMETADATA_DELETE_URL, logger.DEBUG);
 		return dispatchElasticSearch(service, SERVICEMETADATA_DELETE_URL);
 	}
 	

@@ -132,7 +132,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
-	
+	    coreLogger.log("URL to use = " +sMetadata.getUrl(), coreLogger.INFO);
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
 		
 		Map<String,DataType> postObjects = new HashMap<String,DataType>();
@@ -173,6 +173,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			//Default behavior for other inputs, put them in list of objects
 			// which are transformed into JSON consistent with default requestMimeType
 			else {
+				coreLogger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), coreLogger.INFO);
 				postObjects.put(inputName, entry.getValue());
 			}
 		}

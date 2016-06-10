@@ -189,6 +189,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			try {
 				postString = mapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
+				e.printStackTrace();
 				LOGGER.error(e.getMessage());
 				coreLogger.log(e.getMessage(),coreLogger.ERROR);
 				return new ResponseEntity<String>(e.getMessage(),HttpStatus.BAD_REQUEST);
@@ -198,6 +199,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	
 		
 		if (sMetadata.getResourceMetadata().method.equals("GET")) {
+			coreLogger.log("GetForEntity URL="+url, coreLogger.INFO);
 			responseEntity = template.getForEntity(url, String.class);
 			
 		}
@@ -218,6 +220,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				requestEntity = new HttpEntity(headers);
 				
 			}
+			coreLogger.log("PostForEntity URL="+url, coreLogger.INFO);
 			responseEntity = template.postForEntity(url, requestEntity, String.class);
 		}
 		

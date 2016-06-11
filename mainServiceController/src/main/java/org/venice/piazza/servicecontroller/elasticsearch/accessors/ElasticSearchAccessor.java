@@ -41,7 +41,6 @@ import util.PiazzaLogger;
  *
  */
 @Component
-@DependsOn("coreInitDestroy")
 public class ElasticSearchAccessor {
 	private String SERVICEMETADATA_INGEST_URL;
 	private String SERVICEMETADATA_UPDATE_URL;

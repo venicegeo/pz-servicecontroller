@@ -57,8 +57,9 @@ public class ExecuteServiceHandlerTest {
 		rm = new ResourceMetadata();
 		rm.name = "toUpper Params";
 		rm.description = "Service to convert string to uppercase";
-		rm.method = "POST";
+
 		service = new Service();
+		service.method = "POST";
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
@@ -114,7 +115,6 @@ public class ExecuteServiceHandlerTest {
 		tdt.content = "My name is Marge";
 		dataInputs.put("name",tdt);
 		edata.setDataInputs(dataInputs);
-		rm.method = "POST";
 	    URI uri = URI.create("http://localhost:8082/string/toUpper");
 		when(template.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
@@ -126,6 +126,9 @@ public class ExecuteServiceHandlerTest {
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
 		
 	}
+	/**
+	 * Tests executing web service with GET method
+	 */
 	@PrepareForTest({ExecuteServiceHandler.class})
 	@Test
 	public void testHandleWithMapInputsGet() {
@@ -133,9 +136,11 @@ public class ExecuteServiceHandlerTest {
 		edata.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
 		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
 		URLParameterDataType tdt = new URLParameterDataType();
-		tdt.content = "The rain in Spain";
-		dataInputs.put("aString",tdt);
+		tdt.content = "Marge";
+
+		dataInputs.put("name",tdt);
 		edata.setDataInputs(dataInputs);
+
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			String tsvc = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(edata);
@@ -144,10 +149,20 @@ public class ExecuteServiceHandlerTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		rm.method = "GET";
-	    URI uri = URI.create("http://localhost:8082/string/toUpper?aString=The%20rain%20in%20Spain");
+		
+	    URI uri = URI.create("http://localhost:8082/jumpstart/moviequotewelcome?name=Marge");
 		when(template.getForEntity(Mockito.eq(uri),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
+		// Setup the service
+		rm = new ResourceMetadata();
+		rm.name = "Movie Quote";
+		rm.description = "Service the generates random movie quotes";
+        // Setup a service to test GET
+		service = new Service();
+		service.method = "GET";
+		service.setResourceMetadata(rm);
+		service.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
+		service.setUrl("http://localhost:8082/jumpstart//moviequotewelcome");
 		when(mockMongo.getServiceById("a842aae2-bd74-4c4b-9a65-c45e8cd9060f")).thenReturn(service);
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);

@@ -199,7 +199,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		URI url = URI.create(builder.toUriString());
 	
 		
-		if (sMetadata.getResourceMetadata().method.equals("GET")) {
+		if (sMetadata.getMethod().equals("GET")) {
 			coreLogger.log("GetForEntity URL="+url, coreLogger.INFO);
 			responseEntity = template.getForEntity(url, String.class);
 			

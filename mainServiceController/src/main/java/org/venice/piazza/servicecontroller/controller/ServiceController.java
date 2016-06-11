@@ -83,7 +83,6 @@ import util.UUIDFactory;
 
 @RestController
 @RequestMapping({ "/servicecontroller", "" })
-@DependsOn("coreInitDestroy")
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;

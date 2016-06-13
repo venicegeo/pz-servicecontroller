@@ -169,7 +169,7 @@ public class ServiceMessageWorker implements Runnable {
 						sendUpdateStatus(job, handleUpdate, handleResult);
 
 					} else if (jobType instanceof DeleteServiceJob) {
-						DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger, uuidFactory);
+						DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger);
 						handleResult = dlHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendDeleteStatus(job, handleUpdate, handleResult);

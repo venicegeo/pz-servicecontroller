@@ -6,9 +6,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+
 
 import org.junit.Before;
 import org.junit.Test;
@@ -32,9 +31,6 @@ import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
 import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.Format;
-import model.service.metadata.MetadataType;
-import model.service.metadata.ParamDataItem;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 

@@ -126,7 +126,7 @@ public class ServiceController {
 		usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
-		dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
+		dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
 		mapper = new ObjectMapper();

@@ -75,7 +75,7 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse save(Service service) {
-		logger.log("Saving service " + service.getServiceId() + SERVICEMETADATA_INGEST_URL, logger.DEBUG);
+		logger.log("Saving service " + service.getServiceId() + " " + SERVICEMETADATA_INGEST_URL, logger.DEBUG);
 		return dispatchElasticSearch(service, SERVICEMETADATA_INGEST_URL);
 	}
 
@@ -87,7 +87,7 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse update(Service service) {
-		logger.log("Saving service " + service.getServiceId() + SERVICEMETADATA_UPDATE_URL, logger.DEBUG);
+		logger.log("Saving service " + service.getServiceId() + " " + SERVICEMETADATA_UPDATE_URL, logger.DEBUG);
 
 		return dispatchElasticSearch(service, SERVICEMETADATA_UPDATE_URL);
 	}
@@ -100,7 +100,7 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse delete(Service service) {
-		logger.log("Saving service " + service.getServiceId() + SERVICEMETADATA_DELETE_URL, logger.DEBUG);
+		logger.log("Saving service " + service.getServiceId() + " " + SERVICEMETADATA_DELETE_URL, logger.DEBUG);
 		return dispatchElasticSearch(service, SERVICEMETADATA_DELETE_URL);
 	}
 	

@@ -258,12 +258,22 @@ public class ServiceController {
 			@RequestBody Service serviceData) {
 		try {
 			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
-				usHandler.handle(serviceData);
-				return null;
+				String result = usHandler.handle(serviceData);
+				if (result.length() > 0 )  {
+					return new SuccessResponse(null, "Service was updated successfully.", "ServiceController");
+
+				} 
+				else {
+				   return new ErrorResponse(null, "The update for serviceId " + serviceId + 
+						   			" did not happen successfully", "Service Controller");	
+				}
+			
 			} else {
-				throw new Exception(String.format(
-						"Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)",
-						serviceData.getServiceId(), serviceId));
+				return new ErrorResponse(null, 
+						String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)",
+						serviceData.getServiceId(), serviceId), "Service Controller");
+						
+			
 			}
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());

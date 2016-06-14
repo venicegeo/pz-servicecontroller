@@ -169,7 +169,7 @@ public class ServiceMessageWorker implements Runnable {
 						sendUpdateStatus(job, handleUpdate, handleResult);
 
 					} else if (jobType instanceof DeleteServiceJob) {
-						DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger, uuidFactory);
+						DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger);
 						handleResult = dlHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendDeleteStatus(job, handleUpdate, handleResult);
@@ -620,22 +620,22 @@ public class ServiceMessageWorker implements Runnable {
 
 			try {
 				LOGGER.debug("About to call special service");
-				LOGGER.debug("URL calling" + url);
+				LOGGER.debug("URL calling " + url);
 
 				ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 				LOGGER.debug("The Response is " + response.getBody());
 
 				String serviceControlString = response.getBody();
-				LOGGER.debug("Service Control String" + serviceControlString);
+				LOGGER.debug("Service Control String " + serviceControlString);
 
 				ObjectMapper tempMapper = new ObjectMapper();
 				DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
 
 				LOGGER.debug("This is a test");
-				LOGGER.debug("dataResource type is" + dataResource.getDataType().getType());
+				LOGGER.debug("dataResource type is " + dataResource.getDataType().getType());
 
 				dataResource.dataId = uuidFactory.getUUID();
-				LOGGER.debug("dataId" + dataResource.dataId);
+				LOGGER.debug("dataId " + dataResource.dataId);
 				PiazzaJobRequest pjr = new PiazzaJobRequest();
 				pjr.userName = "pz-sc-ingest-raster-test";
 
@@ -647,7 +647,7 @@ public class ServiceMessageWorker implements Runnable {
 				ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), space);
 				producer.send(newProdRecord);
 
-				LOGGER.debug("newProdRecord sent" + newProdRecord.toString());
+				LOGGER.debug("newProdRecord sent " + newProdRecord.toString());
 				StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 
 				// Create a text result and update status
@@ -656,7 +656,7 @@ public class ServiceMessageWorker implements Runnable {
 				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
 
 				producer.send(prodRecord);
-				LOGGER.debug("prodRecord sent" + prodRecord.toString());
+				LOGGER.debug("prodRecord sent " + prodRecord.toString());
 			} catch (JsonProcessingException jpe) {
 				jpe.printStackTrace();
 			} catch (Exception ex) {

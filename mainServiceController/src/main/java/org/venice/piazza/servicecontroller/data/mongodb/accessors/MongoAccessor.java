@@ -58,7 +58,6 @@ import util.PiazzaLogger;
 // TODO  FUTURE See a better way to abstract out MongoDB
 // TODO  FUTURE See a way to store service controller internals 
 @Component
-@DependsOn("coreInitDestroy")
 public class MongoAccessor {
 	private String DATABASE_HOST;
 	private String DATABASE_NAME;

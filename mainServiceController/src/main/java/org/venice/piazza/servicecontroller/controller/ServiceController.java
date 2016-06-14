@@ -26,10 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -83,7 +80,6 @@ import util.UUIDFactory;
 
 @RestController
 @RequestMapping({ "/servicecontroller", "" })
-@DependsOn("coreInitDestroy")
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
@@ -107,11 +103,13 @@ public class ServiceController {
 
 	@Autowired
 	private UUIDFactory uuidFactory;
-	private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
-
+	
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
-
+	
+     /**
+      * Empty controller for now
+      */
 	public ServiceController() {
 
 	}
@@ -127,7 +125,7 @@ public class ServiceController {
 		usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
-		dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
+		dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
 		mapper = new ObjectMapper();
@@ -151,9 +149,9 @@ public class ServiceController {
 			RegisterServiceJob serviceJob = (RegisterServiceJob) jobRequest.jobType;
 			String serviceId = rsHandler.handle(serviceJob.data);
 			return new ServiceResponse(serviceId);
-		} catch (Exception exception) {
-			exception.printStackTrace();
-			return new ErrorResponse(null, String.format("Error Registering Service: %s", exception.getMessage()),
+		} catch (Exception exception) {			
+			logger.log(exception.toString(), PiazzaLogger.ERROR);
+			return new ErrorResponse("unknown", String.format("Error Registering Service: %s", exception.getMessage()),
 					"Service Controller");
 		}
 	}
@@ -174,6 +172,7 @@ public class ServiceController {
 			Service service = accessor.getServiceById(serviceId);
 			return new ServiceResponse(service);
 		} catch (Exception exception) {
+			logger.log(exception.toString(), PiazzaLogger.ERROR);
 			return new ErrorResponse(null, String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
 					"Service Controller");
 		}
@@ -288,8 +287,7 @@ public class ServiceController {
 	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
 
 		String result = usHandler.handle(serviceMetadata);
-
-		LOGGER.debug("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}");
+		logger.log("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}", PiazzaLogger.DEBUG);
 		String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 
 		return responseString;
@@ -313,21 +311,18 @@ public class ServiceController {
 
 		for (Map.Entry<String, DataType> entry : data.dataInputs.entrySet()) {
 			String key = entry.getKey();
-			LOGGER.debug("dataInput key:" + key);
+			logger.log("dataInput key:" + key, PiazzaLogger.DEBUG);
+			logger.log("dataInput Type:" + entry.getValue().getType(), PiazzaLogger.DEBUG);
 
-			LOGGER.debug("dataInput Type:" + entry.getValue().getType());
 		}
 		ResponseEntity<String> result = null;
 		try {
 			result = esHandler.handle(data);
 		} catch (Exception ex) {
-			LOGGER.error(ex.getMessage());
-			logger.log("Service Controller Error Caused Exception: " + ex.getMessage(), logger.ERROR);
-			LOGGER.error("Service Controller Error", ex);
+			logger.log("Service Controller Error Caused Exception: " + ex.toString(), PiazzaLogger.ERROR);
 
 		}
-		LOGGER.debug("Result is" + result);
-		// TODO Remove System.out
+		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 
 		// Set the response based on the service retrieved
 		return result;
@@ -349,9 +344,7 @@ public class ServiceController {
 	public ResponseEntity<String> describeService(@ModelAttribute("resourceId") String resourceId) {
 
 		ResponseEntity<String> result = dsHandler.handle(resourceId);
-		LOGGER.debug("Result is" + result);
-		// TODO Remove System.out
-
+		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 		// Set the response based on the service retrieved
 		return result;
 
@@ -368,13 +361,10 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/deleteService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> deleteService(@ModelAttribute("resourceId") String resourceId) {
-		LOGGER.info("deleteService resourceId=" + resourceId);
-		logger.log("deleteService resourceId=" + resourceId, logger.INFO);
+		logger.log("deleteService resourceId=" + resourceId, PiazzaLogger.INFO);
 
 		String result = dlHandler.handle(resourceId, false);
-		LOGGER.debug("Result is" + result);
-		// TODO Remove System.out
-
+		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 		// Set the response based on the service retrieved
 		return new ResponseEntity<String>(result, HttpStatus.OK);
 
@@ -391,12 +381,9 @@ public class ServiceController {
 	@RequestMapping(value = "/listService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> listService() {
 
-		LOGGER.info("listService");
-		logger.log("listService", logger.INFO);
+		logger.log("listService", PiazzaLogger.INFO);
 		ResponseEntity<String> result = lsHandler.handle();
-		LOGGER.debug("Result is" + result);
-		// TODO Remove System.out
-
+		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 		// Set the response based on the service retrieved
 		return result;
 
@@ -416,12 +403,9 @@ public class ServiceController {
 	@RequestMapping(value = "/search", method = RequestMethod.POST, headers = "Accept=application/json")
 	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
 
-		LOGGER.info("search " + " " + criteria.field + "->" + criteria.pattern);
-		logger.log("search " + " " + criteria.field + "->" + criteria.pattern, logger.INFO);
+		logger.log("search " + " " + criteria.field + "->" + criteria.pattern, PiazzaLogger.INFO);
 		ResponseEntity<String> result = ssHandler.handle(criteria);
-		LOGGER.debug("Result is" + result);
-		// TODO Remove System.out
-
+		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 		// Set the response based on the service retrieved
 		return result;
 
@@ -437,7 +421,8 @@ public class ServiceController {
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ResponseEntity<String> healthCheck() {
 
-		LOGGER.debug("Health Check called");
+
+		logger.log("Health Check called", PiazzaLogger.DEBUG);
 
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(MediaType.valueOf("text/html"));
@@ -482,14 +467,11 @@ public class ServiceController {
 			}
 
 		} catch (JsonParseException e) {
-			LOGGER.error("convertInputMaptoDataType", e);
-			logger.log("convertInputMaptoDataType " + e.getMessage(), logger.ERROR);
+			logger.log("convertInputMaptoDataType " + e.getMessage(), PiazzaLogger.ERROR);
 		} catch (JsonMappingException e) {
-			LOGGER.error("convertInputMaptoDataType", e);
-			logger.log("convertInputMaptoDataType " + e.getMessage(), logger.ERROR);
+			logger.log("convertInputMaptoDataType " + e.getMessage(), PiazzaLogger.ERROR);
 		} catch (IOException e) {
-			LOGGER.error("convertInputMaptoDataType", e);
-			logger.log("convertInputMaptoDataType " + e.getMessage(), logger.ERROR);
+			logger.log("convertInputMaptoDataType " + e.getMessage(), PiazzaLogger.ERROR);
 		}
 		return retVal;
 	}

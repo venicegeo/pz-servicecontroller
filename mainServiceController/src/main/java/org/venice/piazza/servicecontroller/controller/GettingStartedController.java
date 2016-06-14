@@ -42,7 +42,6 @@ import org.venice.piazza.servicecontroller.data.model.Message;
  */
 
 @RequestMapping("/jumpstart")
-@DependsOn("coreInitDestroy")
 public class GettingStartedController {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(GettingStartedController.class);

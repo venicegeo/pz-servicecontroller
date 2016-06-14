@@ -114,12 +114,12 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
 			URI url = URI.create(builder.toUriString());
 			ResponseEntity<String> responseEntity  = template.getForEntity(url, String.class);
-			if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.hasBody()) {
+			/*if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.hasBody()) {
 				sMetadata.setContractData(responseEntity.getBody());
 			}
 			else {
-				LOGGER.warn("Unable to get contract data");
-			}
+				LOGGER.warn("Unable to get contract data"); 
+			} */
 		}
 		String result = accessor.update(sMetadata);
 		LOGGER.debug("The result of the update is " + result);

@@ -105,19 +105,25 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 * @return resourceID of the registered service
 	 */
 	public String handle(Service service) {
-		service.setServiceId(uuidFactory.getUUID());
-		String result = mongoAccessor.save(service);
-		LOGGER.debug("The result of the save is " + result);
-
-		PiazzaResponse response = elasticAccessor.save(service);
-
-		if (ErrorResponse.class.isInstance(response)) {
-			ErrorResponse errResponse = (ErrorResponse) response;
-			LOGGER.error("The result of the save is " + errResponse.message);
+		
+		if (service != null) {
+			service.setServiceId(uuidFactory.getUUID());
+			String result = mongoAccessor.save(service);
+			LOGGER.debug("The result of the save is " + result);
+	
+			PiazzaResponse response = elasticAccessor.save(service);
+	
+			if (ErrorResponse.class.isInstance(response)) {
+				ErrorResponse errResponse = (ErrorResponse) response;
+				LOGGER.error("The result of the save is " + errResponse.message);
+			} else {
+				LOGGER.debug("Successfully stored service " + service.getServiceId());
+			}
+			return service.getServiceId();
 		} else {
-			LOGGER.debug("Successfully stored service " + service.getServiceId());
+			return null;
 		}
 
-		return service.getServiceId();
+		
 	}
 }

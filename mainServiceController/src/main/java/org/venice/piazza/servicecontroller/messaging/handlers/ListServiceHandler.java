@@ -14,14 +14,13 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
-import java.util.ArrayList;
+
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -42,12 +41,10 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
 	private CoreServiceProperties coreServiceProperties;	
-	private RestTemplate template;
 	
 	public ListServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
 		this.accessor = accessor;
 		this.coreServiceProperties = coreServiceProperties;
-		this.template = new RestTemplate();
 		this.coreLogger = coreLogger;
 	
 	}
@@ -57,7 +54,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	 */
 	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
 		LOGGER.info("Listing services");
-		coreLogger.log("listing service", coreLogger.INFO);
+		coreLogger.log("listing service", PiazzaLogger.INFO);
         ResponseEntity<String> handleResourceReturn = handle();
         
 		return new ResponseEntity<String>(handleResourceReturn.getBody(),handleResourceReturn.getStatusCode());
@@ -75,7 +72,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 		} catch (Exception ex) {
 			
 			LOGGER.error(ex.getMessage());
-			coreLogger.log(ex.getMessage(), coreLogger.ERROR);
+			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 			responseEntity = new ResponseEntity<String>("Could not retrieve list of service metadata " , HttpStatus.NOT_FOUND);
 			
 		}

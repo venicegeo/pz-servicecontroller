@@ -1,47 +1,48 @@
+/*******************************************************************************
+ * Copyright 2016, RadiantBlue Technologies, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
+/**
+ * Class of unit tests to test the deletion of services
+ *  @author mlynum
+ */
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
-
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.mockito.MockitoAnnotations;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
+
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import model.data.DataType;
-import model.data.type.BodyDataType;
-import model.data.type.TextDataType;
-import model.data.type.URLParameterDataType;
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.DeleteServiceJob;
-import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
-import util.UUIDFactory;
 
 
 
@@ -58,7 +59,6 @@ public class DeleteServiceHandlerTest {
 	private ElasticSearchAccessor elasticAccessorMock;
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
-	
 	@Mock 
 	private PiazzaLogger piazzaLoggerMock;
 
@@ -76,7 +76,7 @@ public class DeleteServiceHandlerTest {
 		service.setResourceMetadata(rm);
 		service.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
 		service.setUrl("http://localhost:8082/string/toUpper");
-			
+		MockitoAnnotations.initMocks(this);			
     }
 
 	@Test

@@ -15,18 +15,11 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
-
-
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -46,12 +39,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data.DataType;
 import model.data.type.BodyDataType;
-import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.PiazzaJobType;
 import model.job.type.ExecuteServiceJob;
 import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.ParamDataItem;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
@@ -70,19 +61,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
 	private PiazzaLogger coreLogger;
 	private CoreServiceProperties coreServiceProperties;
-	
 	private RestTemplate template;
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecuteServiceHandler.class);
-
-	
 
 	public ExecuteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
 		this.accessor = accessor;
 		this.coreServiceProperties = coreServiceProperties;
 		this.template = new RestTemplate();
 		this.coreLogger = coreLogger;
-	
 	}
 
     /**
@@ -115,124 +101,113 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
-	 * Handles requests to execute a service.  T
-	 * TODO this needs to change to levarage pz-jbcommon ExecuteServiceMessage
-	 * after it builds.
+	 * Handles requests to execute a service. 
+	 * TODO this needs to change to leverage pz-jbcommon ExecuteServiceMessage after it builds.
+	 * 
 	 * @param message
 	 * @return the Response as a String
 	 */
-	public ResponseEntity<String> handle (ExecuteServiceData data) {
+	public ResponseEntity<String> handle(ExecuteServiceData data) {
 		LOGGER.info("executeService serviceId=" + data.getServiceId());
 		coreLogger.log("executeService serviceId=" + data.getServiceId(), coreLogger.INFO);
 		ResponseEntity<String> responseEntity = null;
 		// Get the id from the data
 		String serviceId = data.getServiceId();
-		//Accessor throws exception if can't find service
+		// Accessor throws exception if can't find service
 		Service sMetadata = accessor.getServiceById(serviceId);
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
 	    coreLogger.log("URL to use = " +sMetadata.getUrl(), coreLogger.INFO);
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
-		
-		Map<String,DataType> postObjects = new HashMap<String,DataType>();
-		Iterator<Entry<String,DataType>> it = data.getDataInputs().entrySet().iterator();
+
+		Map<String, DataType> postObjects = new HashMap<String, DataType>();
+		Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
 		String postString = "";
 		while (it.hasNext()) {
-			Entry<String,DataType> entry = it.next();
-			
+			Entry<String, DataType> entry = it.next();
+
 			String inputName = entry.getKey();
-			LOGGER.debug("The parameter is "  + inputName);
-			
+			LOGGER.debug("The parameter is " + inputName);
+
 			if (entry.getValue() instanceof URLParameterDataType) {
-				String paramValue = ((URLParameterDataType)entry.getValue()).getContent();
+				String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
 				if (inputName.length() == 0) {
 					LOGGER.debug("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata());
 
 					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
 					LOGGER.debug("Builder URL is " + builder.toUriString());
 
-				}
-				else {
-					 builder.queryParam(inputName,paramValue);
-					 LOGGER.debug("Input Name=" + inputName + " paramValue=" + paramValue);
+				} else {
+					builder.queryParam(inputName, paramValue);
+					LOGGER.debug("Input Name=" + inputName + " paramValue=" + paramValue);
 				}
 			}
-				
-			
-			else if (entry.getValue() instanceof BodyDataType){
-				BodyDataType bdt = (BodyDataType)entry.getValue();
+
+			else if (entry.getValue() instanceof BodyDataType) {
+				BodyDataType bdt = (BodyDataType) entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
-			    if (requestMimeType == null) {
-			    	LOGGER.error("Body mime type not specified" );
+				if (requestMimeType == null) {
+					LOGGER.error("Body mime type not specified");
 					coreLogger.log("Body mime type not specified", coreLogger.ERROR);
-					return new ResponseEntity<String>("Body mime type not specified",HttpStatus.BAD_REQUEST);
-			    }
+					return new ResponseEntity<String>("Body mime type not specified", HttpStatus.BAD_REQUEST);
+				}
 			}
-			//Default behavior for other inputs, put them in list of objects
-			// which are transformed into JSON consistent with default requestMimeType
+			// Default behavior for other inputs, put them in list of objects
+			// which are transformed into JSON consistent with default
+			// requestMimeType
 			else {
 				coreLogger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), coreLogger.INFO);
 				postObjects.put(inputName, entry.getValue());
 			}
 		}
-		
+
 		LOGGER.debug("Final Builder URL is " + builder.toUriString());
 		coreLogger.log("Final Builder URL" + builder.toUriString(), coreLogger.INFO);
 		if (postString.length() > 0 && postObjects.size() > 0) {
 			LOGGER.error("String Input not consistent with other Inputs");
 			coreLogger.log("String Input not consistent with other Inputs", coreLogger.ERROR);
-			return new ResponseEntity<String>("String Input not consistent with other Inputs",HttpStatus.BAD_REQUEST);
-		}
-		else if (postObjects.size() > 0){
+			return new ResponseEntity<String>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
+		} else if (postObjects.size() > 0) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				postString = mapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
 				LOGGER.error(e.getMessage());
-				coreLogger.log(e.getMessage(),coreLogger.ERROR);
-				return new ResponseEntity<String>(e.getMessage(),HttpStatus.BAD_REQUEST);
+				coreLogger.log(e.getMessage(), coreLogger.ERROR);
+				return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 			}
 		}
 		URI url = URI.create(builder.toUriString());
-	
-		
+
 		if (sMetadata.getMethod().equals("GET")) {
 			coreLogger.log("GetForEntity URL="+url, coreLogger.INFO);
 			responseEntity = template.getForEntity(url, String.class);
-			
-		}
-		else {
+
+		} else {
 			HttpHeaders headers = new HttpHeaders();
-			
+
 			// Set the mimeType of the request
 			MediaType mediaType = createMediaType(requestMimeType);
 			headers.setContentType(mediaType);
 			// Set the mimeType of the request
-			//headers.add("Content-type", sMetadata.getOutputs().get(0).getDataType().getMimeType());
+			// headers.add("Content-type",
+			// sMetadata.getOutputs().get(0).getDataType().getMimeType());
 			HttpEntity<String> requestEntity = null;
 			if (postString.length() > 0) {
 				requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
-				
-			}
-			else {
+
+			} else {
 				requestEntity = new HttpEntity(headers);
-				
+
 			}
 			coreLogger.log("PostForEntity URL="+url, coreLogger.INFO);
 			responseEntity = template.postForEntity(url, requestEntity, String.class);
 		}
-		
-		
-		
-		
-		
-       
-	 
-	  	return responseEntity;
-		
+
+		return responseEntity;
 	}
 	
 	/**

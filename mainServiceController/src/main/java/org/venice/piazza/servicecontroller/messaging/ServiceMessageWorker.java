@@ -91,6 +91,8 @@ public class ServiceMessageWorker implements Runnable {
 	@Autowired
 	private DeleteServiceHandler dlHandler;
 
+	@Autowired
+	private DescribeServiceHandler dsHandler;
 
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the
@@ -174,13 +176,11 @@ public class ServiceMessageWorker implements Runnable {
 						sendUpdateStatus(job, handleUpdate, handleResult);
 
 					} else if (jobType instanceof DeleteServiceJob) {
-						//DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger);
 						handleResult = dlHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendDeleteStatus(job, handleUpdate, handleResult);
 
 					} else if (jobType instanceof DescribeServiceMetadataJob) {
-						DescribeServiceHandler dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
 						handleResult = dsHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendDescribeStatus(job, handleUpdate, handleResult);

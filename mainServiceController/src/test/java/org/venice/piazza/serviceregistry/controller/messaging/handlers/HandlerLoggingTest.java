@@ -13,6 +13,7 @@ import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -49,6 +50,9 @@ import util.UUIDFactory;
 @RunWith(PowerMockRunner.class)
 public class HandlerLoggingTest {
 
+	@Mock
+	private DescribeServiceHandler handler;
+	
 	static String logString = "";
 	ResourceMetadata rm = null;
 	Service service = null;
@@ -191,7 +195,7 @@ public class HandlerLoggingTest {
 	public void TestDescribeServiceHandlerSuccessLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.serviceID = "8";
-		DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
+		//DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
 		doAnswer(new Answer() {
 			
 		    public Object answer(InvocationOnMock invocation) {
@@ -255,7 +259,7 @@ public class HandlerLoggingTest {
 	public void TestDescribeServiceHandlerFailLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.serviceID = "8";
-		DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
+		//DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
 		doAnswer(new Answer() {
 			
 		    public Object answer(InvocationOnMock invocation) {

@@ -16,8 +16,10 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
@@ -33,23 +35,15 @@ import model.job.type.DescribeServiceMetadataJob;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
+@Component
 public class DescribeServiceHandler implements PiazzaJobHandler { 
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(DescribeServiceHandler.class);
 	
+	@Autowired
 	private MongoAccessor accessor;
+	@Autowired
 	private PiazzaLogger coreLogger;
-	private CoreServiceProperties coreServiceProperties;	
-	private RestTemplate template;
 	
-	public DescribeServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
-		this.accessor = accessor;
-		this.coreServiceProperties = coreServiceProperties;
-		this.template = new RestTemplate();
-		this.coreLogger = coreLogger;
-	
-	}
-
 	/**
 	 * Describe service handler
 	 */
@@ -60,26 +54,22 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 		ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
 		return new ResponseEntity<String>(handleResourceReturn.getBody(), handleResourceReturn.getStatusCode());
 	}
-	
-	public ResponseEntity<String> handle (String serviceId) {
+
+	public ResponseEntity<String> handle(String serviceId) {
 		ResponseEntity<String> responseEntity = null;
-		
+
 		try {
-	
 			Service sMetadata = accessor.getServiceById(serviceId);
 			ObjectMapper mapper = new ObjectMapper();
 			String result = mapper.writeValueAsString(sMetadata);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (Exception ex) {
-			
+
 			LOGGER.error(ex.getMessage());
 			coreLogger.log("Could not retrieve resourceId " + serviceId, coreLogger.ERROR);
 			responseEntity = new ResponseEntity<String>("Could not retrieve resourceId " + serviceId, HttpStatus.NOT_FOUND);
-			
 		}
-	
-		return responseEntity;
-		
-	}
 
+		return responseEntity;
+	}
 }

@@ -83,7 +83,6 @@ import util.UUIDFactory;
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;
 	private ExecuteServiceHandler esHandler;
-	private DescribeServiceHandler dsHandler;
 	private UpdateServiceHandler usHandler;
 	private ListServiceHandler lsHandler;
 	private SearchServiceHandler ssHandler;
@@ -93,7 +92,11 @@ public class ServiceController {
 	private DeleteServiceHandler dlHandler;
 
 	@Autowired
+	private DescribeServiceHandler dsHandler;
+	
+	@Autowired
 	private MongoAccessor accessor;
+
 	@Autowired
 	private ElasticSearchAccessor elasticAccessor;
 
@@ -126,7 +129,7 @@ public class ServiceController {
 		rsHandler = new RegisterServiceHandler(accessor,elasticAccessor, coreServiceProp, logger, uuidFactory);
 		usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
-		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
+		//dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
 		//dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);

@@ -96,7 +96,8 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				return new ResponseEntity<String>("UpdateServiceHandler handle didn't work", HttpStatus.METHOD_FAILURE);
 			}
 		} else {
-			return null;
+			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", PiazzaLogger.ERROR);
+			 return new ResponseEntity<String>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
 		}
 	}
 	

@@ -29,7 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 /**
  * Handler for handling registerService requests.  This handler is used 

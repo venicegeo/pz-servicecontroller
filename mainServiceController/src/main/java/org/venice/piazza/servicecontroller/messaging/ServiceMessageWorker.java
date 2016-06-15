@@ -94,6 +94,9 @@ public class ServiceMessageWorker implements Runnable {
 	@Autowired
 	private DescribeServiceHandler dsHandler;
 
+	@Autowired
+	private ExecuteServiceHandler esHandler;
+	
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the
 	 * jobRequest
@@ -159,13 +162,12 @@ public class ServiceMessageWorker implements Runnable {
 							sendExecuteStatus(job, handleUpdate, handleResult);
 						} else {
 							LOGGER.debug("ExecuteServiceJob Original Way");
-
-							ExecuteServiceHandler esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 							handleResult = esHandler.handle(jobType);
+
 							LOGGER.debug("Execution handled");
 							handleResult = checkResult(handleResult);
-							LOGGER.debug("Send Execute Status KAFKA");
 
+							LOGGER.debug("Send Execute Status KAFKA");
 							sendExecuteStatus(job, handleUpdate, handleResult);
 						}
 					} else if (jobType instanceof UpdateServiceJob) {

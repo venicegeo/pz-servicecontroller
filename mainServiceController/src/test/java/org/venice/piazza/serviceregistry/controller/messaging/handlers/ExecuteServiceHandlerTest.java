@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -34,13 +35,16 @@ import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
-
-
 @RunWith(PowerMockRunner.class)
 public class ExecuteServiceHandlerTest {
+	
+	@Mock
+	private ExecuteServiceHandler handler;
+	
 	ResourceMetadata rm = null;
 	Service service = null;
 	RestTemplate template = null;
+
 	@Before
     public void setup() {
 		template = mock(RestTemplate.class);
@@ -59,12 +63,9 @@ public class ExecuteServiceHandlerTest {
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
-		
-		
-    	
     }
+
 	@PrepareForTest({ExecuteServiceHandler.class})
-	//@Test
 	public void testHandleWithNoInputs() {
 		String upperServiceDef = "{  \"name\":\"toUpper Params\"," +
 		        "\"description\":\"Service to convert string to uppercase\"," + 
@@ -73,8 +74,6 @@ public class ExecuteServiceHandlerTest {
 		         "\"params\": [\"aString\"]," + 
 		         "\"mimeType\":\"application/json\"" +
 		       "}";
-		
-		
 		
 		ExecuteServiceData edata = new ExecuteServiceData();
 		//edata.resourceId = "8";
@@ -87,15 +86,12 @@ public class ExecuteServiceHandlerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-		
-		
 		URI uri = URI.create("http://localhost:8085//string/toUpper");
 		when(template.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
 		when(mockMongo.getServiceById("8")).thenReturn(service);
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
-		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
 		ResponseEntity<String> retVal = handler.handle(edata);
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
 	}
@@ -117,11 +113,10 @@ public class ExecuteServiceHandlerTest {
 		when(mockMongo.getServiceById("8")).thenReturn(service);
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
-		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
 		ResponseEntity<String> retVal = handler.handle(edata);
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
-		
 	}
+
 	/**
 	 * Tests executing web service with GET method
 	 */
@@ -162,13 +157,7 @@ public class ExecuteServiceHandlerTest {
 		when(mockMongo.getServiceById("a842aae2-bd74-4c4b-9a65-c45e8cd9060f")).thenReturn(service);
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
-		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
 		ResponseEntity<String> retVal = handler.handle(edata);
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
-		
 	}
-	
-	
-	
-	
 }

@@ -51,7 +51,10 @@ import util.UUIDFactory;
 public class HandlerLoggingTest {
 
 	@Mock
-	private DescribeServiceHandler handler;
+	private DescribeServiceHandler dsHandler;
+
+	@Mock
+	private ExecuteServiceHandler esHandler;
 	
 	static String logString = "";
 	ResourceMetadata rm = null;
@@ -132,10 +135,8 @@ public class HandlerLoggingTest {
 			
 			    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
 		
-		ExecuteServiceHandler handler = new ExecuteServiceHandler(mockMongo,props,logger);
-		ResponseEntity<String> retVal = handler.handle(edata);
+		ResponseEntity<String> retVal = esHandler.handle(edata);
 		assertTrue(logString.contains("Body mime type not specified"));
-	    
 	}
 	
 	@Test
@@ -206,7 +207,7 @@ public class HandlerLoggingTest {
 		
 		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
 		 when(mockMongo.getServiceById("8")).thenReturn(service);
-		 handler.handle(dsmJob);
+		 dsHandler.handle(dsmJob);
 		 assertTrue(logString.contains("Describing a service"));
 		 
 		
@@ -271,7 +272,7 @@ public class HandlerLoggingTest {
 		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
 		NullPointerException ex = new NullPointerException();
 		 when(mockMongo.getServiceById("8")).thenThrow(ex);
-		 handler.handle(dsmJob);
+		 dsHandler.handle(dsmJob);
 		 assertTrue(logString.contains("Could not retrieve resourceId"));
 		 
 		

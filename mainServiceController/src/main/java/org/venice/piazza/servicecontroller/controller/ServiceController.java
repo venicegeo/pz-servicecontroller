@@ -82,7 +82,6 @@ import util.UUIDFactory;
 @RequestMapping({ "/servicecontroller", "" })
 public class ServiceController {
 	private RegisterServiceHandler rsHandler;
-	private ExecuteServiceHandler esHandler;
 	private UpdateServiceHandler usHandler;
 	private ListServiceHandler lsHandler;
 	private SearchServiceHandler ssHandler;
@@ -93,7 +92,10 @@ public class ServiceController {
 
 	@Autowired
 	private DescribeServiceHandler dsHandler;
-	
+
+	@Autowired
+	private ExecuteServiceHandler esHandler;
+
 	@Autowired
 	private MongoAccessor accessor;
 
@@ -128,13 +130,9 @@ public class ServiceController {
 		// Initialize calling server
 		rsHandler = new RegisterServiceHandler(accessor,elasticAccessor, coreServiceProp, logger, uuidFactory);
 		usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
-		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
-		//dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
-		//dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
 		mapper = new ObjectMapper();
-
 	}
 
 	/**

@@ -96,6 +96,9 @@ public class ServiceMessageWorker implements Runnable {
 
 	@Autowired
 	private ExecuteServiceHandler esHandler;
+
+	@Autowired
+	private ListServiceHandler lsHandler;
 	
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the
@@ -188,7 +191,6 @@ public class ServiceMessageWorker implements Runnable {
 						sendDescribeStatus(job, handleUpdate, handleResult);
 
 					} else if (jobType instanceof ListServicesJob) {
-						ListServiceHandler lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);
 						handleResult = lsHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendListStatus(job, handleUpdate, handleResult);

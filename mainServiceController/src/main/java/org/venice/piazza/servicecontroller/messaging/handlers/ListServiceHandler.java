@@ -19,11 +19,11 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -34,20 +34,15 @@ import model.job.PiazzaJobType;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
+@Component
 public class ListServiceHandler implements PiazzaJobHandler { 
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ListServiceHandler.class);
 	
+	@Autowired
 	private MongoAccessor accessor;
+	@Autowired
 	private PiazzaLogger coreLogger;
-	private CoreServiceProperties coreServiceProperties;	
-	
-	public ListServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
-		this.accessor = accessor;
-		this.coreServiceProperties = coreServiceProperties;
-		this.coreLogger = coreLogger;
-	
-	}
 	
 	/**
 	 * ListService handler
@@ -62,9 +57,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	
 	public ResponseEntity<String> handle () {
 		ResponseEntity<String> responseEntity = null;
-		
 		try {
-	
 			List<Service> rmList = accessor.list();
 			ObjectMapper mapper = new ObjectMapper();
 			String result = mapper.writeValueAsString(rmList);
@@ -74,11 +67,8 @@ public class ListServiceHandler implements PiazzaJobHandler {
 			LOGGER.error(ex.getMessage());
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 			responseEntity = new ResponseEntity<String>("Could not retrieve list of service metadata " , HttpStatus.NOT_FOUND);
-			
 		}
-	
-		return responseEntity;
-		
-	}
 
+		return responseEntity;
+	}
 }

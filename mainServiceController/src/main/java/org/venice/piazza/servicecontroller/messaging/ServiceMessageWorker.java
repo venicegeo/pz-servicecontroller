@@ -99,6 +99,15 @@ public class ServiceMessageWorker implements Runnable {
 
 	@Autowired
 	private ListServiceHandler lsHandler;
+
+	@Autowired
+	private RegisterServiceHandler rsHandler;
+
+	@Autowired
+	private SearchServiceHandler ssHandler;
+
+	@Autowired
+	private UpdateServiceHandler usHandler;
 	
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the
@@ -145,7 +154,6 @@ public class ServiceMessageWorker implements Runnable {
 					if (jobType instanceof RegisterServiceJob) {
 						LOGGER.debug("RegisterServiceJob Detected");
 						// Handle Register Job
-						RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger, uuidFactory);
 						handleResult = rsHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendRegisterStatus(job, handleUpdate, handleResult);
@@ -174,8 +182,6 @@ public class ServiceMessageWorker implements Runnable {
 							sendExecuteStatus(job, handleUpdate, handleResult);
 						}
 					} else if (jobType instanceof UpdateServiceJob) {
-						UpdateServiceHandler usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProperties,
-								coreLogger, uuidFactory);
 						handleResult = usHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendUpdateStatus(job, handleUpdate, handleResult);
@@ -197,9 +203,8 @@ public class ServiceMessageWorker implements Runnable {
 
 					} else if (jobType instanceof SearchServiceJob) {
 						LOGGER.debug("SearchService Job Detected");
-						SearchServiceHandler ssHandler = new SearchServiceHandler(accessor, coreServiceProperties, coreLogger);
-
 						handleResult = ssHandler.handle(jobType);
+						
 						LOGGER.debug("Performed Search Job Detected");
 						handleResult = checkResult(handleResult);
 						sendSearchStatus(job, handleUpdate, handleResult);

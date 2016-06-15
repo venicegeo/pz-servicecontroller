@@ -16,12 +16,10 @@
 package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 
 import org.mongojack.DBCursor;
@@ -40,7 +38,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -48,14 +45,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import model.data.DataType;
-import model.data.type.TextDataType;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
@@ -68,27 +58,25 @@ import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
-import util.UUIDFactory;
 
 /**
  * Purpose of this controller is to handle service requests for registerin and
  * managing services.
  * 
- * @author mlynum
+ * @author mlynum & Sonny.Saniev
  * @since 1.0
  */
 
 @RestController
 @RequestMapping({ "/servicecontroller", "" })
 public class ServiceController {
-	private RegisterServiceHandler rsHandler;
-	private UpdateServiceHandler usHandler;
-	private SearchServiceHandler ssHandler;
-	private ObjectMapper mapper;
 
 	@Autowired
 	private DeleteServiceHandler dlHandler;
 
+	@Autowired
+	private UpdateServiceHandler usHandler;
+	
 	@Autowired
 	private DescribeServiceHandler dsHandler;
 
@@ -102,16 +90,13 @@ public class ServiceController {
 	private MongoAccessor accessor;
 
 	@Autowired
-	private ElasticSearchAccessor elasticAccessor;
-
-	@Autowired
-	private CoreServiceProperties coreServiceProp;
-
-	@Autowired
 	private PiazzaLogger logger;
 
 	@Autowired
-	private UUIDFactory uuidFactory;
+	private RegisterServiceHandler rsHandler;
+	
+	@Autowired
+	private SearchServiceHandler ssHandler;
 	
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
@@ -121,19 +106,6 @@ public class ServiceController {
       */
 	public ServiceController() {
 
-	}
-
-	/**
-	 * Initialize the handler to handle calls
-	 */
-	@PostConstruct
-	public void initialize() {
-
-		// Initialize calling server
-		rsHandler = new RegisterServiceHandler(accessor,elasticAccessor, coreServiceProp, logger, uuidFactory);
-		usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
-		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
-		mapper = new ObjectMapper();
 	}
 
 	/**
@@ -209,10 +181,13 @@ public class ServiceController {
 				cursor.and(DBQuery.is("resourceMetadata.createdBy", userName));
 			}
 			Integer size = new Integer(cursor.size());
+
 			// Filter the data by pages
 			List<Service> data = cursor.skip(page * pageSize).limit(pageSize).toArray();
+
 			// Attach pagination information
 			Pagination pagination = new Pagination(size, page, pageSize);
+
 			// Create the Response and send back
 			return new ServiceListResponse(data, pagination);
 		} catch (Exception exception) {
@@ -258,26 +233,21 @@ public class ServiceController {
 	 *         there is one.
 	 */
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.PUT)
-	public PiazzaResponse updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId,
-			@RequestBody Service serviceData) {
+	public PiazzaResponse updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
 			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
 				String result = usHandler.handle(serviceData);
-				if (result.length() > 0 )  {
+				if (result.length() > 0) {
 					return new SuccessResponse(null, "Service was updated successfully.", "ServiceController");
-
-				} 
-				else {
-				   return new ErrorResponse(null, "The update for serviceId " + serviceId + 
-						   			" did not happen successfully", "Service Controller");	
+				} else {
+					return new ErrorResponse(null, "The update for serviceId " + serviceId + " did not happen successfully",
+							"Service Controller");
 				}
-			
 			} else {
-				return new ErrorResponse(null, 
+				return new ErrorResponse(null,
 						String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)",
-						serviceData.getServiceId(), serviceId), "Service Controller");
-						
-			
+								serviceData.getServiceId(), serviceId),
+						"Service Controller");
 			}
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
@@ -305,12 +275,10 @@ public class ServiceController {
 		String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 
 		return responseString;
-
 	}
 
 	/**
 	 * Executes a service registered in the Service Controller.
-	 * 
 	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK)
 	 * administration and for testing of the serviceController.
 	 * 
@@ -322,25 +290,21 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers = "Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
-
 		for (Map.Entry<String, DataType> entry : data.dataInputs.entrySet()) {
 			String key = entry.getKey();
 			logger.log("dataInput key:" + key, PiazzaLogger.DEBUG);
 			logger.log("dataInput Type:" + entry.getValue().getType(), PiazzaLogger.DEBUG);
-
 		}
 		ResponseEntity<String> result = null;
 		try {
 			result = esHandler.handle(data);
 		} catch (Exception ex) {
 			logger.log("Service Controller Error Caused Exception: " + ex.toString(), PiazzaLogger.ERROR);
-
 		}
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 
 		// Set the response based on the service retrieved
 		return result;
-
 	}
 
 	/**
@@ -361,7 +325,6 @@ public class ServiceController {
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 		// Set the response based on the service retrieved
 		return result;
-
 	}
 
 	/**
@@ -376,12 +339,9 @@ public class ServiceController {
 	@RequestMapping(value = "/deleteService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> deleteService(@ModelAttribute("resourceId") String resourceId) {
 		logger.log("deleteService resourceId=" + resourceId, PiazzaLogger.INFO);
-
 		String result = dlHandler.handle(resourceId, false);
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);
-		// Set the response based on the service retrieved
 		return new ResponseEntity<String>(result, HttpStatus.OK);
-
 	}
 
 	/**
@@ -394,13 +354,10 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/listService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> listService() {
-
 		logger.log("listService", PiazzaLogger.INFO);
 		ResponseEntity<String> result = lsHandler.handle();
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);
-		// Set the response based on the service retrieved
 		return result;
-
 	}
 
 	/**
@@ -420,9 +377,7 @@ public class ServiceController {
 		logger.log("search " + " " + criteria.field + "->" + criteria.pattern, PiazzaLogger.INFO);
 		ResponseEntity<String> result = ssHandler.handle(criteria);
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);
-		// Set the response based on the service retrieved
 		return result;
-
 	}
 
 	/**
@@ -434,24 +389,19 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ResponseEntity<String> healthCheck() {
-
-
 		logger.log("Health Check called", PiazzaLogger.DEBUG);
 
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(MediaType.valueOf("text/html"));
 		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
-		htmlMessage = htmlMessage
-				+ "<BODY><BR> Welcome from the Piazza Service Controller. "
+		htmlMessage = htmlMessage + "<BODY><BR> Welcome from the Piazza Service Controller. "
 				+ "<BR>For details on running and using the ServiceController, "
 				+ "<BR>see <A HREF=\"https://github.com/venicegeo/venice/wiki/Pz-ServiceController\"> Pz Service Controller<A> for details."
 				+ "<BODY></HTML>";
 
 		ResponseEntity<String> response = new ResponseEntity<String>(htmlMessage, responseHeaders, HttpStatus.OK);
 
-		// Set the response based on the service retrieved
 		return response;
-
 	}
 
 	/**
@@ -464,30 +414,5 @@ public class ServiceController {
 	@RequestMapping(value = "/admin/stats", method = RequestMethod.GET)
 	public void stats(HttpServletResponse response) throws IOException {
 		response.sendRedirect("/metrics");
-
 	}
-
-	DataType convertInputMaptoDataType(HashMap<String, String> input) {
-
-		DataType retVal = null;
-		try {
-			String inputString = mapper.writeValueAsString(input);
-
-			switch (input.get("type")) {
-			case "text":
-				TextDataType tdt = mapper.readValue(inputString, TextDataType.class);
-				retVal = tdt;
-				break;
-			}
-
-		} catch (JsonParseException e) {
-			logger.log("convertInputMaptoDataType " + e.getMessage(), PiazzaLogger.ERROR);
-		} catch (JsonMappingException e) {
-			logger.log("convertInputMaptoDataType " + e.getMessage(), PiazzaLogger.ERROR);
-		} catch (IOException e) {
-			logger.log("convertInputMaptoDataType " + e.getMessage(), PiazzaLogger.ERROR);
-		}
-		return retVal;
-	}
-
 }

@@ -58,6 +58,15 @@ public class HandlerLoggingTest {
 
 	@Mock
 	private ListServiceHandler lsHandler;
+
+	@Mock
+	private RegisterServiceHandler rsHandler;
+	
+	@Mock
+	private SearchServiceHandler ssHandler;
+
+	@Mock
+	private UpdateServiceHandler usHandler;
 	
 	static String logString = "";
 	ResourceMetadata rm = null;
@@ -142,7 +151,6 @@ public class HandlerLoggingTest {
 		sjob.data = criteria;
 		logString = "";
 
-		SearchServiceHandler searchHandler = new SearchServiceHandler(mockMongo, props, logger);
 		doAnswer(new Answer() {
 
 			public Object answer(InvocationOnMock invocation) {
@@ -156,7 +164,7 @@ public class HandlerLoggingTest {
 		ArrayList<Service> services = new ArrayList<Service>();
 		services.add(service);
 		when(mockMongo.search(criteria)).thenReturn(services);
-		searchHandler.handle(sjob);
+		ssHandler.handle(sjob);
 		assertTrue(logString.contains("About to search using criteria"));
 
 	}
@@ -170,7 +178,6 @@ public class HandlerLoggingTest {
 		sjob.data = criteria;
 		logString = "";
 		
-		SearchServiceHandler searchHandler = new SearchServiceHandler(mockMongo,props,logger);
 		doAnswer(new Answer() {
 					
 				    public Object answer(InvocationOnMock invocation) {
@@ -181,7 +188,7 @@ public class HandlerLoggingTest {
 				
 		}}).when(logger).log(Mockito.anyString(),Mockito.anyString());
 		when(mockMongo.search(criteria)).thenReturn(new ArrayList<Service>());
-		searchHandler.handle(sjob);
+		ssHandler.handle(sjob);
 		assertTrue(logString.contains("No results"));
 	}
 	
@@ -284,7 +291,6 @@ public class HandlerLoggingTest {
 		
 		RegisterServiceJob rjob = new RegisterServiceJob();
 		rjob.data = service;
-		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
 		
 		doAnswer(new Answer() {
 			
@@ -296,14 +302,14 @@ public class HandlerLoggingTest {
 		
 		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
 	
-	     handler.handle(rjob);
+	     rsHandler.handle(rjob);
 	     assertTrue(logString.contains("serviceMetadata received"));
 	}
 	
 	@Test
 	public void TestUpdateServiceHandlerSuccessLogging() {
 		UUIDFactory uuidFactory = mock(UUIDFactory.class);
-	    when(uuidFactory.getUUID()).thenReturn("NoDoz");
+		when(uuidFactory.getUUID()).thenReturn("NoDoz");
 		template = mock(RestTemplate.class);
 		try {
 			whenNew(RestTemplate.class).withNoArguments().thenReturn(template);
@@ -318,25 +324,25 @@ public class HandlerLoggingTest {
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
 		ParamDataItem pitem = new ParamDataItem();
-		
+
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.data = service;
-		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
-		
+
 		doAnswer(new Answer() {
-			
-		    public Object answer(InvocationOnMock invocation) {
-		
-		        Object[] args = invocation.getArguments();
-		        logString = args[0].toString();
-		        return null;
-		
-		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
-	
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
+
 		when(mockMongo.update(service)).thenReturn("8");
 		when(mockElasticAccessor.update(service)).thenReturn(new ServiceResponse());
-	     handler.handle(rjob);
-	     assertTrue(logString.contains("was updated"));
+		usHandler.handle(rjob);
+		assertTrue(logString.contains("was updated"));
 	}
 
 	@Test
@@ -361,7 +367,6 @@ public class HandlerLoggingTest {
 		
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.data = service;
-		UpdateServiceHandler handler = new UpdateServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
 		
 		doAnswer(new Answer() {
 			
@@ -374,7 +379,7 @@ public class HandlerLoggingTest {
 		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
 	
 		when(mockMongo.update(service)).thenReturn("");
-	     handler.handle(rjob);
+	     usHandler.handle(rjob);
 	     assertTrue(logString.contains("something went wrong"));
 	}
 }

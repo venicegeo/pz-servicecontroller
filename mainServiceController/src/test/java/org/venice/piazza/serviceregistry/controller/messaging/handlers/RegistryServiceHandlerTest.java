@@ -10,8 +10,10 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
@@ -33,6 +35,10 @@ import util.UUIDFactory;
 
 @RunWith(PowerMockRunner.class)
 public class RegistryServiceHandlerTest {
+	
+	@Mock
+	private RegisterServiceHandler rsHandler;
+	
 	RestTemplate template = null;
 	Service service = null;
 	ResourceMetadata rm  = null;
@@ -85,8 +91,7 @@ public class RegistryServiceHandlerTest {
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		//when(props.getUuidservicehost().thenReturn("Nothing");
 		PiazzaLogger logger = mock(PiazzaLogger.class);
-		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
-        String retVal = handler.handle(service);
+        String retVal = rsHandler.handle(service);
         assertTrue(retVal.contains("NoDoz"));
         assertTrue(service.getServiceId().contains("NoDoz"));
 		
@@ -101,9 +106,8 @@ public class RegistryServiceHandlerTest {
 		when(mockMongo.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
-		RegisterServiceHandler handler = new RegisterServiceHandler(mockMongo,mockElasticAccessor,props,logger,uuidFactory);
 		Service nullService = null;
-        String retVal = handler.handle(nullService);
+        String retVal = rsHandler.handle(nullService);
         assertNull(retVal);
 	}
 	

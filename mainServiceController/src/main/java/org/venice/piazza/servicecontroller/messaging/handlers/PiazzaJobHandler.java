@@ -26,7 +26,6 @@ import org.springframework.http.ResponseEntity;
  * @version 1.0
  */
 public interface PiazzaJobHandler {
-
 	/**
 	 * Handler for every type of service.
 	 * 
@@ -34,5 +33,4 @@ public interface PiazzaJobHandler {
 	 * @return
 	 */
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest);
-
 }

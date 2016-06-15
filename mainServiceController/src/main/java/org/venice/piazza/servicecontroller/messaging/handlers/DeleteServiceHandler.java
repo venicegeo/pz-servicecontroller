@@ -41,6 +41,7 @@ import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearch
 
 @Component
 public class DeleteServiceHandler implements PiazzaJobHandler {
+
 	@Autowired
 	private MongoAccessor accessor;
 	@Autowired

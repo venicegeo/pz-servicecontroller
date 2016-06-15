@@ -1,18 +1,13 @@
 package org.venice.piazza.servicecontroller.messaging;
 
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.annotation.PostConstruct;
-
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -24,12 +19,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
@@ -37,7 +28,6 @@ import model.job.Job;
 import model.job.PiazzaJobType;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
-import util.UUIDFactory;
 
 @Component
 public class ServiceMessageThreadManager {
@@ -57,8 +47,7 @@ public class ServiceMessageThreadManager {
 	private String KAFKA_GROUP;
 		
 	/*
-	 * TODO need to determine how statuses will be sent to update the job (Call
-	 * back?)
+	 * TODO need to determine how statuses will be sent to update the job (Call back?)
 	 */
 	private Producer<String, String> producer;
 	private Consumer<String, String> consumer;
@@ -102,10 +91,8 @@ public class ServiceMessageThreadManager {
 
 		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, READ_SERVICE_JOB_TOPIC_NAME,
 				REGISTER_SERVICE_JOB_TOPIC_NAME, UPDATE_SERVICE_JOB_TOPIC_NAME, LIST_SERVICE_JOB_TOPIC_NAME, SEARCH_SERVICE_JOB_TOPIC_NAME);
-		;
 
 		// Initialize the Kafka consumer/producer
-
 		String kafkaHostFull = coreServiceProperties.getKafkaHost();
 		KAFKA_GROUP = coreServiceProperties.getKafkaGroup();
 
@@ -113,7 +100,6 @@ public class ServiceMessageThreadManager {
 		KAFKA_PORT = kafkaHostFull.split(":")[1];
 
 		LOGGER.info("============================================================");
-
 		LOGGER.info("DELETE_SERVICE_JOB_TOPIC_NAME=" + DELETE_SERVICE_JOB_TOPIC_NAME);
 		LOGGER.info("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME);
 		LOGGER.info("READ_SERVICE_JOB_TOPIC_NAME=" + READ_SERVICE_JOB_TOPIC_NAME);
@@ -127,7 +113,6 @@ public class ServiceMessageThreadManager {
 		LOGGER.info("============================================================");
 
 		/* Initialize producer and consumer for the Kafka Queue */
-
 		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
 		consumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP);
 
@@ -141,6 +126,7 @@ public class ServiceMessageThreadManager {
 				pollServiceJobs();
 			}
 		};
+
 		// Subscribe for the topics
 		consumer.subscribe(topics);
 		kafkaListenerThread.start();

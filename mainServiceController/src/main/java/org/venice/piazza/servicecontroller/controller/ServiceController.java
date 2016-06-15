@@ -86,9 +86,11 @@ public class ServiceController {
 	private DescribeServiceHandler dsHandler;
 	private UpdateServiceHandler usHandler;
 	private ListServiceHandler lsHandler;
-	private DeleteServiceHandler dlHandler;
 	private SearchServiceHandler ssHandler;
 	private ObjectMapper mapper;
+
+	@Autowired
+	private DeleteServiceHandler dlHandler;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -125,7 +127,7 @@ public class ServiceController {
 		usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProp, logger, uuidFactory);
 		esHandler = new ExecuteServiceHandler(accessor, coreServiceProp, logger);
 		dsHandler = new DescribeServiceHandler(accessor, coreServiceProp, logger);
-		dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger);
+		//dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProp, logger);
 		lsHandler = new ListServiceHandler(accessor, coreServiceProp, logger);
 		ssHandler = new SearchServiceHandler(accessor, coreServiceProp, logger);
 		mapper = new ObjectMapper();

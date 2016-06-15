@@ -15,6 +15,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -86,6 +87,10 @@ public class ServiceMessageWorker implements Runnable {
 	private Producer<String, String> producer;
 	private UUIDFactory uuidFactory;
 	private String space;
+	
+	@Autowired
+	private DeleteServiceHandler dlHandler;
+
 
 	/**
 	 * Initializes the ServiceMessageWorker which works on handling the
@@ -169,7 +174,7 @@ public class ServiceMessageWorker implements Runnable {
 						sendUpdateStatus(job, handleUpdate, handleResult);
 
 					} else if (jobType instanceof DeleteServiceJob) {
-						DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger);
+						//DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger);
 						handleResult = dlHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
 						sendDeleteStatus(job, handleUpdate, handleResult);

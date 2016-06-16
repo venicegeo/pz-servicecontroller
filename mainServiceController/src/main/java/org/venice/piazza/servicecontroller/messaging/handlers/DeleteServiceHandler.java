@@ -23,46 +23,42 @@ import model.job.type.DeleteServiceJob;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 /**
  * Handler for handling registerService requests.  This handler is used 
  * when register-service kafka topics are received or when clients utilize the 
  * ServiceController registerService web service.
- * @author mlynum
+ * @author mlynum & Sonny.Saniev
  * @version 1.0
  *
  */
 
+@Component
 public class DeleteServiceHandler implements PiazzaJobHandler {
-	private MongoAccessor accessor;
-	private PiazzaLogger coreLogger;
-	private ElasticSearchAccessor elasticAccessor;
-	private CoreServiceProperties coreServiceProps;
 
-	public DeleteServiceHandler(MongoAccessor accessor, ElasticSearchAccessor elasticAccessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger)
-	{
-		this.accessor = accessor;
-		this.coreLogger = coreLogger;
-		this.elasticAccessor = elasticAccessor;
-		this.coreServiceProps = coreServiceProps;
-	}
+	@Autowired
+	private MongoAccessor accessor;
+	@Autowired
+	private ElasticSearchAccessor elasticAccessor;
+	@Autowired
+	private PiazzaLogger coreLogger;
 
 	/**
-	 * Handler for the DeleteServiceJob that was submitted. Stores the
-	 * metadata in MongoDB (non-Javadoc)
+	 * Handler for the DeleteServiceJob that was submitted. Stores the metadata
+	 * in MongoDB (non-Javadoc)
 	 * 
-	 * @see
-	 * org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(
-	 * model.job.PiazzaJobType)
+	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(
+	 *      model.job.PiazzaJobType)
 	 */
 	@Override
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
-        ResponseEntity<String>  responseEntity;
+		ResponseEntity<String> responseEntity;
 		coreLogger.log("Deleting a service", PiazzaLogger.DEBUG);
 		DeleteServiceJob job = (DeleteServiceJob) jobRequest;
 		if (job != null) {
@@ -77,18 +73,17 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 				resultList.add(jobId);
 				resultList.add(resourceId);
 				responseEntity = new ResponseEntity<>(resultList.toString(), HttpStatus.OK);
-
 			} else {
 				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
-				responseEntity =  new ResponseEntity<>("DeleteServiceHandler handle didn't work", HttpStatus.NOT_FOUND);
+				responseEntity = new ResponseEntity<>("DeleteServiceHandler handle didn't work", HttpStatus.NOT_FOUND);
 			}
 		} else {
 			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", PiazzaLogger.ERROR);
 			responseEntity = new ResponseEntity<>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
 		}
-		
+
 		return responseEntity;
-	}// handle
+	}
 
 	/**
 	 * Deletes resource by removing from mongo, and sends delete request to elastic search
@@ -98,19 +93,15 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 */
 	public String handle(String resourceId, boolean softDelete) {
 		coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
-
 		Service service = accessor.getServiceById(resourceId);
 		elasticAccessor.delete(service);
 
-	
 		String result = "";
 		try {
 			result = accessor.delete(resourceId, softDelete);
 		} catch (Exception e) {
 			coreLogger.log(e.toString(), PiazzaLogger.ERROR);
 		}
-		
-		
 
 		if ((result != null) && (result.length() > 0)) {
 			coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);

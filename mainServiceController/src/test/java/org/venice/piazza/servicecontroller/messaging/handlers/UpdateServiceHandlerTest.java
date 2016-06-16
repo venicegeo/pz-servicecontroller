@@ -33,6 +33,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -59,16 +60,22 @@ public class UpdateServiceHandlerTest {
 	// Create some mocks
 	@Mock
 	private MongoAccessor accessorMock;
+	
 	@Mock 
 	private ElasticSearchAccessor elasticAccessorMock;
+	
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
+	
 	@Mock 
 	private PiazzaLogger piazzaLoggerMock;
+	
 	@Mock
 	private UUIDFactory uuidFactoryMock;
-
 	
+	@Mock
+	private UpdateServiceHandler usHandler;
+
 	@Before
     public void setup() {
         // Setup a Service with some Resource Metadata
@@ -89,9 +96,7 @@ public class UpdateServiceHandlerTest {
 	 * Test that the DeleteServiceHandler constructor is working
 	 */
 	public void testConstructor() {
-		
-		UpdateServiceHandler ush = new UpdateServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock, uuidFactoryMock);
-		assertNotNull("The Handler Initialized successfully", ush);
+		assertNotNull("The Handler Initialized successfully", usHandler);
 	}
 	
 	@Test
@@ -101,8 +106,7 @@ public class UpdateServiceHandlerTest {
 	 */
 	public void testHandleJobRequestNull() {
 		PiazzaJobType jobRequest = null;
-		UpdateServiceHandler ush = new UpdateServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock, uuidFactoryMock);
-		ResponseEntity<String> result = ush.handle(jobRequest);
+		ResponseEntity<String> result = usHandler.handle(jobRequest);
         assertEquals("The response to a null JobRequest Deletion should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
 	
@@ -113,7 +117,7 @@ public class UpdateServiceHandlerTest {
 	public void testValidUpdate() {
 		UpdateServiceJob job = new UpdateServiceJob();
 		job.data = service;
-		final UpdateServiceHandler ushMock = Mockito.spy (new UpdateServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock, uuidFactoryMock));
+		final UpdateServiceHandler ushMock = Mockito.spy (usHandler);
 
 		Mockito.doReturn("success").when(ushMock).handle(service);
 		

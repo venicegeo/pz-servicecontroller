@@ -18,25 +18,21 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 import model.job.PiazzaJobType;
 import model.job.type.UpdateServiceJob;
-import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
-import util.UUIDFactory;
 
 
 /**
@@ -47,24 +43,20 @@ import util.UUIDFactory;
  * @version 1.0
  *
  */
-
+@Component
 public class UpdateServiceHandler implements PiazzaJobHandler {
+
+	@Autowired
 	private MongoAccessor accessor;
-	private ElasticSearchAccessor elasticAccessor;
-	private PiazzaLogger coreLogger;
-	private UUIDFactory uuidFactory;
-	private RestTemplate template;
-	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
-
-
-	public UpdateServiceHandler(MongoAccessor accessor,ElasticSearchAccessor elasticAccessor, CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
-		this.accessor = accessor;
-		this.elasticAccessor = elasticAccessor;
-		this.coreLogger = coreLogger;
-		this.uuidFactory = uuidFactory;
-		this.template = new RestTemplate();
 	
-	}
+	@Autowired
+	private ElasticSearchAccessor elasticAccessor;
+	
+	@Autowired
+	private PiazzaLogger coreLogger;
+	
+	private RestTemplate template = new RestTemplate();
+	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
     /**
      * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in MongoDB
@@ -146,10 +138,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		else {
 			LOGGER.debug("ElasticSearch Successfully updated service " + sMetadata.getServiceId());
 		}*/
+
 		return result;
-				
 	}
-	
-
-
 }

@@ -85,33 +85,43 @@ public class ServiceControllerTest {
 	
 	@Mock
 	private RegisterServiceHandler rsHandlerMock;
+	
 	@Mock
 	private ExecuteServiceHandler esHandlerMock;
+	
 	@Mock
 	private DescribeServiceHandler dsHandlerMock;
+	
 	@Mock
 	private UpdateServiceHandler usHandlerMock;
+	
 	@Mock
 	private ListServiceHandler lsHandlerMock;
+	
 	@Mock
 	private DeleteServiceHandler dlHandlerMock;
+	
 	@Mock
 	private SearchServiceHandler ssHandlerMock;
+	
 	@Mock
 	private MongoAccessor accessorMock;
+	
 	@Mock 
 	private ElasticSearchAccessor elasticAccessorMock;
+	
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
+	
 	@Mock 
 	private PiazzaLogger loggerMock;
+	
 	@Mock
 	private org.mongojack.DBCursor<Service> dbCursorMock;
 
 	@Mock
 	private JacksonDBCollection<Service, String> colMock;
 
-	
 	@Before
 	/** 
 	 * Called for each test setup
@@ -137,7 +147,7 @@ public class ServiceControllerTest {
 	public void testInit() {
 		ServiceController sc = new ServiceController();
 		// Should check to make sure each of the handlers are not null
-		sc.initialize();
+		//sc.initialize();
 	}
 	@Test
 	/**

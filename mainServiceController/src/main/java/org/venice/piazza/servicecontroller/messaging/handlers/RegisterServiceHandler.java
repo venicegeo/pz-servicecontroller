@@ -15,29 +15,22 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 import model.job.PiazzaJobType;
 import model.job.type.RegisterServiceJob;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
 import model.service.metadata.Service;
+
 import util.PiazzaLogger;
 import util.UUIDFactory;
-
 
 /**
  * Handler for handling registerService requests.  This handler is used 
@@ -47,29 +40,24 @@ import util.UUIDFactory;
  * @version 1.0
  *
  */
-
+@Component
 public class RegisterServiceHandler implements PiazzaJobHandler {
+	@Autowired
 	private MongoAccessor mongoAccessor;
+	@Autowired
 	private ElasticSearchAccessor elasticAccessor;
+	@Autowired
 	private PiazzaLogger coreLogger;
+	@Autowired
 	private UUIDFactory uuidFactory;
-	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
-	private RestTemplate template;
-
-
-	public RegisterServiceHandler(MongoAccessor mongoAccessor, ElasticSearchAccessor elasticAccessor,CoreServiceProperties coreServiceProp, PiazzaLogger coreLogger, UUIDFactory uuidFactory){ 
-		this.mongoAccessor = mongoAccessor;
-		this.elasticAccessor = elasticAccessor;
-		this.coreLogger = coreLogger;
-		this.uuidFactory = uuidFactory;
-		this.template = new RestTemplate();
 	
-	}
+	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
 
-    /**
-     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in MongoDB
-     * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
-     */
+	/**
+	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in MongoDB
+	 * 
+	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
+	 */
 	@SuppressWarnings("deprecation")
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 		coreLogger.log("Registering a Service", PiazzaLogger.INFO);
@@ -90,7 +78,6 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
 				return new ResponseEntity<String>("RegisterServiceHandler handle didn't work", HttpStatus.METHOD_FAILURE);
 			}
-
 		} else {
 			LOGGER.error("No RegisterServiceJob");
 			coreLogger.log("No RegisterServiceJob", PiazzaLogger.ERROR);
@@ -105,14 +92,13 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 * @return resourceID of the registered service
 	 */
 	public String handle(Service service) {
-		
 		if (service != null) {
 			service.setServiceId(uuidFactory.getUUID());
 			String result = mongoAccessor.save(service);
 			LOGGER.debug("The result of the save is " + result);
-	
+
 			PiazzaResponse response = elasticAccessor.save(service);
-	
+
 			if (ErrorResponse.class.isInstance(response)) {
 				ErrorResponse errResponse = (ErrorResponse) response;
 				LOGGER.error("The result of the save is " + errResponse.message);
@@ -123,7 +109,5 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		} else {
 			return null;
 		}
-
-		
 	}
 }

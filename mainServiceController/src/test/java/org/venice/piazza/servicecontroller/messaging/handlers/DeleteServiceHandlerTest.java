@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -62,7 +63,8 @@ public class DeleteServiceHandlerTest {
 	private CoreServiceProperties coreServicePropMock;
 	@Mock 
 	private PiazzaLogger piazzaLoggerMock;
-
+	@Mock
+	private DeleteServiceHandler deleteServiceHandler;
 
 	
 	@Before
@@ -86,8 +88,8 @@ public class DeleteServiceHandlerTest {
 	 */
 	public void testConstructor() {
 		
-		DeleteServiceHandler dsh = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
-		assertNotNull("The Handler Initialized successfully", dsh);
+		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
+		assertNotNull("The Handler Initialized successfully", deleteServiceHandler);
 	}
 	
 	@Test
@@ -97,8 +99,8 @@ public class DeleteServiceHandlerTest {
 	 */
 	public void testHandleJobRequestNull() {
 		PiazzaJobType jobRequest = null;
-		DeleteServiceHandler dsh = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
-		ResponseEntity<String> result = dsh.handle(jobRequest);
+		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
+		ResponseEntity<String> result = deleteServiceHandler.handle(jobRequest);
         assertEquals("The response to a null JobRequest Deletion should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
 	
@@ -124,7 +126,7 @@ public class DeleteServiceHandlerTest {
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>(resultList.toString(), HttpStatus.OK); 
 		
 		// Create a mock and do a return instead of calling the actual handle method
-		final DeleteServiceHandler dshMock = Mockito.spy (new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock));
+		final DeleteServiceHandler dshMock = Mockito.spy (deleteServiceHandler);
 		Mockito.doReturn(testResponse).when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
 		ResponseEntity<String> result = dshMock.handle(dsj);
@@ -149,7 +151,7 @@ public class DeleteServiceHandlerTest {
 		resultList.add(dsj.serviceID);
 		
 		// Create a mock and do a return instead of calling the actual handle method
-		final DeleteServiceHandler dshMock = Mockito.spy (new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock));
+		final DeleteServiceHandler dshMock = Mockito.spy (deleteServiceHandler);
 		Mockito.doReturn("").when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
 		ResponseEntity<String> result = dshMock.handle(dsj);
@@ -174,7 +176,7 @@ public class DeleteServiceHandlerTest {
 		resultList.add(dsj.serviceID);
 		
 		// Create a mock and do a return instead of calling the actual handle method
-		final DeleteServiceHandler dshMock = Mockito.spy (new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock));
+		final DeleteServiceHandler dshMock = Mockito.spy (deleteServiceHandler);
 		Mockito.doReturn(null).when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
 		ResponseEntity<String> result = dshMock.handle(dsj);
@@ -193,10 +195,10 @@ public class DeleteServiceHandlerTest {
         
 		
 		// When calling delete from mongo have it return a successful string
-		DeleteServiceHandler dsh = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
+		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("service " + serviceID + " deleted").when(accessorMock).delete(serviceID, true);
 
-		String result = dsh.handle(serviceID, true);
+		String result = deleteServiceHandler.handle(serviceID, true);
 		// Build the actual result which would be built using ObjectMapper
 		String actualResult = "service " + serviceID + " deleted";
 		assertEquals ("The serviceID " + serviceID + " should have deleted successfully!", result, actualResult);
@@ -213,10 +215,10 @@ public class DeleteServiceHandlerTest {
         
 		
 		// When calling delete from mongo have it return a successful string
-		DeleteServiceHandler dsh = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
+		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("service " + serviceID + " deleted").when(accessorMock).delete(serviceID, false);
 
-		String result = dsh.handle(serviceID, false);
+		String result = deleteServiceHandler.handle(serviceID, false);
 		// Build the actual result which would be built using ObjectMapper
 		String actualResult = "service " + serviceID + " deleted";
 		assertEquals ("The serviceID " + serviceID + " should have deleted successfully!", result, actualResult);
@@ -233,10 +235,10 @@ public class DeleteServiceHandlerTest {
         
 		
 		// When calling delete from mongo have it return a successful string
-		DeleteServiceHandler dsh = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
+		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn(null).when(accessorMock).delete(serviceID, false);
 
-		String result = dsh.handle(serviceID, false);
+		String result = deleteServiceHandler.handle(serviceID, false);
 	
 		assertEquals ("The serviceID " + serviceID + " should have failed deletion!", result, null);
 	}
@@ -252,10 +254,10 @@ public class DeleteServiceHandlerTest {
         
 		
 		// When calling delete from mongo have it return a successful string
-		DeleteServiceHandler dsh = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
+		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("").when(accessorMock).delete(serviceID, false);
 
-		String result = dsh.handle(serviceID, false);
+		String result = deleteServiceHandler.handle(serviceID, false);
 	
 		assertEquals ("The serviceID " + serviceID + " should have failed deletion!", result, "");
 	}

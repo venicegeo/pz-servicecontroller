@@ -22,18 +22,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -46,8 +46,6 @@ import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
-
-
 /**
  * Handler for handling executeService requests.  This handler is used 
  * when execute-service kafka topics are received or when clients utilize the 
@@ -55,27 +53,20 @@ import util.PiazzaLogger;
  * @author mlynum & Sonny.Saniev
  * @version 1.0
  */
-
+@Component
 public class ExecuteServiceHandler implements PiazzaJobHandler {
 
+	@Autowired
 	private MongoAccessor accessor;
+	@Autowired
 	private PiazzaLogger coreLogger;
-	private CoreServiceProperties coreServiceProperties;
-	private RestTemplate template;
+
+	private RestTemplate template = new RestTemplate();
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecuteServiceHandler.class);
 
-	public ExecuteServiceHandler(MongoAccessor accessor, CoreServiceProperties coreServiceProperties, PiazzaLogger coreLogger) {
-		this.accessor = accessor;
-		this.coreServiceProperties = coreServiceProperties;
-		this.template = new RestTemplate();
-		this.coreLogger = coreLogger;
-	}
-
     /**
-     * Handler for handling execute service requests.  This
-     * method will execute a service given the resourceId and return a response to
-     * the job manager.
-     * MongoDB
+     * Handler for handling execute service requests. This method will execute a service given 
+     * the resourceId and return a response to the job manager.
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
@@ -111,10 +102,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		LOGGER.info("executeService serviceId=" + data.getServiceId());
 		coreLogger.log("executeService serviceId=" + data.getServiceId(), coreLogger.INFO);
 		ResponseEntity<String> responseEntity = null;
-		// Get the id from the data
 		String serviceId = data.getServiceId();
+
 		// Accessor throws exception if can't find service
 		Service sMetadata = accessor.getServiceById(serviceId);
+
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
@@ -126,7 +118,6 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		String postString = "";
 		while (it.hasNext()) {
 			Entry<String, DataType> entry = it.next();
-
 			String inputName = entry.getKey();
 			LOGGER.debug("The parameter is " + inputName);
 
@@ -142,9 +133,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					builder.queryParam(inputName, paramValue);
 					LOGGER.debug("Input Name=" + inputName + " paramValue=" + paramValue);
 				}
-			}
-
-			else if (entry.getValue() instanceof BodyDataType) {
+			} else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
@@ -153,11 +142,9 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					coreLogger.log("Body mime type not specified", coreLogger.ERROR);
 					return new ResponseEntity<String>("Body mime type not specified", HttpStatus.BAD_REQUEST);
 				}
-			}
-			// Default behavior for other inputs, put them in list of objects
-			// which are transformed into JSON consistent with default
-			// requestMimeType
-			else {
+			} else {
+				// Default behavior for other inputs, put them in list of objects
+				// which are transformed into JSON consistent with default requestMimeType
 				coreLogger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), coreLogger.INFO);
 				postObjects.put(inputName, entry.getValue());
 			}
@@ -180,10 +167,10 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 			}
 		}
+		
 		URI url = URI.create(builder.toUriString());
-
 		if (sMetadata.getMethod().equals("GET")) {
-			coreLogger.log("GetForEntity URL="+url, coreLogger.INFO);
+			coreLogger.log("GetForEntity URL=" + url, coreLogger.INFO);
 			responseEntity = template.getForEntity(url, String.class);
 
 		} else {
@@ -192,18 +179,13 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			// Set the mimeType of the request
 			MediaType mediaType = createMediaType(requestMimeType);
 			headers.setContentType(mediaType);
-			// Set the mimeType of the request
-			// headers.add("Content-type",
-			// sMetadata.getOutputs().get(0).getDataType().getMimeType());
 			HttpEntity<String> requestEntity = null;
 			if (postString.length() > 0) {
-				requestEntity = this.buildHttpEntity(sMetadata, headers, postString);
-
+				requestEntity = new HttpEntity<String>(postString, headers);
 			} else {
 				requestEntity = new HttpEntity(headers);
-
 			}
-			coreLogger.log("PostForEntity URL="+url, coreLogger.INFO);
+			coreLogger.log("PostForEntity URL=" + url, coreLogger.INFO);
 			responseEntity = template.postForEntity(url, requestEntity, String.class);
 		}
 
@@ -211,8 +193,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	}
 	
 	/**
-	 * This method creates a MediaType based on the mimetype that was 
-	 * provided
+	 * This method creates a MediaType based on the mimetype that was provided
+	 * 
 	 * @param mimeType
 	 * @return MediaType
 	 */
@@ -224,33 +206,16 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		// If a slash was found then there is a type and subtype
 		if (index != -1) {
 			type = sb.substring(0, index);
-			
-		    subtype = sb.substring(index+1, mimeType.length());
-		    mediaType = new MediaType(type, subtype);
-		    LOGGER.debug("The type is="+type);
-			LOGGER.debug("The subtype="+subtype);
-		}
-		else {
-			// Assume there is just a type for the mime, no subtype
-			mediaType = new MediaType(mimeType);			
-		}
-		
-		return mediaType;
-	
-		
-	}
-	
-	public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
-	
-		
-		
-		//MediaType mediaType = createMediaType(rMetadata.requestMimeType);
-		//headers.setContentType(mediaType);
-		//LOGGER.debug("data to be used " + data);
-		//LOGGER.debug("Mimetype is " + sMetadata.getOutputs().get(0).getDataType().getMimeType());
-		HttpEntity<String> requestEntity = new HttpEntity<String>(data,headers);
-		return requestEntity;
-	
-	}
 
+			subtype = sb.substring(index + 1, mimeType.length());
+			mediaType = new MediaType(type, subtype);
+			LOGGER.debug("The type is=" + type);
+			LOGGER.debug("The subtype=" + subtype);
+		} else {
+			// Assume there is just a type for the mime, no subtype
+			mediaType = new MediaType(mimeType);
+		}
+
+		return mediaType;
+	}
 }

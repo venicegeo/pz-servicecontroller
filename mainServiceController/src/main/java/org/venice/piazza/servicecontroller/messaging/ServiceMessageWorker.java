@@ -2,12 +2,11 @@ package org.venice.piazza.servicecontroller.messaging;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Future;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
@@ -15,12 +14,17 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
@@ -28,7 +32,6 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -36,8 +39,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -75,46 +76,49 @@ import util.UUIDFactory;
  * @author mlynum & Sonny.Saniev
  *
  */
-public class ServiceMessageWorker implements Runnable {
+@Component
+public class ServiceMessageWorker {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
-	private MongoAccessor accessor;
-	private ElasticSearchAccessor elasticAccessor;
-	private PiazzaLogger coreLogger;
-	private CoreServiceProperties coreServiceProperties;
-	private Job job = null;
-	private Producer<String, String> producer;
+
+	@Value("${SPACE}")
+	private String SPACE;
+
+	@Autowired
 	private UUIDFactory uuidFactory;
-	private String space;
+	
+	@Autowired
+	private MongoAccessor accessor;
+	
+	@Autowired
+	private PiazzaLogger coreLogger;
+	
+	@Autowired
+	private DeleteServiceHandler dlHandler;
 
-	/**
-	 * Initializes the ServiceMessageWorker which works on handling the
-	 * jobRequest
-	 * 
-	 * @param consumerRecord
-	 * @param producer
-	 * @param callback
-	 * @param uuidFactory
-	 * @param logger
-	 * @param jobType
-	 */
-	public ServiceMessageWorker(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, MongoAccessor accessor,
-			ElasticSearchAccessor elasticAccessor, WorkerCallback callback, CoreServiceProperties coreServiceProperties,
-			UUIDFactory uuidFactory, PiazzaLogger logger, Job job, String space) {
-		this.job = job;
-		this.producer = producer;
-		this.accessor = accessor;
-		this.elasticAccessor = elasticAccessor;
-		this.coreLogger = logger;
+	@Autowired
+	private DescribeServiceHandler dsHandler;
 
-		this.space = space;
-		this.uuidFactory = uuidFactory;
-	}
+	@Autowired
+	private ExecuteServiceHandler esHandler;
+
+	@Autowired
+	private ListServiceHandler lsHandler;
+
+	@Autowired
+	private RegisterServiceHandler rsHandler;
+
+	@Autowired
+	private SearchServiceHandler ssHandler;
+
+	@Autowired
+	private UpdateServiceHandler usHandler;
 	
 	/**
-	 * Handles service job requests
+	 * Handles service job requests on a thread
 	 */
-	public void run() {
+	@Async
+	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job, WorkerCallback callback){
 		try {
 			String handleUpdate = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
@@ -132,11 +136,9 @@ public class ServiceMessageWorker implements Runnable {
 					if (jobType instanceof RegisterServiceJob) {
 						LOGGER.debug("RegisterServiceJob Detected");
 						// Handle Register Job
-						RegisterServiceHandler rsHandler = new RegisterServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger, uuidFactory);
 						handleResult = rsHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
-						sendRegisterStatus(job, handleUpdate, handleResult);
-
+						sendRegisterStatus(job, producer, handleUpdate, handleResult);
 					} else if (jobType instanceof ExecuteServiceJob) {
 						LOGGER.debug("ExecuteServiceJob Detected");
 
@@ -147,55 +149,48 @@ public class ServiceMessageWorker implements Runnable {
 						if ((dataType != null) && (dataType instanceof RasterDataType)) {
 							// Call special method to call and send
 							rasterJob = true;
-							handleRasterType(jobItem);
+							handleRasterType(jobItem, job, producer);
 
-							sendExecuteStatus(job, handleUpdate, handleResult);
+							sendExecuteStatus(job, producer, handleUpdate, handleResult);
 						} else {
 							LOGGER.debug("ExecuteServiceJob Original Way");
-
-							ExecuteServiceHandler esHandler = new ExecuteServiceHandler(accessor, coreServiceProperties, coreLogger);
 							handleResult = esHandler.handle(jobType);
+
 							LOGGER.debug("Execution handled");
 							handleResult = checkResult(handleResult);
-							LOGGER.debug("Send Execute Status KAFKA");
 
-							sendExecuteStatus(job, handleUpdate, handleResult);
+							LOGGER.debug("Send Execute Status KAFKA");
+							sendExecuteStatus(job, producer, handleUpdate, handleResult);
 						}
 					} else if (jobType instanceof UpdateServiceJob) {
-						UpdateServiceHandler usHandler = new UpdateServiceHandler(accessor, elasticAccessor, coreServiceProperties,
-								coreLogger, uuidFactory);
 						handleResult = usHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
-						sendUpdateStatus(job, handleUpdate, handleResult);
+						sendUpdateStatus(job, producer, handleUpdate, handleResult);
 
 					} else if (jobType instanceof DeleteServiceJob) {
-						DeleteServiceHandler dlHandler = new DeleteServiceHandler(accessor, elasticAccessor, coreServiceProperties, coreLogger);
 						handleResult = dlHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
-						sendDeleteStatus(job, handleUpdate, handleResult);
+						sendDeleteStatus(job, producer, handleUpdate, handleResult);
 
 					} else if (jobType instanceof DescribeServiceMetadataJob) {
-						DescribeServiceHandler dsHandler = new DescribeServiceHandler(accessor, coreServiceProperties, coreLogger);
 						handleResult = dsHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
-						sendDescribeStatus(job, handleUpdate, handleResult);
+						sendDescribeStatus(job, producer, handleUpdate, handleResult);
 
 					} else if (jobType instanceof ListServicesJob) {
-						ListServiceHandler lsHandler = new ListServiceHandler(accessor, coreServiceProperties, coreLogger);
 						handleResult = lsHandler.handle(jobType);
 						handleResult = checkResult(handleResult);
-						sendListStatus(job, handleUpdate, handleResult);
+						sendListStatus(job, producer, handleUpdate, handleResult);
 
 					} else if (jobType instanceof SearchServiceJob) {
 						LOGGER.debug("SearchService Job Detected");
-						SearchServiceHandler ssHandler = new SearchServiceHandler(accessor, coreServiceProperties, coreLogger);
-
 						handleResult = ssHandler.handle(jobType);
+
 						LOGGER.debug("Performed Search Job Detected");
 						handleResult = checkResult(handleResult);
-						sendSearchStatus(job, handleUpdate, handleResult);
+						sendSearchStatus(job, producer, handleUpdate, handleResult);
 					}
-				} // if job not null
+				}
 			} catch (IOException ex) {
 				LOGGER.error(ex.getMessage());
 				handleUpdate = StatusUpdate.STATUS_ERROR;
@@ -224,14 +219,12 @@ public class ServiceMessageWorker implements Runnable {
 					su.setResult(errorResult);
 
 					ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-							String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space), job.getJobId(),
+							String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
 							mapper.writeValueAsString(su));
 					producer.send(prodRecord);
-				}
-				// If the status is not ok and the job is not equal to null
-				// then send an update to the job manager that there was some
-				// failure
-				else {
+				} else {
+					// If the status is not ok and the job is not equal to null
+					// then send an update to the job manager that there was some failure
 					boolean eResult = ((handleResult.getStatusCode() != HttpStatus.OK) && (job != null)) ? false : false;
 					if (eResult) {
 						handleUpdate = StatusUpdate.STATUS_FAIL;
@@ -248,8 +241,7 @@ public class ServiceMessageWorker implements Runnable {
 						su.setResult(errorResult);
 
 						ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space), job.getJobId(),
-								mapper.writeValueAsString(su));
+								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), mapper.writeValueAsString(su));
 						producer.send(prodRecord);
 					}
 
@@ -260,6 +252,8 @@ public class ServiceMessageWorker implements Runnable {
 		} catch (JsonProcessingException ex) {
 			LOGGER.error(ex.getMessage());
 		}
+
+		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
 
 	/**
@@ -270,7 +264,7 @@ public class ServiceMessageWorker implements Runnable {
 	 * @param handleResult
 	 * @throws JsonProcessingException
 	 */
-	private void sendListStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
+	private void sendListStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
@@ -284,13 +278,13 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
 
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
 
 				producer.send(prodRecord);
 			} else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(handleResult.getBody(), handleResult.getStatusCode().toString()));
-				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
 			}
 		}
 	}
@@ -299,7 +293,7 @@ public class ServiceMessageWorker implements Runnable {
 	 * Sends an update for registering a job
 	 * 
 	 */
-	private void sendRegisterStatus(Job job, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {
+	private void sendRegisterStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
@@ -312,14 +306,14 @@ public class ServiceMessageWorker implements Runnable {
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
 				
 				producer.send(prodRecord);
 			}
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(handleResult.getBody(), handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
 			}
 		}
 	}
@@ -332,7 +326,7 @@ public class ServiceMessageWorker implements Runnable {
 	 * @param handleResult
 	 * @throws JsonProcessingException
 	 */
-	private void sendSearchStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
+	private void sendSearchStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		LOGGER.info("sendSearchStatus to jobmanager");
 		if (handleResult != null) {
 			// Create a text result and update status
@@ -345,14 +339,14 @@ public class ServiceMessageWorker implements Runnable {
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
 				LOGGER.info("THe STATUS is " + su.getStatus());
 				LOGGER.info("THe RESULT is " + su.getResult());
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
 
 				producer.send(prodRecord);
 			} else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(handleResult.getBody(), "No Results returned from the search. HTTP Status:" + handleResult.getStatusCode().toString()));
 				
-				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
 			}
 		} else {
 			LOGGER.info("There are no search results that match");
@@ -367,8 +361,7 @@ public class ServiceMessageWorker implements Runnable {
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
 				LOGGER.info("THe STATUS is " + su.getStatus());
 				LOGGER.info("THe RESULT is " + su.getResult());
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
-
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
 				producer.send(prodRecord);
 			}
 		}
@@ -379,13 +372,13 @@ public class ServiceMessageWorker implements Runnable {
 	 * Message is sent on Kafka Queue
 	 * 
 	 */
-	private void sendUpdateStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
+	private void sendUpdateStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
 		StatusUpdate su = new StatusUpdate();
 		su.setStatus(serviceControlString);
 		ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-				String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, space), job.getJobId(), mapper.writeValueAsString(su));
+				String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), mapper.writeValueAsString(su));
 		producer.send(prodRecord);
 	}
 	
@@ -395,7 +388,7 @@ public class ServiceMessageWorker implements Runnable {
 	 * Message is sent on Kafka Queue
 	 * 
 	 */
-	private void sendDeleteStatus(Job job, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {	
+	private void sendDeleteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {	
 		
 		if (handleResult != null) {
 			// Create a text result and update status
@@ -409,7 +402,7 @@ public class ServiceMessageWorker implements Runnable {
 			if (handleResult.getStatusCode() == HttpStatus.OK) {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
 				
 				producer.send(prodRecord);
 			}
@@ -417,7 +410,7 @@ public class ServiceMessageWorker implements Runnable {
 			else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(handleResult.getBody(), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
 			}
 		}
 		
@@ -428,7 +421,7 @@ public class ServiceMessageWorker implements Runnable {
 	 * Queue
 	 * 
 	 */
-	private void sendDescribeStatus(Job job, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
+	private void sendDescribeStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
 		if (handleResult != null) {
 			// Create a text result and update status
 			StatusUpdate su = new StatusUpdate();
@@ -441,13 +434,13 @@ public class ServiceMessageWorker implements Runnable {
 				LOGGER.debug("THe STATUS is " + su.getStatus());
 				LOGGER.debug("THe RESULT is " + su.getResult());
 
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space);
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
 				producer.send(prodRecord);
 			} else {
 				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
 				su.setResult(new ErrorResult(handleResult.getBody(),
 						"Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
-				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, space));
+				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
 			}
 		}
 	}
@@ -461,10 +454,9 @@ public class ServiceMessageWorker implements Runnable {
 	 * @param handleResult
 	 * @throws JsonProcessingException
 	 */
-	private void sendExecuteStatus(Job job, String status, ResponseEntity<String> handleResult)
+	private void sendExecuteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult)
 			throws JsonProcessingException, IOException {
 		LOGGER.debug("The result provided from service is " + handleResult.getBody());
-
 
 		//String serviceControlString = handleResult.getBody().get(0).toString();
 		String serviceControlString = handleResult.getBody().toString();
@@ -528,7 +520,7 @@ public class ServiceMessageWorker implements Runnable {
 
 		// Generate 123-456 with UUIDGen
 		String jobId = uuidFactory.getUUID();
-		ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, space);
+		ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, SPACE);
 		producer.send(newProdRecord);
 		
 		coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(),
@@ -539,7 +531,7 @@ public class ServiceMessageWorker implements Runnable {
 		// Create a text result and update status via kafka
 		DataResult textResult = new DataResult(data.dataId);
 		statusUpdate.setResult(textResult);
-		ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
+		ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
 		producer.send(prodRecord);
 	}
 	
@@ -548,7 +540,7 @@ public class ServiceMessageWorker implements Runnable {
 	 * refactored once the API changes have been communicated to other team
 	 * members
 	 */
-	public void handleRasterType(ExecuteServiceJob executeJob) {
+	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer) {
 		RestTemplate restTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;
 		// Get the id from the data
@@ -644,7 +636,7 @@ public class ServiceMessageWorker implements Runnable {
 				ingestJob.host = true;
 				pjr.jobType = ingestJob;
 
-				ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), space);
+				ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
 				producer.send(newProdRecord);
 
 				LOGGER.debug("newProdRecord sent " + newProdRecord.toString());
@@ -653,7 +645,7 @@ public class ServiceMessageWorker implements Runnable {
 				// Create a text result and update status
 				DataResult textResult = new DataResult(dataResource.dataId);
 				statusUpdate.setResult(textResult);
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, space);
+				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
 
 				producer.send(prodRecord);
 				LOGGER.debug("prodRecord sent " + prodRecord.toString());

@@ -24,6 +24,7 @@ import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
 /**
  * Main class for the pz-servicecontroller.  Launches the application
  * @author mlynum
@@ -32,6 +33,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 
 @SpringBootApplication
 @EnableConfigurationProperties
+@EnableAsync
 @EnableMongoRepositories("org.venice.piazza.serviceregistry.data.mongodb.repository")
 /* Enable Boot application and MongoRepositories */
 public class Application extends SpringBootServletInitializer {

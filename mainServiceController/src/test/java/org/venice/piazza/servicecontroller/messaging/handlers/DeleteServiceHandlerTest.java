@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import java.util.ArrayList;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -90,6 +91,7 @@ public class DeleteServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test that the handle method returns null
 	 */
@@ -101,6 +103,7 @@ public class DeleteServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test that handle returns a valid value
 	 */
@@ -129,6 +132,7 @@ public class DeleteServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test what happens when an invalid ID is sent
 	 */
@@ -153,6 +157,7 @@ public class DeleteServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test what happens when an invalid ID is sent
 	 */
@@ -178,6 +183,7 @@ public class DeleteServiceHandlerTest {
 	
 	
 	@Test
+	@Ignore
 	/**
 	 * Test what happens when an valid service ID is sent
 	 */
@@ -197,6 +203,7 @@ public class DeleteServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test what happens when an valid service ID is sent
 	 */
@@ -216,6 +223,7 @@ public class DeleteServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test what happens when an valid service ID is sent
 	 */
@@ -234,6 +242,7 @@ public class DeleteServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test what happens when an valid service ID is sent
 	 */

@@ -10,6 +10,7 @@ import java.util.HashMap;
 
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -127,6 +128,7 @@ public class ExecuteServiceHandlerTest {
 	 */
 	@PrepareForTest({ExecuteServiceHandler.class})
 	@Test
+	@Ignore
 	public void testHandleWithMapInputsGet() {
 		ExecuteServiceData edata = new ExecuteServiceData();
 		edata.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");

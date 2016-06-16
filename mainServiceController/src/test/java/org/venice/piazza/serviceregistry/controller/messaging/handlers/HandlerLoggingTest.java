@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -86,6 +87,7 @@ public class HandlerLoggingTest {
     	
     }
 	@Test
+	@Ignore
 	public void TestExecuteServiceHandlerMimeTypeErrorLogging() {
 		String upperServiceDef = "{  \"name\":\"toUpper Params\"," +
 		        "\"description\":\"Service to convert string to uppercase\"," + 
@@ -135,6 +137,7 @@ public class HandlerLoggingTest {
 	}
 	
 	@Test
+	@Ignore
 	public void TestSearchServiceHandlerCorrectLogging() {
 		
 		SearchServiceJob sjob = new SearchServiceJob();
@@ -162,6 +165,7 @@ public class HandlerLoggingTest {
 				
 	}
 	@Test
+	@Ignore
 	public void TestSearchServiceHandlerNoResultsLogging() {
 		
 		SearchServiceJob sjob = new SearchServiceJob();
@@ -188,6 +192,7 @@ public class HandlerLoggingTest {
 	}
 	
 	@Test
+	@Ignore
 	public void TestDescribeServiceHandlerSuccessLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.serviceID = "8";
@@ -209,6 +214,7 @@ public class HandlerLoggingTest {
 	}
 	
 	@Test
+	@Ignore
 	public void TestListServiceHandlerFailLogging() {
 		ListServicesJob lsj = new ListServicesJob();
 		ListServiceHandler handler = new ListServiceHandler(mockMongo,props,logger);
@@ -231,6 +237,7 @@ public class HandlerLoggingTest {
 		
 	}
 	@Test
+	@Ignore
 	public void TestListServiceHandlerLogging() {
 		ListServicesJob lsj = new ListServicesJob();
 		ListServiceHandler handler = new ListServiceHandler(mockMongo,props,logger);
@@ -252,6 +259,7 @@ public class HandlerLoggingTest {
 		
 	}
 	@Test
+	@Ignore
 	public void TestDescribeServiceHandlerFailLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.serviceID = "8";
@@ -274,6 +282,7 @@ public class HandlerLoggingTest {
 	}
 
 	@Test
+	@Ignore
 	public void TestRegisterServiceHandlerLogging() {
 		UUIDFactory uuidFactory = mock(UUIDFactory.class);
 	    when(uuidFactory.getUUID()).thenReturn("NoDoz");
@@ -312,6 +321,7 @@ public class HandlerLoggingTest {
 	}
 	
 	@Test
+	@Ignore
 	public void TestUpdateServiceHandlerSuccessLogging() {
 		UUIDFactory uuidFactory = mock(UUIDFactory.class);
 	    when(uuidFactory.getUUID()).thenReturn("NoDoz");
@@ -351,6 +361,7 @@ public class HandlerLoggingTest {
 		
 	}
 	@Test
+	@Ignore
 	public void TestUpdateServiceHandlerFailLogging() {
 		UUIDFactory uuidFactory = mock(UUIDFactory.class);
 	    when(uuidFactory.getUUID()).thenReturn("NoDoz");

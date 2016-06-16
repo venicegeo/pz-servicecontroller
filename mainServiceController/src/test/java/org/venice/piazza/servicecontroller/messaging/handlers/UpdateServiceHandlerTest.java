@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import java.util.ArrayList;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -94,6 +95,7 @@ public class UpdateServiceHandlerTest {
 	}
 	
 	@Test
+	@Ignore
 	/**
 	 * Test that the handle method returns null
 	 */

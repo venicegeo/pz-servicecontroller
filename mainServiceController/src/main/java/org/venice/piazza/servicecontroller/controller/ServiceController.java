@@ -54,6 +54,7 @@ import model.response.Pagination;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
 import model.response.ServiceResponse;
+import model.response.ServiceIdResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
@@ -124,7 +125,7 @@ public class ServiceController {
 		try {
 			RegisterServiceJob serviceJob = (RegisterServiceJob) jobRequest.jobType;
 			String serviceId = rsHandler.handle(serviceJob.data);
-			return new ServiceResponse(serviceId);
+			return new ServiceIdResponse(serviceId);
 		} catch (Exception exception) {			
 			logger.log(exception.toString(), PiazzaLogger.ERROR);
 			return new ErrorResponse("unknown", String.format("Error Registering Service: %s", exception.getMessage()),

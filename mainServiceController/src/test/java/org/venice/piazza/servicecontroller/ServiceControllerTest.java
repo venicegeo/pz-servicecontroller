@@ -71,6 +71,7 @@ import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
 import model.response.ServiceResponse;
+import model.response.ServiceIdResponse;
 import model.response.SuccessResponse;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
@@ -171,7 +172,7 @@ public class ServiceControllerTest {
 		// Should check to make sure each of the handlers are not null
 		PiazzaResponse piazzaResponse = sc.registerService(pjr);
 
-		assertEquals("The response String should match", ((ServiceResponse)piazzaResponse).serviceId, testServiceId);
+		assertEquals("The response String should match", ((ServiceIdResponse)piazzaResponse).serviceId, testServiceId);
 	}
 	
 	@Test

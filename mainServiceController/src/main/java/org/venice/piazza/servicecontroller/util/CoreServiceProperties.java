@@ -39,8 +39,10 @@ public class CoreServiceProperties {
 
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String kafkaHost;
-	@Value("#{'${kafka.group}' + '-' + '${SPACE}'}")
+	
+	@Value("${kafka.group.name}")
 	private String kafkaGroup;
+	
 	@Value("${server.port}")
 	private int serverPort;
 	@Value("${vcap.services.pz-mongodb.credentials.uri}")
@@ -53,16 +55,14 @@ public class CoreServiceProperties {
 	private String host;
 	@Value("${servicecontroller.port}")
 	private String port;
-
-	@Value("#{'${search.protocol}' + '://' + '${search.prefix}' + '.' + '${DOMAIN}' + ':' + '${search.port}' + '/' + '${search.endpoint}'}")
+	@Value("${search.url}")
 	private String pzSearchUrl;
-	@Value("#{'${metadata.ingest.protocol}' + '://' + '${metadata.ingest.prefix}' + '.' + '${DOMAIN}' + ':' + '${metadata.ingest.port}' + '/' + '${metadata.ingest.endpoint}'}")
+	@Value("${metadata.ingest.url}")
 	private String pzServicemetadataIngestUrl;
-	@Value("#{'${metadata.ingest.protocol}' + '://' + '${metadata.ingest.prefix}' + '.' + '${DOMAIN}' + ':' + '${metadata.ingest.port}' + '/' + '${metadata.update.endpoint}'}")
+	@Value("${metadata.update.url}")
 	private String pzServicemetadataUpdateUrl;
-	@Value("#{'${metadata.ingest.protocol}' + '://' + '${metadata.ingest.prefix}' + '.' + '${DOMAIN}' + ':' + '${metadata.ingest.port}' + '/' + '${metadata.delete.endpoint}'}")
+	@Value("${metadata.delete.url}")
 	private String pzServicemetadataDeleteUrl;
-	
 	@Value("${SPACE}")
 	private String space;
 

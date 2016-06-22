@@ -25,15 +25,12 @@ import static org.junit.Assert.assertNotNull;
 import java.util.ArrayList;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -44,15 +41,12 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
-import model.job.type.DeleteServiceJob;
 import model.job.type.UpdateServiceJob;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UpdateServiceHandler.class})
 public class UpdateServiceHandlerTest {
 	ResourceMetadata rm = null;
 	Service service = null;
@@ -73,7 +67,7 @@ public class UpdateServiceHandlerTest {
 	@Mock
 	private UUIDFactory uuidFactoryMock;
 	
-	@Mock
+	@InjectMocks 
 	private UpdateServiceHandler usHandler;
 
 	@Before
@@ -100,30 +94,123 @@ public class UpdateServiceHandlerTest {
 	}
 	
 	@Test
-	@Ignore
 	/**
 	 * Test that the handle method returns null
 	 */
 	public void testHandleJobRequestNull() {
 		PiazzaJobType jobRequest = null;
 		ResponseEntity<String> result = usHandler.handle(jobRequest);
-        assertEquals("The response to a null JobRequest Deletion should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
+        assertEquals("The response to a null JobRequest update should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
 	
 	
 	/**
 	 * Test that handle returns a valid value
 	 */
+	@Test
 	public void testValidUpdate() {
 		UpdateServiceJob job = new UpdateServiceJob();
 		job.data = service;
+		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		
+		ArrayList<String> resultList = new ArrayList<String>();
+		resultList.add(job.jobId);
+		resultList.add(service.getServiceId());
+		
+		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
+
 		final UpdateServiceHandler ushMock = Mockito.spy (usHandler);
 
 		Mockito.doReturn("success").when(ushMock).handle(service);
 		
-		ushMock.handle(job);
+		ResponseEntity<String> result = ushMock.handle(job);
 	
-		//assertEquals ("The response entity was correct for the deletion", responseEntity, result);
+		assertEquals ("The response entity was correct for the update", responseEntity, result);
+
+	}
+	
+	/**
+	 * Test what happens when there is an invalid update
+	 */
+	@Test
+	public void testUnsuccessfulUpdate() {
+		UpdateServiceJob job = new UpdateServiceJob();
+		job.data = service;
+		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		
+		ArrayList<String> resultList = new ArrayList<String>();
+		resultList.add(job.jobId);
+		resultList.add(service.getServiceId());
+		
+		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+
+		final UpdateServiceHandler ushMock = Mockito.spy (usHandler);
+
+		Mockito.doReturn("").when(ushMock).handle(service);
+		
+		ResponseEntity<String> result = ushMock.handle(job);
+	
+		assertEquals ("The item was not updated successfully.", responseEntity.getStatusCode(), result.getStatusCode());
+
+	}
+	
+	/**
+	 * Test whether the service is updated successfully by sending in
+	 * direct service information
+	 */
+	@Test
+	public void testHandleNullService() {
+		Service testService = null;
+		String result = usHandler.handle(testService);
+        assertEquals("The response string should be empty", result.length(), 0);
+	}
+	
+	
+	/**
+	 * Test whether information is updated successfully
+	 */
+	@Test
+	public void testHandleService() {
+		// Mock the response from Mongo
+		Mockito.doReturn(service.getServiceId()).when(accessorMock).update(service);
+		String result = usHandler.handle(service);
+        assertEquals("The responding service id shoudl match the id", result, service.getServiceId());
+	}
+	
+	/**
+	 * Test unsuccessful update of information
+	 */
+	@Test
+	public void testUnsucessfulUpdateServiceInfo() {
+		// Mock the response from Mongo
+		Mockito.doReturn("").when(accessorMock).update(service);
+		String result = usHandler.handle(service);
+        assertEquals("The response string should be empty", result.length(), 0);
+	}
+	
+	
+	/**
+	 * Test contract information
+	 */
+	@Test
+	public void testContractInfo() {
+		service.setContractUrl("http://pzsvc-hello.int.geointservices.io/");
+		// Mock the response from Mongo
+		Mockito.doReturn(service.getServiceId()).when(accessorMock).update(service);
+		String result = usHandler.handle(service);
+        assertEquals("The responding service id shoudl match the id", result, service.getServiceId());
+	}
+	
+	/**
+	 * Test invalid Contract information
+	 */
+	@Test
+	public void testInvalidContractInfo() {
+		service.setContractUrl("htp://pzsvc-hello.int.geointservices.io/");
+		// Mock the response from Mongo
+		Mockito.doReturn(service.getServiceId()).when(accessorMock).update(service);
+		String result = usHandler.handle(service);
+        assertEquals("The response string should be empty", result.length(), 0);
 	}
 	
 }

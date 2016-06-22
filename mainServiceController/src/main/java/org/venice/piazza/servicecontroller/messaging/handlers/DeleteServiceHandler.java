@@ -59,9 +59,11 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	@Override
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 		ResponseEntity<String> responseEntity;
-		coreLogger.log("Deleting a service", PiazzaLogger.DEBUG);
-		DeleteServiceJob job = (DeleteServiceJob) jobRequest;
-		if (job != null) {
+
+		if (jobRequest != null) {
+			coreLogger.log("Deleting a service", PiazzaLogger.DEBUG);
+			DeleteServiceJob job = (DeleteServiceJob) jobRequest;
+
 			// Get the ResourceMetadata
 			String resourceId = job.serviceID;
 			coreLogger.log("deleteService serviceId=" + resourceId, PiazzaLogger.INFO);

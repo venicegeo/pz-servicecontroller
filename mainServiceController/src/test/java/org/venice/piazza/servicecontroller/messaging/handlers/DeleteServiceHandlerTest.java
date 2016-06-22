@@ -19,26 +19,19 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
  *  @author mlynum
  */
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
-
-import javax.annotation.Resource;
-
 import org.junit.Before;
-import org.junit.Ignore;
+
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
@@ -48,17 +41,20 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.DeleteServiceJob;
+import model.job.type.RegisterServiceJob;
+import model.request.PiazzaJobRequest;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DeleteServiceHandler.class})
 public class DeleteServiceHandlerTest {
 	
 	ResourceMetadata rm = null;
 	Service service = null;
 	
+	@Mock 
+	private PiazzaLogger loggerMock;
+
 	@InjectMocks
 	private DeleteServiceHandler dhHandler;
 	
@@ -69,8 +65,11 @@ public class DeleteServiceHandlerTest {
 	private ElasticSearchAccessor elasticAccessorMock;
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
-	@Mock 
+	@InjectMocks 
 	private PiazzaLogger piazzaLoggerMock;
+	
+	@Mock
+	private RegisterServiceHandler rsHandlerMock;
 
 	
 	@Before
@@ -97,7 +96,9 @@ public class DeleteServiceHandlerTest {
 	@Test
 	public void testHandleJobRequestNull() {
 		PiazzaJobType jobRequest = null;
+		Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
 		ResponseEntity<String> result = dhHandler.handle(jobRequest);
+
         assertEquals("The response to a null JobRequest Deletion should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
 	
@@ -250,5 +251,30 @@ public class DeleteServiceHandlerTest {
 		String result = dhHandler.handle(serviceID, false);
 	
 		assertEquals ("The serviceID " + serviceID + " should have failed deletion!", result, "");
+	}
+	
+	@Test
+	/**
+	 * Test the successful registration of a service
+	 */
+	public void testRegisterServiceSuccess() {
+		
+		// Setup the RegisterServiceJob and the PiazzaJobRequest
+		PiazzaJobRequest pjr= new PiazzaJobRequest();
+		RegisterServiceJob rsj = new RegisterServiceJob();
+		rsj.data = service;    
+		
+		pjr.jobType = rsj;
+		pjr.userName = "mlynum";
+		service.setServiceId("");
+		
+		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
+		Mockito.doReturn(testServiceId).when(rsHandlerMock).handle(rsj.data);
+
+        Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+		// Should check to make sure each of the handlers are not null
+		//PiazzaResponse piazzaResponse = sc.registerService(pjr);
+
+		//assertEquals("The response String should match", ((ServiceResponse)piazzaResponse).serviceId, testServiceId);
 	}
 }

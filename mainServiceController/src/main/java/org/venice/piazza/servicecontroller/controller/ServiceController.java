@@ -61,7 +61,7 @@ import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 /**
- * Purpose of this controller is to handle service requests for registerin and
+ * Purpose of this controller is to handle service requests for register in and
  * managing services.
  * 
  * @author mlynum & Sonny.Saniev

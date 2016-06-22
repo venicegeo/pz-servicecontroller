@@ -70,25 +70,24 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 			// Get the ResourceMetadata
 			Service sMetadata = job.data;
 			LOGGER.info("serviceMetadata received is " + sMetadata);
-			coreLogger.log("serviceMetadata received is " + sMetadata, coreLogger.INFO);
+			coreLogger.log("serviceMetadata received is " + sMetadata, PiazzaLogger.INFO);
 			String result = handle(sMetadata);
 
 			if (result.length() > 0) {
 				String jobId = job.getJobId();
 				// TODO Use the result, send a message with the resource ID and jobId
-				ArrayList<String> resultList = new ArrayList<String>();
+				ArrayList<String> resultList = new ArrayList<>();
 				resultList.add(jobId);
 				resultList.add(sMetadata.getServiceId());
 
 				return new ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
+				
 			} else {
-				LOGGER.error("No result response from the handler, something went wrong");
-				coreLogger.log("No result response from the handler, something went wrong", coreLogger.ERROR);
-
-				return new ResponseEntity<String>("UpdateServiceHandler handle didn't work", HttpStatus.METHOD_FAILURE);
+				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
+				return new ResponseEntity<String>("UpdateServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {
-			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", PiazzaLogger.ERROR);
+			 coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", PiazzaLogger.ERROR);
 			 return new ResponseEntity<String>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
 		}
 	}
@@ -99,45 +98,46 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	 * @return resourceID of the registered service
 	 */
 	public String handle (Service sMetadata) {
-
-        coreLogger.log("about to update a registered service.", PiazzaLogger.INFO);
-        LOGGER.info("about to update a registered service.");
-
-        if (sMetadata.getContractUrl() != null) {
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
-			URI url = URI.create(builder.toUriString());
-			ResponseEntity<String> responseEntity  = template.getForEntity(url, String.class);
-			/*if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.hasBody()) {
-				sMetadata.setContractData(responseEntity.getBody());
-			}
-			else {
-				LOGGER.warn("Unable to get contract data"); 
-			} */
-		}
-		String result = accessor.update(sMetadata);
-		LOGGER.debug("The result of the update is " + result);
-		LOGGER.debug("The result of the save is " + result);
-		
-		// Send update to elastic search
-		PiazzaResponse response = elasticAccessor.update(sMetadata);
-		if (result.length() > 0) {
-		   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, PiazzaLogger.INFO);
-		   LOGGER.info("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result);
-		} else {
-			   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", PiazzaLogger.INFO);
-			   LOGGER.info("The service " + sMetadata.getResourceMetadata().name + " was NOT updated");
-		}
-		// If an ID was returned then send a kafka message back updating the job iD 
-		// with the resourceID
-		
-		/*TODO if (ErrorResponse.class.isInstance(response)) {
-			ErrorResponse errResponse = (ErrorResponse)response;
-			LOGGER.error("The result of the elasticsearch update is " + errResponse.message);
-			result = "";  // Indicates that update went wrong,  Mongo and ElasticSearch inconsistent
-		}
-		else {
-			LOGGER.debug("ElasticSearch Successfully updated service " + sMetadata.getServiceId());
-		}*/
+        String result = "";
+        try {
+	        if (sMetadata != null) {
+		        coreLogger.log("about to update a registered service.", PiazzaLogger.INFO);
+		        // If there is actual contractURL data then you can try and use this information.
+		        if (sMetadata.getContractUrl() != null) {
+					UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
+					URI url = URI.create(builder.toUriString());
+					ResponseEntity<String> contractEntity  = template.getForEntity(url, String.class);
+					
+					// TODO use contractEntity for something else in the future
+				}
+		        
+				result = accessor.update(sMetadata);
+		        coreLogger.log("The result of the update is " + result, PiazzaLogger.INFO);
+				
+				if (result.length() > 0) {
+				   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, PiazzaLogger.INFO);
+				   // Only when the user service data is updated successfully then
+				   // update elastic search
+				    PiazzaResponse response = elasticAccessor.update(sMetadata);
+				} else {
+					   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", PiazzaLogger.INFO);
+				}
+				// If an ID was returned then send a kafka message back updating the job iD 
+				// with the resourceID
+				
+				/*TODO if (ErrorResponse.class.isInstance(response)) {
+					ErrorResponse errResponse = (ErrorResponse)response;
+					LOGGER.error("The result of the elasticsearch update is " + errResponse.message);
+					result = "";  // Indicates that update went wrong,  Mongo and ElasticSearch inconsistent
+				}
+				else {
+					LOGGER.debug("ElasticSearch Successfully updated service " + sMetadata.getServiceId());
+				}*/
+	        }
+        } catch (IllegalArgumentException ex) {
+        	coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+        	
+        }
 
 		return result;
 	}

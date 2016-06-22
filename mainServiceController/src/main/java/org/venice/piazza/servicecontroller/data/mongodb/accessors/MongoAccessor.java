@@ -200,7 +200,7 @@ public class MongoAccessor {
 			
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
 			// Return the id that was used
-			return sMetadata.getServiceId().toString();
+			return sMetadata.getServiceId();
 			
 		} catch (MongoException ex) {
 			LOGGER.debug(ex.toString());

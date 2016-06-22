@@ -59,6 +59,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
 	 */
 	@SuppressWarnings("deprecation")
+	@Override
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 		coreLogger.log("Registering a Service", PiazzaLogger.INFO);
 		RegisterServiceJob job = (RegisterServiceJob) jobRequest;
@@ -66,7 +67,6 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		if (job != null) {
 			// Get the Service metadata
 			Service serviceMetadata = job.data;
-			LOGGER.info("serviceMetadata received is " + serviceMetadata);
 			coreLogger.log("serviceMetadata received is " + serviceMetadata, PiazzaLogger.INFO);
 
 			String result = handle(serviceMetadata);
@@ -74,40 +74,42 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 				return new ResponseEntity<String>(responseString, HttpStatus.OK);
 			} else {
-				LOGGER.error("No result response from the handler, something went wrong");
 				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
-				return new ResponseEntity<String>("RegisterServiceHandler handle didn't work", HttpStatus.METHOD_FAILURE);
+				return new ResponseEntity<String>("RegisterServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {
-			LOGGER.error("No RegisterServiceJob");
 			coreLogger.log("No RegisterServiceJob", PiazzaLogger.ERROR);
-			return new ResponseEntity<String>("No RegisterServiceJob", HttpStatus.METHOD_FAILURE);
+			return new ResponseEntity<String>("No RegisterServiceJob", HttpStatus.BAD_REQUEST);
 		}
 	}
 
 	/**
 	 * Handler for registering the new service with mongo and elastic search.
 	 * 
-	 * @param rMetadata
+	 * @param service
 	 * @return resourceID of the registered service
 	 */
 	public String handle(Service service) {
+		String resultServiceId = "";
 		if (service != null) {
-			service.setServiceId(uuidFactory.getUUID());
-			String result = mongoAccessor.save(service);
-			LOGGER.debug("The result of the save is " + result);
+			resultServiceId = uuidFactory.getUUID();
+			service.setServiceId(resultServiceId);
+			
+			resultServiceId = mongoAccessor.save(service);
+			coreLogger.log("The result of the save is " + resultServiceId, PiazzaLogger.DEBUG);
 
 			PiazzaResponse response = elasticAccessor.save(service);
 
 			if (ErrorResponse.class.isInstance(response)) {
 				ErrorResponse errResponse = (ErrorResponse) response;
-				LOGGER.error("The result of the save is " + errResponse.message);
+				coreLogger.log("The result of the save is " + errResponse.message, PiazzaLogger.DEBUG);
+
 			} else {
-				LOGGER.debug("Successfully stored service " + service.getServiceId());
+				coreLogger.log("Successfully stored service " + service.getServiceId(), PiazzaLogger.DEBUG);
+
 			}
-			return service.getServiceId();
-		} else {
-			return null;
-		}
+		} 
+		
+		return resultServiceId;
 	}
 }

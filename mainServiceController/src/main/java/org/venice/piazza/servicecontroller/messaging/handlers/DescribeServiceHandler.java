@@ -20,10 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -48,11 +47,20 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 	 * Describe service handler
 	 */
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
-		LOGGER.info("Describing a service");
-		coreLogger.log("Describing a service", coreLogger.INFO);
+		coreLogger.log("Describing a service", PiazzaLogger.INFO);
 		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob) jobRequest;
-		ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
-		return new ResponseEntity<String>(handleResourceReturn.getBody(), handleResourceReturn.getStatusCode());
+		if (job != null ) {
+			ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
+	        if (handleResourceReturn.getBody().length() > 0) {
+	        	return new ResponseEntity<>(handleResourceReturn.getBody(), handleResourceReturn.getStatusCode());
+			} else {
+				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
+				return new ResponseEntity<>("Could not retrieve service metadata.", HttpStatus.NOT_FOUND);
+			}
+		} else {
+			coreLogger.log("No DescribeServiceMetadataJob provided.", PiazzaLogger.ERROR);
+			return new ResponseEntity<>("No DescribeServiceMetadataJob provided.", HttpStatus.BAD_REQUEST);
+		}
 	}
 
 	public ResponseEntity<String> handle(String serviceId) {
@@ -63,11 +71,9 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 			ObjectMapper mapper = new ObjectMapper();
 			String result = mapper.writeValueAsString(sMetadata);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
-		} catch (Exception ex) {
-
-			LOGGER.error(ex.getMessage());
-			coreLogger.log("Could not retrieve resourceId " + serviceId, coreLogger.ERROR);
-			responseEntity = new ResponseEntity<String>("Could not retrieve resourceId " + serviceId, HttpStatus.NOT_FOUND);
+		} catch (JsonProcessingException ex) {
+			coreLogger.log("Could not retrieve resourceId " + serviceId, PiazzaLogger.ERROR);
+			responseEntity = new ResponseEntity<>("Could not retrieve resourceId " + serviceId, HttpStatus.NOT_FOUND);
 		}
 
 		return responseEntity;

@@ -128,7 +128,7 @@ public class ServiceController {
 			return new ServiceIdResponse(serviceId);
 		} catch (Exception exception) {			
 			logger.log(exception.toString(), PiazzaLogger.ERROR);
-			return new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
+			return new ErrorResponse("unknown", String.format("Error Registering Service: %s", exception.getMessage()),
 					"Service Controller");
 		}
 	}
@@ -150,7 +150,7 @@ public class ServiceController {
 			return new ServiceResponse(service);
 		} catch (Exception exception) {
 			logger.log(exception.toString(), PiazzaLogger.ERROR);
-			return new ErrorResponse(String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
+			return new ErrorResponse(null, String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
 					"Service Controller");
 		}
 	}
@@ -194,7 +194,7 @@ public class ServiceController {
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
-			return new ErrorResponse(error, "Service Controller");
+			return new ErrorResponse(null, error, "Service Controller");
 		}
 	}
 
@@ -213,11 +213,11 @@ public class ServiceController {
 		try {
 			// remove from elastic search as well....
 			dlHandler.handle(serviceId, softDelete);
-			return new SuccessResponse("Service was deleted successfully.", "ServiceController");
+			return new SuccessResponse(null, "Service was deleted successfully.", "ServiceController");
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
-			return new ErrorResponse(error, "Service Controller");
+			return new ErrorResponse(null, error, "Service Controller");
 		}
 	}
 	
@@ -239,13 +239,13 @@ public class ServiceController {
 			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
 				String result = usHandler.handle(serviceData);
 				if (result.length() > 0) {
-					return new SuccessResponse("Service was updated successfully.", "ServiceController");
+					return new SuccessResponse(null, "Service was updated successfully.", "ServiceController");
 				} else {
-					return new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully",
+					return new ErrorResponse(null, "The update for serviceId " + serviceId + " did not happen successfully",
 							"Service Controller");
 				}
 			} else {
-				return new ErrorResponse(
+				return new ErrorResponse(null,
 						String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)",
 								serviceData.getServiceId(), serviceId),
 						"Service Controller");
@@ -253,7 +253,7 @@ public class ServiceController {
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
-			return new ErrorResponse(error, "Service Controller");
+			return new ErrorResponse(null, error, "Service Controller");
 		}
 	}
 

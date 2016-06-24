@@ -124,7 +124,7 @@ public class ElasticSearchAccessor {
 			return restTemplate.postForObject(url, entity, PiazzaResponse.class);
 		} catch (Exception exception) {
 			logger.log(String.format("Could not Index ServiceMetaData to Service: %s", exception.getMessage()), PiazzaLogger.ERROR);
-			return new ErrorResponse("Error connecting to ServiceMetadata Service: " + exception.getMessage(), "ServiceController");
+			return new ErrorResponse(null, "Error connecting to ServiceMetadata Service: " + exception.getMessage(), "ServiceController");
 		}
 	}
 }

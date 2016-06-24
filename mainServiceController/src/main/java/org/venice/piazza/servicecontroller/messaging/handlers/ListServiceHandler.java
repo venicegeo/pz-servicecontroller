@@ -24,16 +24,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import model.job.PiazzaJobType;
+import model.service.metadata.Service;
+import util.PiazzaLogger;
 
 /**
  * @author mlynum
  * @version 1.0
  */
-import model.job.PiazzaJobType;
-import model.service.metadata.Service;
-import util.PiazzaLogger;
-
 @Component
 public class ListServiceHandler implements PiazzaJobHandler { 
 	
@@ -47,28 +48,34 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	/**
 	 * ListService handler
 	 */
+	@Override
 	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
-		LOGGER.info("Listing services");
 		coreLogger.log("listing service", PiazzaLogger.INFO);
         ResponseEntity<String> handleResourceReturn = handle();
-        
-		return new ResponseEntity<String>(handleResourceReturn.getBody(),handleResourceReturn.getStatusCode());
+        if (handleResourceReturn.getBody().length() > 0) {
+        	return new ResponseEntity<>(handleResourceReturn.getBody(), handleResourceReturn.getStatusCode());
+		} else {
+			coreLogger.log("Something went wrong when trying to get a list of services", PiazzaLogger.ERROR);
+			return new ResponseEntity<>("Could not retrieve a list of user services", HttpStatus.NOT_FOUND);
+		}
 	}
 	
 	public ResponseEntity<String> handle () {
 		ResponseEntity<String> responseEntity = null;
 		try {
 			List<Service> rmList = accessor.list();
-			ObjectMapper mapper = new ObjectMapper();
+			ObjectMapper mapper = makeObjectMapper();
 			String result = mapper.writeValueAsString(rmList);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (Exception ex) {
-			
-			LOGGER.error(ex.getMessage());
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
-			responseEntity = new ResponseEntity<String>("Could not retrieve list of service metadata " , HttpStatus.NOT_FOUND);
+			responseEntity = new ResponseEntity<String>("Could not retrieve a list of user services" , HttpStatus.NOT_FOUND);
 		}
 
 		return responseEntity;
+	}
+	
+	ObjectMapper makeObjectMapper() {
+		return new ObjectMapper();
 	}
 }

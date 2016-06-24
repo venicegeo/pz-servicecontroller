@@ -25,14 +25,16 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * @author mlynum
- * @version 1.0
- */
+
 import model.job.PiazzaJobType;
 import model.job.type.DescribeServiceMetadataJob;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
+
+/**
+ * @author mlynum
+ * @version 1.0
+ */
 
 @Component
 public class DescribeServiceHandler implements PiazzaJobHandler { 

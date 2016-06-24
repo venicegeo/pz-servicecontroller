@@ -503,11 +503,11 @@ public class ServiceMessageWorker {
 			ex.printStackTrace();
 
 			// Checking payload type and settings the correct type
-			if (type.equals(TextDataType.type)) {
+			if (type.equals(TextDataType.TYPE)) {
 				TextDataType newDataType = new TextDataType();
 				newDataType.content = serviceControlString;
 				data.dataType = newDataType;
-			} else if (type.equals(GeoJsonDataType.type)) {
+			} else if (type.equals(GeoJsonDataType.TYPE)) {
 				GeoJsonDataType newDataType = new GeoJsonDataType();
 				newDataType.setGeoJsonContent(serviceControlString);
 				data.dataType = newDataType;

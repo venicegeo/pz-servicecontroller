@@ -1,4 +1,4 @@
-package org.venice.piazza.serviceregistry.controller.messaging.handlers;
+package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.mockito.PowerMockito.mock;

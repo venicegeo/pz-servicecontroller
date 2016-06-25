@@ -79,14 +79,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			ExecuteServiceData esData = job.data;
 			ResponseEntity<String> handleResult = handle(esData);
 			ResponseEntity<String> result = new ResponseEntity<String>(handleResult.getBody(), handleResult.getStatusCode());
-            LOGGER.debug("The result is " + result);
+			coreLogger.log("The result is " + result, PiazzaLogger.DEBUG);
+
 
 			// TODO Use the result, send a message with the resource ID and jobId
 			return result;
 		}
 		else {
-			LOGGER.error("Job is null" );
-			coreLogger.log("Job is null", coreLogger.ERROR);
+			coreLogger.log("Job is null", PiazzaLogger.ERROR);
 			return new ResponseEntity<String>("Job is null", HttpStatus.BAD_REQUEST);
 		}
 	}
@@ -100,7 +100,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 */
 	public ResponseEntity<String> handle(ExecuteServiceData data) {
 		LOGGER.info("executeService serviceId=" + data.getServiceId());
-		coreLogger.log("executeService serviceId=" + data.getServiceId(), coreLogger.INFO);
+		coreLogger.log("executeService serviceId=" + data.getServiceId(), PiazzaLogger.INFO);
 		ResponseEntity<String> responseEntity = null;
 		String serviceId = data.getServiceId();
 
@@ -110,7 +110,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
-	    coreLogger.log("URL to use = " +sMetadata.getUrl(), coreLogger.INFO);
+	    coreLogger.log("URL to use = " +sMetadata.getUrl(), PiazzaLogger.INFO);
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
 
 		Map<String, DataType> postObjects = new HashMap<String, DataType>();
@@ -139,22 +139,22 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				requestMimeType = bdt.getMimeType();
 				if (requestMimeType == null) {
 					LOGGER.error("Body mime type not specified");
-					coreLogger.log("Body mime type not specified", coreLogger.ERROR);
+					coreLogger.log("Body mime type not specified", PiazzaLogger.ERROR);
 					return new ResponseEntity<String>("Body mime type not specified", HttpStatus.BAD_REQUEST);
 				}
 			} else {
 				// Default behavior for other inputs, put them in list of objects
 				// which are transformed into JSON consistent with default requestMimeType
-				coreLogger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), coreLogger.INFO);
+				coreLogger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), PiazzaLogger.INFO);
 				postObjects.put(inputName, entry.getValue());
 			}
 		}
 
 		LOGGER.debug("Final Builder URL is " + builder.toUriString());
-		coreLogger.log("Final Builder URL" + builder.toUriString(), coreLogger.INFO);
+		coreLogger.log("Final Builder URL" + builder.toUriString(), PiazzaLogger.INFO);
 		if (postString.length() > 0 && postObjects.size() > 0) {
 			LOGGER.error("String Input not consistent with other Inputs");
-			coreLogger.log("String Input not consistent with other Inputs", coreLogger.ERROR);
+			coreLogger.log("String Input not consistent with other Inputs", PiazzaLogger.ERROR);
 			return new ResponseEntity<String>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
 		} else if (postObjects.size() > 0) {
 			ObjectMapper mapper = new ObjectMapper();
@@ -163,14 +163,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
 				LOGGER.error(e.getMessage());
-				coreLogger.log(e.getMessage(), coreLogger.ERROR);
+				coreLogger.log(e.getMessage(), PiazzaLogger.ERROR);
 				return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 			}
 		}
 		
 		URI url = URI.create(builder.toUriString());
 		if (sMetadata.getMethod().equals("GET")) {
-			coreLogger.log("GetForEntity URL=" + url, coreLogger.INFO);
+			coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
 			responseEntity = template.getForEntity(url, String.class);
 
 		} else {
@@ -185,7 +185,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			} else {
 				requestEntity = new HttpEntity(headers);
 			}
-			coreLogger.log("PostForEntity URL=" + url, coreLogger.INFO);
+			coreLogger.log("PostForEntity URL=" + url, PiazzaLogger.INFO);
 			responseEntity = template.postForEntity(url, requestEntity, String.class);
 		}
 

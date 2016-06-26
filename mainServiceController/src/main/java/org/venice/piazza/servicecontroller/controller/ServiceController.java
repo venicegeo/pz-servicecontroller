@@ -16,14 +16,11 @@
 package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.mongojack.DBCursor;
-import org.mongojack.DBQuery;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -45,19 +42,19 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
+
 import model.data.DataType;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
 import model.response.SuccessResponse;
-import model.response.Pagination;
 import model.response.PiazzaResponse;
-import model.response.ServiceListResponse;
 import model.response.ServiceResponse;
 import model.response.ServiceIdResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
+
 import util.PiazzaLogger;
 
 /**
@@ -169,28 +166,9 @@ public class ServiceController {
 			@RequestParam(value = "keyword", required = false) String keyword,
 			@RequestParam(value = "userName", required = false) String userName) {
 		try {
-			Pattern regex = Pattern.compile(String.format("(?i)%s", keyword != null ? keyword : ""));
 			
-			// Get a DB Cursor to the query for general data
-			DBCursor<Service> cursor = accessor
-					.getServiceCollection()
-					.find()
-					.or(DBQuery.regex("resourceMetadata.name", regex),
-							DBQuery.regex("resourceMetadata.description", regex), DBQuery.regex("url", regex),
-							DBQuery.regex("serviceId", regex));
-			if ((userName != null) && !(userName.isEmpty())) {
-				cursor.and(DBQuery.is("resourceMetadata.createdBy", userName));
-			}
-			Integer size = new Integer(cursor.size());
-
-			// Filter the data by pages
-			List<Service> data = cursor.skip(page * pageSize).limit(pageSize).toArray();
-
-			// Attach pagination information
-			Pagination pagination = new Pagination(size, page, pageSize);
-
-			// Create the Response and send back
-			return new ServiceListResponse(data, pagination);
+			return accessor.getServices(page, pageSize, keyword, userName);
+			
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
@@ -397,7 +375,7 @@ public class ServiceController {
 		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
 		htmlMessage = htmlMessage + "<BODY><BR> Welcome from the Piazza Service Controller. "
 				+ "<BR>For details on running and using the ServiceController, "
-				+ "<BR>see <A HREF=\"https://github.com/venicegeo/venice/wiki/Pz-ServiceController\"> Pz Service Controller<A> for details."
+				+ "<BR>see <A HREF=\"http://pz-docs.geointservices.io/devguide/index.html\"> The Piazza Developer's Guide<A> for details."
 				+ "<BODY></HTML>";
 
 		ResponseEntity<String> response = new ResponseEntity<String>(htmlMessage, responseHeaders, HttpStatus.OK);

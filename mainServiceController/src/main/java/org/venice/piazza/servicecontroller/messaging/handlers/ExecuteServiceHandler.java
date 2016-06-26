@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -29,10 +27,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +59,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private PiazzaLogger coreLogger;
 
 	private RestTemplate template = new RestTemplate();
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExecuteServiceHandler.class);
+
 
     /**
      * Handler for handling execute service requests. This method will execute a service given 
@@ -70,24 +67,26 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
      * (non-Javadoc)
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
+	@Override
 	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
-		LOGGER.debug("Executing a service");
+		coreLogger.log("Executing a Service.", PiazzaLogger.DEBUG);
+
 
 		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
+		// Check to see if this is a valid request
 		if (job != null)  {
 			// Get the ResourceMetadata
 			ExecuteServiceData esData = job.data;
 			ResponseEntity<String> handleResult = handle(esData);
-			ResponseEntity<String> result = new ResponseEntity<String>(handleResult.getBody(), handleResult.getStatusCode());
+			ResponseEntity<String> result = new ResponseEntity<>(handleResult.getBody(), handleResult.getStatusCode());
 			coreLogger.log("The result is " + result, PiazzaLogger.DEBUG);
-
-
+			
 			// TODO Use the result, send a message with the resource ID and jobId
 			return result;
 		}
 		else {
 			coreLogger.log("Job is null", PiazzaLogger.ERROR);
-			return new ResponseEntity<String>("Job is null", HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("Job is null", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -99,9 +98,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * @return the Response as a String
 	 */
 	public ResponseEntity<String> handle(ExecuteServiceData data) {
-		LOGGER.info("executeService serviceId=" + data.getServiceId());
 		coreLogger.log("executeService serviceId=" + data.getServiceId(), PiazzaLogger.INFO);
-		ResponseEntity<String> responseEntity = null;
+		ResponseEntity<String> responseEntity;
 		String serviceId = data.getServiceId();
 
 		// Accessor throws exception if can't find service
@@ -109,38 +107,40 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
-		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
-	    coreLogger.log("URL to use = " +sMetadata.getUrl(), PiazzaLogger.INFO);
-		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
+		String rawURL = sMetadata.getUrl();
+	    coreLogger.log("URL to use = " +rawURL, PiazzaLogger.INFO);
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);
 
-		Map<String, DataType> postObjects = new HashMap<String, DataType>();
+		Map<String, DataType> postObjects = new HashMap<>();
 		Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
 		String postString = "";
 		while (it.hasNext()) {
 			Entry<String, DataType> entry = it.next();
 			String inputName = entry.getKey();
-			LOGGER.debug("The parameter is " + inputName);
+			coreLogger.log("The parameter is " + inputName, PiazzaLogger.DEBUG);
+
 
 			if (entry.getValue() instanceof URLParameterDataType) {
 				String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
 				if (inputName.length() == 0) {
-					LOGGER.debug("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata());
+					coreLogger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), PiazzaLogger.DEBUG);
+
 
 					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
-					LOGGER.debug("Builder URL is " + builder.toUriString());
+					coreLogger.log("Builder URL is " + builder.toUriString(), PiazzaLogger.DEBUG);
+
 
 				} else {
 					builder.queryParam(inputName, paramValue);
-					LOGGER.debug("Input Name=" + inputName + " paramValue=" + paramValue);
+					coreLogger.log("Input Name=" + inputName + " paramValue=" + paramValue, PiazzaLogger.DEBUG);
 				}
 			} else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
-				if (requestMimeType == null) {
-					LOGGER.error("Body mime type not specified");
+				if ((requestMimeType == null) || (requestMimeType.length() == 0)) {
 					coreLogger.log("Body mime type not specified", PiazzaLogger.ERROR);
-					return new ResponseEntity<String>("Body mime type not specified", HttpStatus.BAD_REQUEST);
+					return new ResponseEntity<>("Body mime type not specified", HttpStatus.BAD_REQUEST);
 				}
 			} else {
 				// Default behavior for other inputs, put them in list of objects
@@ -150,21 +150,17 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			}
 		}
 
-		LOGGER.debug("Final Builder URL is " + builder.toUriString());
 		coreLogger.log("Final Builder URL" + builder.toUriString(), PiazzaLogger.INFO);
 		if (postString.length() > 0 && postObjects.size() > 0) {
-			LOGGER.error("String Input not consistent with other Inputs");
 			coreLogger.log("String Input not consistent with other Inputs", PiazzaLogger.ERROR);
-			return new ResponseEntity<String>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
 		} else if (postObjects.size() > 0) {
-			ObjectMapper mapper = new ObjectMapper();
+			ObjectMapper mapper = makeObjectMapper();
 			try {
 				postString = mapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
-				e.printStackTrace();
-				LOGGER.error(e.getMessage());
 				coreLogger.log(e.getMessage(), PiazzaLogger.ERROR);
-				return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+				return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
 			}
 		}
 		
@@ -179,12 +175,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			// Set the mimeType of the request
 			MediaType mediaType = createMediaType(requestMimeType);
 			headers.setContentType(mediaType);
-			HttpEntity<String> requestEntity = null;
-			if (postString.length() > 0) {
-				requestEntity = new HttpEntity<String>(postString, headers);
-			} else {
-				requestEntity = new HttpEntity(headers);
-			}
+			HttpEntity<String> requestEntity = makeHttpEntity(headers, postString);
+			
 			coreLogger.log("PostForEntity URL=" + url, PiazzaLogger.INFO);
 			responseEntity = template.postForEntity(url, requestEntity, String.class);
 		}
@@ -209,13 +201,30 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 			subtype = sb.substring(index + 1, mimeType.length());
 			mediaType = new MediaType(type, subtype);
-			LOGGER.debug("The type is=" + type);
-			LOGGER.debug("The subtype=" + subtype);
 		} else {
 			// Assume there is just a type for the mime, no subtype
 			mediaType = new MediaType(mimeType);
 		}
 
 		return mediaType;
+	}
+	
+	/**
+	 * create HttpEntity
+	 */
+	public HttpEntity <String> makeHttpEntity(HttpHeaders headers, String postString) {
+		HttpEntity <String>requestEntity;
+		
+		if (postString.length() > 0)
+			requestEntity = new HttpEntity<>(postString, headers);
+		else
+			requestEntity = new HttpEntity<>(headers);
+		
+		return requestEntity;
+
+		
+	}
+	ObjectMapper makeObjectMapper() {
+		return new ObjectMapper();
 	}
 }

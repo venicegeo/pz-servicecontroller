@@ -232,7 +232,7 @@ public class SearchServiceHandlerTest {
 	 * due to a marshalling error
 	 */
 	@Test
-	public void testThrowExceptoin() {
+	public void testThrowException() {
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Could not search for services" , HttpStatus.NOT_FOUND);
 
 		SearchCriteria criteria = new SearchCriteria();

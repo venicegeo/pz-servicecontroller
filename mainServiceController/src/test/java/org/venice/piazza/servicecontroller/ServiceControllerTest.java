@@ -21,7 +21,6 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  */
 import static org.junit.Assert.*;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,21 +29,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mongojack.DBCursor;
-import org.mongojack.DBQuery;
+
 import org.mongojack.JacksonDBCollection;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.controller.ServiceController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -59,7 +51,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandl
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.TestUtilities;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mongodb.MongoException;
 
 import model.data.DataType;
@@ -410,7 +401,6 @@ public class ServiceControllerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-		URI uri = URI.create("http://localhost:8085//string/toUpper");
 		String responseString = "\"jobId:1234567\"";
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>(responseString, HttpStatus.OK); 
         Mockito.doReturn(responseEntity).when(esHandlerMock).handle(edata);
@@ -435,9 +425,6 @@ public class ServiceControllerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-		URI uri = URI.create("http://localhost:8085//string/toUpper");
-		String responseString = "\"jobId:1234567\"";
-		ResponseEntity<String> responseEntity = new ResponseEntity<String>(responseString, HttpStatus.OK); 
         Mockito.doThrow(new MongoException("An error occured")).when(esHandlerMock).handle(edata);
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);

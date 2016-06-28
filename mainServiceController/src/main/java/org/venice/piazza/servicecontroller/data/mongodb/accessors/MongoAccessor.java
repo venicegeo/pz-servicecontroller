@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -45,6 +46,9 @@ import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
 import model.data.DataResource;
+import model.response.Pagination;
+import model.response.PiazzaResponse;
+import model.response.ServiceListResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -266,6 +270,34 @@ public class MongoAccessor {
 		// they plan to.
 		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 		return JacksonDBCollection.wrap(collection, Service.class, String.class);
+	}
+	
+	/** 
+	 * Get a list of services with pagination
+	 */
+
+	public PiazzaResponse getServices(Integer page, Integer pageSize, String keyword, String userName) {
+		Pattern regex = Pattern.compile(String.format("(?i)%s", keyword != null ? keyword : ""));
+		
+		// Get a DB Cursor to the query for general data
+		DBCursor<Service> cursor = getServiceCollection()
+				.find()
+				.or(DBQuery.regex("resourceMetadata.name", regex),
+						DBQuery.regex("resourceMetadata.description", regex), DBQuery.regex("url", regex),
+						DBQuery.regex("serviceId", regex));
+		if ((userName != null) && !(userName.isEmpty())) {
+			cursor.and(DBQuery.is("resourceMetadata.createdBy", userName));
+		}
+		Integer size = new Integer(cursor.size());
+
+		// Filter the data by pages
+		List<Service> data = cursor.skip(page * pageSize).limit(pageSize).toArray();
+
+		// Attach pagination information
+		Pagination pagination = new Pagination(size, page, pageSize);
+
+		// Create the Response and send back
+		return new ServiceListResponse(data, pagination);
 	}
 
 	

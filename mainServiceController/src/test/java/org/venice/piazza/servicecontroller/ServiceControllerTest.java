@@ -21,7 +21,6 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  */
 import static org.junit.Assert.*;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,21 +29,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mongojack.DBCursor;
-import org.mongojack.DBQuery;
+
 import org.mongojack.JacksonDBCollection;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.controller.ServiceController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -59,7 +51,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandl
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.TestUtilities;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mongodb.MongoException;
 
 import model.data.DataType;
@@ -68,11 +59,13 @@ import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
+import model.response.Pagination;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
 import model.response.ServiceResponse;
 import model.response.ServiceIdResponse;
 import model.response.SuccessResponse;
+import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -117,7 +110,7 @@ public class ServiceControllerTest {
 	@Mock 
 	private PiazzaLogger loggerMock;
 	
-	@Mock
+	@InjectMocks
 	private org.mongojack.DBCursor<Service> dbCursorMock;
 
 	@Mock
@@ -223,26 +216,34 @@ public class ServiceControllerTest {
 		
 		// Get a list of services
 		List <Service> services = getServicesList();
+		// Attach pagination information
+		Pagination pagination = new Pagination(1, 1, 1);
+
+		ServiceListResponse serviceList = new ServiceListResponse(services, pagination);
 		// Create some temporary mocks for odd call
-		DBCursor<Service> cursor = Mockito.mock(DBCursor.class); 
-        colMock.insert(service);
-        
-        /*Mockito.when(cursor.next()).thenReturn(service); 
-        Mockito.when(cursor.hasNext()).thenReturn(true, false); 
-        Mockito.doReturn(dbCursorMock).when(colMock).find();          
-		Mockito.doReturn(colMock).when(accessorMock).getServiceCollection();
-		Mockito.doReturn(cursor).when(dbCursorMock).or((DBQuery.Query)Mockito.anyObject(), (DBQuery.Query)Mockito.anyObject(), (DBQuery.Query)Mockito.anyObject(), (DBQuery.Query)Mockito.anyObject());
+		Mockito.when(accessorMock.getServices(1, 25, "", "")).thenReturn(serviceList);
+
+		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "", ""); 
+		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ServiceListResponse.class));
 		
-		//Mockito.when(accessorMock.getServiceCollection().find().or(Mockito.anyObject())).thenReturn(dbCursorMock);
-		//Mockito.doReturn(dbCursorMock).when(accessorMock).getServiceCollection().find().or(Mockito.anyObject());
-		Mockito.doReturn(10).when(dbCursorMock).size();
-		Mockito.doReturn(dbCursorMock).when(dbCursorMock).skip(Mockito.anyInt());
-		Mockito.doReturn(dbCursorMock).when(dbCursorMock).limit(Mockito.anyInt());
-		Mockito.doReturn(services).when(dbCursorMock).toArray(); 
+	}
+	
+	@Test
+	/** 
+	 * Get a list of services with Exception thrown
+	 */
+	public void testGetServicesThrowException() {
+		
+		// Get a list of services
+		List <Service> services = getServicesList();
+		// Attach pagination information
+		Pagination pagination = new Pagination(1, 1, 1);
 
-		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "", ""); */
-		//assertThat("A list of services should be returned", piazzaResponse, instanceOf(ServiceListResponse.class));
+		// Create some temporary mocks for odd call
+		Mockito.when(accessorMock.getServices(1, 25, "", "")).thenThrow(new MongoException("There was an error"));
 
+		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "", ""); 
+		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 		
 	}
 	
@@ -307,66 +308,58 @@ public class ServiceControllerTest {
 
 		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 	}
-	
+
 	@Test
 	public void testUpdateServiceMetadata() {
-		
+
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doReturn("Update Successful").when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be successful",piazzaResponse, instanceOf(SuccessResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be successful", piazzaResponse.getBody(), instanceOf(SuccessResponse.class));
 	}
-	
+
 	@Test
 	/**
 	 * Test that the service is not updated when the serviceIds do not match
 	 */
 	public void testUpdateServiceMetadataNoMatch() {
-		
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId("123-23323bsr");
 		Mockito.doReturn("Update Successful").when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be unsuccessful",piazzaResponse, instanceOf(ErrorResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
 	}
-	
+
 	@Test
 	/**
-	 * Test that a PiazzaError Response is returned when the update does not work
+	 * Test that a PiazzaError Response is returned when the update does not
+	 * work
 	 */
 	public void testUpdateServiceMetadataNoResult() {
-		
+
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doReturn("").when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be unsuccessful",piazzaResponse, instanceOf(ErrorResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
 	}
-	
+
 	@Test
 	/**
 	 * Test that a PiazzaError Response is returned when an Exception is thrown
 	 */
 	public void testUpdateServiceMetadataExceptionThrown() {
-		
+
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doThrow(new MongoException("There was an error")).when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be unsuccessful",piazzaResponse, instanceOf(ErrorResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
 	}
 	
 	@Test
@@ -400,7 +393,6 @@ public class ServiceControllerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-		URI uri = URI.create("http://localhost:8085//string/toUpper");
 		String responseString = "\"jobId:1234567\"";
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>(responseString, HttpStatus.OK); 
         Mockito.doReturn(responseEntity).when(esHandlerMock).handle(edata);
@@ -425,22 +417,88 @@ public class ServiceControllerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-		URI uri = URI.create("http://localhost:8085//string/toUpper");
-		String responseString = "\"jobId:1234567\"";
-		ResponseEntity<String> responseEntity = new ResponseEntity<String>(responseString, HttpStatus.OK); 
         Mockito.doThrow(new MongoException("An error occured")).when(esHandlerMock).handle(edata);
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);
         assertEquals("The response should be a null", retVal, null);
 	}
-
 	
+	@Test
+	/**
+	 * tests the describeService.  This is called internally for testing
+	 */
+	
+	public void testDescribeService() {
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
+		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to describe" + serviceId, HttpStatus.OK); 
+        Mockito.doReturn(responseEntity).when(dsHandlerMock).handle(serviceId);
+        ResponseEntity<String> result = sc.describeService(serviceId);
+        assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
+        assertTrue(result.getBody().contains(serviceId));
+
+	}
+	
+	@Test
+	/**
+	 * tests the deleteService.  This is called internally for testing
+	 */
+	
+	public void testDeleteService() {
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
+		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to delete " + serviceId, HttpStatus.OK); 
+        Mockito.doReturn("Just a test to describe" + serviceId).when(dlHandlerMock).handle(serviceId, false);
+        ResponseEntity<String> result = sc.deleteService(serviceId);
+        assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
+        assertTrue(result.getBody().contains(serviceId));
+	}
+
+	@Test
+	/**
+	 * tests the listService.  This is called internally for testing
+	 */
+	
+	public void testListService() {
+		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to list", HttpStatus.OK); 
+        Mockito.doReturn(responseEntity ).when(lsHandlerMock).handle();
+        ResponseEntity<String> result = sc.listService();
+        assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
+	}
+	
+	@Test
+	/**
+	 * tests the search.  This is called internally for testing
+	 */
+	
+	public void testSearch() {
+		SearchCriteria criteria = new SearchCriteria();
+		criteria.field = "name";
+		criteria.pattern = "M*";
+		
+		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to search", HttpStatus.OK); 
+        Mockito.doReturn(responseEntity ).when(ssHandlerMock).handle(criteria);
+        ResponseEntity<String> result = sc.search(criteria);
+        assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
+	}
+	@Test
+	/**
+	 * test health check
+	 */
+	public void testHealthCheck() {
+		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
+		htmlMessage = htmlMessage + "<BODY><BR> Welcome from the Piazza Service Controller. "
+				+ "<BR>For details on running and using the ServiceController, "
+				+ "<BR>see <A HREF=\"http://pz-docs.geointservices.io/devguide/index.html\"> The Piazza Developer's Guide<A> for details."
+				+ "<BODY></HTML>";
+		ResponseEntity<String> result = sc.healthCheck();
+        assertEquals("The response should be 200", result.getStatusCode(), HttpStatus.OK);
+        assertTrue("The response contains the appropriate message", result.getBody().contains(htmlMessage));
+	}
 	/**
 	 * Return a list of generic services for testing.  
 	 * Each service has a unique serviceId
 	 * @return
 	 */
-	private List getServicesList() {
+	private List <Service> getServicesList() {
 		List <Service> services = new ArrayList <> ();
 		
 		for (int i =0; i < 10; i++) {
@@ -463,6 +521,5 @@ public class ServiceControllerTest {
 		}
 		return services;
 	}
-	
-    
+	    
 }

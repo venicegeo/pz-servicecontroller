@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ *l
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,45 +30,34 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.job.metadata.ResourceMetadata;
-import model.job.type.ListServicesJob;
+import model.job.type.SearchServiceJob;
+import model.service.SearchCriteria;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
-
 /**
  * @author mlynum
  * @version 1.0
  */
 
-
-public class ListServiceHandlerTest {
-	
+public class SearchServiceHandlerTest {
 	List <Service> services = null;
-
 	
-	@InjectMocks 
-	private PiazzaLogger coreLoggerMock;
+	@Mock 
+	private PiazzaLogger loggerMock;
 	@Mock
 	private MongoAccessor accessorMock;
-	@Mock 
-	private ElasticSearchAccessor elasticAccessorMock;
-	@Mock
-	private CoreServiceProperties coreServicePropMock;
-	@Mock 
-	private PiazzaLogger piazzaLoggerMock;
+
 	@Mock
 	private ObjectMapper omMock;
-	
+
 	@InjectMocks
-	private ListServiceHandler lsHandler;
+	private SearchServiceHandler ssHandler;
 	
 	@Before
     public void setup() {
@@ -117,97 +106,35 @@ public class ListServiceHandlerTest {
 		MockitoAnnotations.initMocks(this);	
 		
     }
+	
 	/**
-	 * Test that a list of services could be retrieved.
+	 * Test that the search retrieves results
 	 */
 	@Test
-	public void testListServicesSuccess() {
-		ListServicesJob job = new ListServicesJob();
+	public void testSearchSuccess() {
+		SearchServiceJob job = new SearchServiceJob();
+		
+		SearchCriteria criteria = new SearchCriteria();
+		criteria.field="animalType";
+		criteria.pattern="A*r";
 	
+		job.data =criteria;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			String responseServiceString = mapper.writeValueAsString(services);
-
-			ResponseEntity<String> responseEntity = new  ResponseEntity<String>(responseServiceString, HttpStatus.OK);
-
-			final ListServiceHandler lsMock = Mockito.spy (lsHandler);
-
-			Mockito.doReturn(responseEntity).when(lsMock).handle();				
-			ResponseEntity<String> result = lsMock.handle(job);
-		
-			assertEquals ("The response entity was correct for this describe request", responseEntity, result);
-			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
-			assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
-
-
-		} catch (JsonProcessingException jpe) {
-			jpe.printStackTrace();
-		}
-
-	}
-	
-	/**
-	 * Test that a list of services could not be retrieved.
-	 */
-	@Test
-	public void testListServicesFailure() {
-		ListServicesJob job = new ListServicesJob();
-
-		ResponseEntity<String> responseEntity = new  ResponseEntity<String>("", HttpStatus.NOT_FOUND);
-
-		final ListServiceHandler lsMock = Mockito.spy (lsHandler);
-
-		Mockito.doReturn(responseEntity).when(lsMock).handle();				
-		ResponseEntity<String> result = lsMock.handle(job);
-	
-		assertEquals ("The status code should be HttpStatus.NOT_FOUND.", result.getStatusCode(), HttpStatus.NOT_FOUND);
-
-	}
-	
-	/**
-	 * Test that a list of services could be retrieved.
-	 */
-	@Test
-	public void testListServicesSuccessAccessor() {	
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			String responseServiceString = mapper.writeValueAsString(services);
-
-			ResponseEntity<String> responseEntity = new  ResponseEntity<String>(responseServiceString, HttpStatus.OK);
-			Mockito.doReturn(services).when(accessorMock).list();		
-
-			ResponseEntity<String> result = lsHandler.handle();
-		
-			assertEquals ("The response entity was correct for this list services request", responseEntity, result);
-			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
-			assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
-
-
-		} catch (JsonProcessingException jpe) {
-			jpe.printStackTrace();
-		}
-
-	}
-	
-	/**
-	 * Test what happens when there are no registered user services
-	 */
-	@Test
-	public void testEmptyList() {	
-		try {
-			ObjectMapper mapper = new ObjectMapper();
 			
-			List <Service> serviceList = new ArrayList<>();
-			String responseServiceString = mapper.writeValueAsString(serviceList);
 
 			ResponseEntity<String> responseEntity = new  ResponseEntity<String>(responseServiceString, HttpStatus.OK);
-			Mockito.doReturn(serviceList).when(accessorMock).list();		
 
-			ResponseEntity<String> result = lsHandler.handle();
+			final SearchServiceHandler ssMock = Mockito.spy (ssHandler);
+
+			Mockito.doReturn(responseEntity).when(ssMock).handle(criteria);				
+			ResponseEntity<String> result = ssMock.handle(job);
 		
-			assertEquals ("The response entity was correct for this list services request", responseEntity, result);
+			assertEquals ("The response entity is correct", responseEntity, result);
 			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
-			assertEquals ("The body of the response is correct with empty list", responseEntity.getBody(), responseServiceString);
+			assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
+
 
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
@@ -216,25 +143,114 @@ public class ListServiceHandlerTest {
 	}
 	
 	/**
-	 * Test that the list of services could not be retrieved 
+	 * Test that there is a failure when trying to send in a null job
+	 */
+	@Test
+	public void testSearchNullValue() {
+		SearchServiceJob job = null;
+	
+		ResponseEntity<String> result = ssHandler.handle(job);
+		assertEquals ("The response code is 404", result.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+	}
+	
+	/**
+	 * Test that services were returned
+	 */
+	@Test
+	public void testSuccessSearchCriteria() {	
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			String responseServiceString = mapper.writeValueAsString(services);
+			SearchCriteria criteria = new SearchCriteria();
+			criteria.field="animalType";
+			criteria.pattern="A*r";
+
+			ResponseEntity<String> responseEntity = new  ResponseEntity<String>(responseServiceString, HttpStatus.OK);
+			Mockito.doReturn(services).when(accessorMock).search(criteria);		
+	        Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+
+			ResponseEntity<String> result = ssHandler.handle(criteria);
+		
+			assertEquals ("The response entity result is correct", responseEntity, result);
+			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
+			assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
+
+
+		} catch (JsonProcessingException jpe) {
+			jpe.printStackTrace();
+		}
+
+	}
+	
+	/**
+	 * Test Null Criteria
+	 */
+	@Test
+	public void testNullCriteria() {	
+		SearchCriteria criteria = null;
+
+		ResponseEntity<String> responseEntity = new  ResponseEntity<String>("No criteria was specified", HttpStatus.NO_CONTENT);
+		Mockito.doReturn(services).when(accessorMock).search(criteria);		
+
+		ResponseEntity<String> result = ssHandler.handle(criteria);
+	
+		assertEquals ("The response code is correct", responseEntity.getStatusCode(), HttpStatus.NO_CONTENT);
+		assertEquals ("The body of the response is correct", responseEntity.getBody(), result.getBody());
+
+
+
+	}
+	
+	/**
+	 * Test that services were returned
+	 */
+	@Test
+	public void testSearchNoResults() {	
+
+		SearchCriteria criteria = new SearchCriteria();
+		criteria.field="animalType";
+		criteria.pattern="A*r";
+		List <String>results = new ArrayList<>();
+		String actualResponse = "No results were returned searching for field";
+		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(actualResponse, HttpStatus.NO_CONTENT);
+		Mockito.doReturn(results).when(accessorMock).search(criteria);		
+        Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+
+		ResponseEntity<String> result = ssHandler.handle(criteria);
+	
+		assertEquals ("The response entity result is correct", responseEntity, result);
+		assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.NO_CONTENT);
+		assertEquals ("The body of the response is correct", responseEntity.getBody(), actualResponse);
+
+
+
+	}
+	
+	/**
+	 * Test that the results throws a JSON exception
 	 * due to a marshalling error
 	 */
 	@Test
-	public void testUnsuccessListServiceException() {
-		ResponseEntity<String> responseEntity = new  ResponseEntity<String>("Could not retrieve a list of user services", HttpStatus.NOT_FOUND);
-		try {
-			final ListServiceHandler lsMock = Mockito.spy (lsHandler);
+	public void testThrowException() {
+		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Could not search for services" , HttpStatus.NOT_FOUND);
 
-			Mockito.doReturn(omMock).when(lsMock).makeObjectMapper();
-			Mockito.doReturn(services).when(accessorMock).list();	
+		SearchCriteria criteria = new SearchCriteria();
+		criteria.field="animalType";
+		criteria.pattern="A*r";
+		try {
+			final SearchServiceHandler ssMock = Mockito.spy (ssHandler);
+
+			Mockito.doReturn(omMock).when(ssMock).makeObjectMapper();
+			Mockito.doReturn(services).when(accessorMock).search(criteria);	
 			
 			Mockito.when(omMock.writeValueAsString(services)).thenThrow( new JsonMappingException("Test Exception") );
-			ResponseEntity<String> result = lsMock.handle();
+			ResponseEntity<String> result = ssMock.handle(criteria);
 
 			
-			assertEquals ("The response entity was correct for this list service request", responseEntity, result);
+			assertEquals ("The response entity was correct for the search request", responseEntity, result);
 			assertEquals ("The response code is 404", responseEntity.getStatusCode(), HttpStatus.NOT_FOUND);
-			assertEquals ("The body of the response is correct", responseEntity.getBody(),  "Could not retrieve a list of user services");
+			assertEquals ("The body of the response is correct", responseEntity.getBody(),  "Could not search for services");
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
 		} catch (Exception ex) {

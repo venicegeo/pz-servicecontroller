@@ -14,8 +14,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -40,7 +39,6 @@ public class ServiceMessageThreadManager {
 	private String LIST_SERVICE_JOB_TOPIC_NAME;
 	private String SEARCH_SERVICE_JOB_TOPIC_NAME;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
 
 	private String KAFKA_HOST;
 	private String KAFKA_PORT;
@@ -52,7 +50,7 @@ public class ServiceMessageThreadManager {
 	private Producer<String, String> producer;
 	private Consumer<String, String> consumer;
 	private List<String> topics;
-	private final AtomicBoolean closed = new AtomicBoolean(false);
+	private final AtomicBoolean closed;
 
 	private Map<String, Future<?>> runningServiceRequests;
 	
@@ -72,6 +70,7 @@ public class ServiceMessageThreadManager {
 	 * Constructor for ServiceMessageThreadManager
 	 */
 	public ServiceMessageThreadManager() {
+		closed = makeAtomicBoolean();
 
 	}
 
@@ -80,6 +79,7 @@ public class ServiceMessageThreadManager {
 	 */
 	@PostConstruct
 	public void initialize() {
+		
 		// Initialize dynamic topic names
 		DELETE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "delete-service", SPACE);
 		EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "execute-service", SPACE);
@@ -99,18 +99,18 @@ public class ServiceMessageThreadManager {
 		KAFKA_HOST = kafkaHostFull.split(":")[0];
 		KAFKA_PORT = kafkaHostFull.split(":")[1];
 
-		LOGGER.info("============================================================");
-		LOGGER.info("DELETE_SERVICE_JOB_TOPIC_NAME=" + DELETE_SERVICE_JOB_TOPIC_NAME);
-		LOGGER.info("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME);
-		LOGGER.info("READ_SERVICE_JOB_TOPIC_NAME=" + READ_SERVICE_JOB_TOPIC_NAME);
-		LOGGER.info("REGISTER_SERVICE_JOB_TOPIC_NAME=" + REGISTER_SERVICE_JOB_TOPIC_NAME);
-		LOGGER.info("UPDATE_SERVICE_JOB_TOPIC_NAME=" + UPDATE_SERVICE_JOB_TOPIC_NAME);
-		LOGGER.info("LIST_SERVICE_JOB_TOPIC_NAME=" + LIST_SERVICE_JOB_TOPIC_NAME);
-		LOGGER.info("SEARCH_SERVICE_JOB_TOPIC_NAME=" + SEARCH_SERVICE_JOB_TOPIC_NAME);
-		LOGGER.info("KAFKA_GROUP=" + KAFKA_GROUP);
-		LOGGER.info("KAFKA_HOST=" + KAFKA_HOST);
-		LOGGER.info("KAFKA_PORT=" + KAFKA_PORT);
-		LOGGER.info("============================================================");
+		coreLogger.log("============================================================", PiazzaLogger.INFO);
+		coreLogger.log("DELETE_SERVICE_JOB_TOPIC_NAME=" + DELETE_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
+		coreLogger.log("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
+		coreLogger.log("READ_SERVICE_JOB_TOPIC_NAME=" + READ_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
+		coreLogger.log("REGISTER_SERVICE_JOB_TOPIC_NAME=" + REGISTER_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
+		coreLogger.log("UPDATE_SERVICE_JOB_TOPIC_NAME=" + UPDATE_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
+		coreLogger.log("LIST_SERVICE_JOB_TOPIC_NAME=" + LIST_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
+		coreLogger.log("SEARCH_SERVICE_JOB_TOPIC_NAME=" + SEARCH_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
+		coreLogger.log("KAFKA_GROUP=" + KAFKA_GROUP, PiazzaLogger.INFO);
+		coreLogger.log("KAFKA_HOST=" + KAFKA_HOST, PiazzaLogger.INFO);
+		coreLogger.log("KAFKA_PORT=" + KAFKA_PORT, PiazzaLogger.INFO);
+		coreLogger.log("============================================================", PiazzaLogger.INFO);
 
 		/* Initialize producer and consumer for the Kafka Queue */
 		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
@@ -122,6 +122,7 @@ public class ServiceMessageThreadManager {
 		// Start polling for Kafka Jobs on the Group Consumer.. This occurs on a
 		// separate Thread so as not to block Spring.
 		Thread kafkaListenerThread = new Thread() {
+			@Override
 			public void run() {
 				pollServiceJobs();
 			}
@@ -131,8 +132,9 @@ public class ServiceMessageThreadManager {
 		consumer.subscribe(topics);
 		kafkaListenerThread.start();
 
-		// Start polling for Kafka Abort Jobs on the unique Consumer.
+		// Start polling for Kafka Abort Jobs on the unique Consumer.	
 		Thread pollAbortThread = new Thread() {
+			@Override
 			public void run() {
 				pollAbortServiceJobs();
 			}
@@ -145,9 +147,9 @@ public class ServiceMessageThreadManager {
 	 */
 	public void pollServiceJobs() {
 
-		ObjectMapper mapper = new ObjectMapper();
+		ObjectMapper mapper = makeObjectMapper();
 		try {
-			Job job = null;
+			Job job;
 
 			// Create a Callback that will be invoked when a Worker completes.
 			// This will
@@ -161,15 +163,6 @@ public class ServiceMessageThreadManager {
 				ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
 				// Handle new Messages on this topic.
 				for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
-					// LOGGER.info("Received topic: " + consumerRecord.topic() +
-					// " with key "
-					// + consumerRecord.key());
-
-					// coreLogger.log("Received topic: " +
-					// consumerRecord.topic() + " with key "
-					// + consumerRecord.key(), coreLogger.INFO);
-
-					// Wrap the JobRequest in the Job object
 					try {
 						job = mapper.readValue(consumerRecord.value(), Job.class);
 
@@ -186,8 +179,7 @@ public class ServiceMessageThreadManager {
 							// Now get the job type and process the request
 							PiazzaJobType jobType = job.getJobType();
 							if (jobType != null) {
-								LOGGER.info("Received jobType: " + jobType.getType());
-								coreLogger.log("Received jobType: " + jobType.getType(), coreLogger.INFO);
+								coreLogger.log("Received jobType: " + jobType.getType(), PiazzaLogger.INFO);
 							}
 
 							// start a new thread
@@ -198,13 +190,12 @@ public class ServiceMessageThreadManager {
 						}
 
 					} catch (Exception ex) {
-
+						coreLogger.log(String.format("The item received did not marshal to a job", ex), PiazzaLogger.FATAL);
 					}
 				} // for loop
 			} // while loop
 		} catch (Exception ex) {
-			LOGGER.error("Problem", ex);
-			coreLogger.log(String.format("There was a problem.", ex), PiazzaLogger.FATAL);
+			coreLogger.log(String.format("The item received did not marshal to a job", ex), PiazzaLogger.FATAL);
 
 		}
 
@@ -215,12 +206,12 @@ public class ServiceMessageThreadManager {
 	 * then it will be terminated.
 	 */
 	public void pollAbortServiceJobs() {
+		Consumer<String, String> uniqueConsumer;
+		uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT,
+				String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
 		try {
 			// Create the Unique Consumer
 
-			Consumer<String, String> uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT,
-
-					String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
 			uniqueConsumer.subscribe(Arrays.asList(String.format("%s-%s", JobMessageFactory.ABORT_JOB_TOPIC_NAME, SPACE)));
 
 			// Poll
@@ -239,8 +230,20 @@ public class ServiceMessageThreadManager {
 					}
 				}
 			}
-		} catch (WakeupException ex) {
+		} catch (WakeupException wex) {
+			coreLogger.log(String.format("Polling Thread forcefully closed: %s", wex.getMessage()), PiazzaLogger.FATAL);
+			uniqueConsumer.close();
+		} catch (Exception ex) {
 			coreLogger.log(String.format("Polling Thread forcefully closed: %s", ex.getMessage()), PiazzaLogger.FATAL);
+			uniqueConsumer.close();
 		}
+	}
+	
+	public ObjectMapper makeObjectMapper() {
+		return new ObjectMapper();
+	}
+	
+	public AtomicBoolean makeAtomicBoolean () {
+		return new AtomicBoolean();
 	}
 }

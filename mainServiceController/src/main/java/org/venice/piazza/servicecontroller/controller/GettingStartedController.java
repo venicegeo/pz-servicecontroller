@@ -17,9 +17,7 @@ package org.venice.piazza.servicecontroller.controller;
 
 import java.util.Random;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.DependsOn;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +29,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.model.Message;
 
-
+import util.PiazzaLogger;
 
 @RestController
 /**
@@ -44,7 +42,6 @@ import org.venice.piazza.servicecontroller.data.model.Message;
 @RequestMapping("/jumpstart")
 public class GettingStartedController {
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(GettingStartedController.class);
 	private final static int MESSSAGE_COUNT = 15;
 	
 	private final static String ORACLE_WELCOME="Here, take a cookie. I promise, by the time you're done eating it, you'll feel right as rain.";
@@ -71,7 +68,9 @@ public class GettingStartedController {
 								PREDATOR_WELCOME, FEWGOODMEN_WELCOME, GOODFATHER_WLECOME, HUNTREDOCTOBER_WELCOME,
 								HEAT_WELCOME, DUNE_WELCOME, USUAL_SUSPECTS_WELCOME, PASSENGER57_WELCOME,
 								DEVILWEARSPRADA_WELCOME, FUNNYFARM_WELCOME, PRESTIGE_WELCOME};   
-
+	
+	@Autowired
+	private PiazzaLogger logger;
 	/**
 	 * Rest call to convert a string to upper case
 	 * Access 
@@ -88,7 +87,7 @@ public class GettingStartedController {
 		if (aString != null)
 			result = aString.toUpperCase();
 	
-        LOGGER.info("The result is " + result);
+        logger.log("The result is " + result, PiazzaLogger.INFO);
  
         return "{\"result\":\"" + result + "\"}";
     }
@@ -114,19 +113,18 @@ public class GettingStartedController {
 		String theString = msg.gettheString();
 		if ((conversionType != null) && (theString != null)) {
 			if (conversionType.equals(Message.UPPER))  {
-				LOGGER.info("Make the String uppercase" + theString);
-				LOGGER.info("The message" + msg);
+		        logger.log("Make the String uppercase" + theString, PiazzaLogger.INFO);
+		        logger.log("The message" + msg, PiazzaLogger.INFO);
 		        result=convertStringtoUpper(theString);
 			} 
 			else if (conversionType.equals(Message.LOWER))  {
-				LOGGER.info("Make the String lower case" + theString);
+		        logger.log("Make the String lower case" + theString, PiazzaLogger.INFO);
 				result=convertStringtoLower(theString);
 		       
 			}
 		}
 		
 		return result;
-
 		
 	}
 	/**
@@ -144,7 +142,8 @@ public class GettingStartedController {
         
         if(aString != null)
         	result  = aString.toLowerCase();
-        LOGGER.info("The result is " + result);
+        logger.log("The result is " + result, PiazzaLogger.INFO);
+        
         return "{\"result\":\"" + result + "\"}";
 
     }
@@ -162,9 +161,9 @@ public class GettingStartedController {
 		String message = "";
 		 int msgNum = getRandomNumber();
 		 message= welcomeMessages[msgNum];
-        LOGGER.info("Generate a hearty movie welcome");
+        logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
         if (name != null) {
-        	LOGGER.info("User is " + name);
+        	logger.log("User is " + name, PiazzaLogger.INFO);
         	 message = message + "\n\nHELLO " + name + "!!!!\n";
         }
        
@@ -172,7 +171,7 @@ public class GettingStartedController {
         message = message + "Details on using pz-servicecontrollers are \n";
         message = message + "here https://github.com/venicegeo/venice/wiki/Pz-ServiceController";
        
-        LOGGER.info("Welcome generated" + message);
+        logger.log("Welcome generated" + message, PiazzaLogger.INFO);
         return "{\"message\":\"" + message+ "\"}";
     }
 	
@@ -189,39 +188,19 @@ public class GettingStartedController {
 		String message = "";
 		 int msgNum = getRandomNumber();
 		 message= welcomeMessages[msgNum];
-        LOGGER.info("Generate a hearty movie welcome");
+        logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
         if (name != null) {
-        	LOGGER.info("User is " + name);
+        	logger.log("User is " + name, PiazzaLogger.INFO);
         	 message = message + "\n\nHELLO " + name + "!!!!\n";
         }
        
         message = message + "Welcome to the piazza pz-servicecontroller!\n";
         message = message + "Details on using pz-servicecontrollers are \n";
        
-        LOGGER.info("Welcome generated" + message);
+        logger.log("Welcome generated" + message, PiazzaLogger.INFO);
         return "{\"message\":\"" + message+ "\"}";
     }
 	
-	/**
-	 * Provide a movie welcome to pz-service controller
-	 * Access 
-	 * 
-	 * @param none
-	 * @return JSON {result:<A greeting>}
-	 */	 
-/*	@RequestMapping(value = "/moviewelcome", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
-	@ResponseBody
-    public String movieWelcomeToUser(@ModelAttribute("name") String name ) {
-		String result = "";
-		
-        LOGGER.info("Generate a hearty movie welcome for user " + name);
-        int msgNum = getRandomNumber();
-        String message = "Hello " + name + "!";
-        String movieMsg =  movieWelcome();
-        int colon = movieMsg.indexOf(":");
-        movieMsg = (new StringBuffer(movieMsg).insert(colon+1, message)).toString();
-        return "{\"message\":\"" + movieMsg+ "\"}";
-    } */
 	
 	
 	private int getRandomNumber() {

@@ -317,66 +317,58 @@ public class ServiceControllerTest {
 
 		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 	}
-	
+
 	@Test
 	public void testUpdateServiceMetadata() {
-		
+
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doReturn("Update Successful").when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be successful",piazzaResponse, instanceOf(SuccessResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be successful", piazzaResponse.getBody(), instanceOf(SuccessResponse.class));
 	}
-	
+
 	@Test
 	/**
 	 * Test that the service is not updated when the serviceIds do not match
 	 */
 	public void testUpdateServiceMetadataNoMatch() {
-		
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId("123-23323bsr");
 		Mockito.doReturn("Update Successful").when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be unsuccessful",piazzaResponse, instanceOf(ErrorResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
 	}
-	
+
 	@Test
 	/**
-	 * Test that a PiazzaError Response is returned when the update does not work
+	 * Test that a PiazzaError Response is returned when the update does not
+	 * work
 	 */
 	public void testUpdateServiceMetadataNoResult() {
-		
+
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doReturn("").when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be unsuccessful",piazzaResponse, instanceOf(ErrorResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
 	}
-	
+
 	@Test
 	/**
 	 * Test that a PiazzaError Response is returned when an Exception is thrown
 	 */
 	public void testUpdateServiceMetadataExceptionThrown() {
-		
+
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doThrow(new MongoException("There was an error")).when(usHandlerMock).handle(service);
 
-		PiazzaResponse piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be unsuccessful",piazzaResponse, instanceOf(ErrorResponse.class));
-
-
+		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
+		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
 	}
 	
 	@Test

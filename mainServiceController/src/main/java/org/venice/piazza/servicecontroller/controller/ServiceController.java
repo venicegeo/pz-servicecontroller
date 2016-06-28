@@ -211,27 +211,25 @@ public class ServiceController {
 	 * @return Null if the service has been updated, or an appropriate error if
 	 *         there is one.
 	 */
+	
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.PUT)
-	public PiazzaResponse updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
+	public ResponseEntity<PiazzaResponse> updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
 			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
 				String result = usHandler.handle(serviceData);
 				if (result.length() > 0) {
-					return new SuccessResponse(null, "Service was updated successfully.", "ServiceController");
+					return new ResponseEntity<PiazzaResponse>(new SuccessResponse(null, "Service was updated successfully.", "ServiceController"), HttpStatus.OK);
 				} else {
-					return new ErrorResponse(null, "The update for serviceId " + serviceId + " did not happen successfully",
-							"Service Controller");
+					return new ResponseEntity<PiazzaResponse>(new ErrorResponse(null, "The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"), HttpStatus.OK);
 				}
-			} else {
-				return new ErrorResponse(null,
-						String.format("Cannot Update Service because the Metadata ID (%s) does not match the Specified ID (%s)",
-								serviceData.getServiceId(), serviceId),
-						"Service Controller");
 			}
+			
+			String errorMessage = String.format("Cannot update service due to metadata ID (%s) not matching the specified ID (%s)", serviceData.getServiceId(), serviceId);
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(null, errorMessage, "ServiceController"), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
-			return new ErrorResponse(null, error, "Service Controller");
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(null, error, "ServiceController"), HttpStatus.OK);
 		}
 	}
 

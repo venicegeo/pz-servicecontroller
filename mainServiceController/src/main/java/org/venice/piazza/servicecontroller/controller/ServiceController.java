@@ -211,7 +211,7 @@ public class ServiceController {
 	 * @return Null if the service has been updated, or an appropriate error if
 	 *         there is one.
 	 */
-	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.POST)
+	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.PUT)
 	public PiazzaResponse updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
 			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {

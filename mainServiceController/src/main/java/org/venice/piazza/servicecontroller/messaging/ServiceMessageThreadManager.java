@@ -50,7 +50,7 @@ public class ServiceMessageThreadManager {
 	private Producer<String, String> producer;
 	private Consumer<String, String> consumer;
 	private List<String> topics;
-	private final AtomicBoolean closed = new AtomicBoolean(false);
+	private final AtomicBoolean closed;
 
 	private Map<String, Future<?>> runningServiceRequests;
 	
@@ -70,6 +70,7 @@ public class ServiceMessageThreadManager {
 	 * Constructor for ServiceMessageThreadManager
 	 */
 	public ServiceMessageThreadManager() {
+		closed = makeAtomicBoolean();
 
 	}
 
@@ -78,6 +79,7 @@ public class ServiceMessageThreadManager {
 	 */
 	@PostConstruct
 	public void initialize() {
+		
 		// Initialize dynamic topic names
 		DELETE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "delete-service", SPACE);
 		EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "execute-service", SPACE);
@@ -161,15 +163,6 @@ public class ServiceMessageThreadManager {
 				ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
 				// Handle new Messages on this topic.
 				for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
-					// LOGGER.info("Received topic: " + consumerRecord.topic() +
-					// " with key "
-					// + consumerRecord.key());
-
-					// coreLogger.log("Received topic: " +
-					// consumerRecord.topic() + " with key "
-					// + consumerRecord.key(), coreLogger.INFO);
-
-					// Wrap the JobRequest in the Job object
 					try {
 						job = mapper.readValue(consumerRecord.value(), Job.class);
 
@@ -197,12 +190,12 @@ public class ServiceMessageThreadManager {
 						}
 
 					} catch (Exception ex) {
-						coreLogger.log(String.format("There was a problem.", ex), PiazzaLogger.FATAL);
+						coreLogger.log(String.format("The item received did not marshal to a job", ex), PiazzaLogger.FATAL);
 					}
 				} // for loop
 			} // while loop
 		} catch (Exception ex) {
-			coreLogger.log(String.format("There was a problem.", ex), PiazzaLogger.FATAL);
+			coreLogger.log(String.format("The item received did not marshal to a job", ex), PiazzaLogger.FATAL);
 
 		}
 
@@ -219,7 +212,6 @@ public class ServiceMessageThreadManager {
 		try {
 			// Create the Unique Consumer
 
-			
 			uniqueConsumer.subscribe(Arrays.asList(String.format("%s-%s", JobMessageFactory.ABORT_JOB_TOPIC_NAME, SPACE)));
 
 			// Poll
@@ -238,7 +230,10 @@ public class ServiceMessageThreadManager {
 					}
 				}
 			}
-		} catch (WakeupException ex) {
+		} catch (WakeupException wex) {
+			coreLogger.log(String.format("Polling Thread forcefully closed: %s", wex.getMessage()), PiazzaLogger.FATAL);
+			uniqueConsumer.close();
+		} catch (Exception ex) {
 			coreLogger.log(String.format("Polling Thread forcefully closed: %s", ex.getMessage()), PiazzaLogger.FATAL);
 			uniqueConsumer.close();
 		}
@@ -246,5 +241,9 @@ public class ServiceMessageThreadManager {
 	
 	public ObjectMapper makeObjectMapper() {
 		return new ObjectMapper();
+	}
+	
+	public AtomicBoolean makeAtomicBoolean () {
+		return new AtomicBoolean();
 	}
 }

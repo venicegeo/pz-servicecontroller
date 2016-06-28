@@ -22,11 +22,15 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.MockProducer;
@@ -104,6 +108,7 @@ public class ServiceMessageThreadManagerTest {
 	
 	@Mock
 	private KafkaClientFactory kcFactoryMock;
+
 	
 	@Mock
 	private CoreServiceProperties propertiesMock;
@@ -137,7 +142,6 @@ public class ServiceMessageThreadManagerTest {
 	 * Test Initialization
 	 */
 	public void testInitialization() {
-		final ServiceMessageThreadManager smtmMock = Mockito.spy (smtManager);
 
 		Mockito.when(propertiesMock.getKafkaGroup()).thenReturn("ServiceController Group");
 		Mockito.when(propertiesMock.getKafkaHost()).thenReturn("localhost:8087");		
@@ -158,11 +162,89 @@ public class ServiceMessageThreadManagerTest {
 	/**
 	 * Test Polling
 	 */
-	public void testPolling() {
+	public void testPollingClosedConnection() {
 		
-		final ServiceMessageThreadManager esMock = Mockito.spy (smtManager);
-
+		final ServiceMessageThreadManager smtmMock = Mockito.spy (smtManager);
+		try {
+			Mockito.doReturn(new AtomicBoolean(true)).when(smtmMock).makeAtomicBoolean();
+			smtmMock.pollServiceJobs();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 		
 	}
+	
+	/**
+	 * Test Abort Polling losed Connection
+	 */
+	public void testAbortPollingClosedConnection() {
+		
+		final ServiceMessageThreadManager smtmMock = Mockito.spy (smtManager);
+		try {
+			Mockito.doReturn(new AtomicBoolean(true)).when(smtmMock).makeAtomicBoolean();
+			smtmMock.pollAbortServiceJobs();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	@Test
+	/**
+	 * Test Polling
+	 */
+	public void testPollingNoConsumerRecords() {
+		
+		final ServiceMessageThreadManager smtmMock = Mockito.spy (smtManager);
+		try {
+			smtmMock.pollServiceJobs();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * Test polling of consumer records when nothing is returned
+	 */
+	@Test
+	public void testPolling() {
+		// Mock
+		Mockito.doNothing().when(consumerMock).subscribe(Mockito.anyList());
+		
+		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<String, String>(null);
+		Mockito.when(consumerMock.poll(Mockito.anyLong())).thenReturn(consumerRecords);
+		smtManager.pollServiceJobs();
 
+    }
+	
+	/**
+	 * Test aborting Polls
+	 */
+	@Test
+	public void testAbortPolling() {
+
+		Mockito.when(propertiesMock.getKafkaGroup()).thenReturn("ServiceController Group");
+		Mockito.when(propertiesMock.getKafkaHost()).thenReturn("localhost:8087");		
+		PowerMockito.mockStatic(KafkaClientFactory.class);
+		PowerMockito.when(KafkaClientFactory.getConsumer(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(consumerMock);
+		Mockito.doNothing().when(consumerMock).subscribe(Mockito.anyList());
+
+		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<String, String>(null);
+		Mockito.when(consumerMock.poll(Mockito.anyLong())).thenReturn(consumerRecords);
+		smtManager.pollAbortServiceJobs();
+
+    }	
+	 
+
+	static void setFinalStatic(Field field, Object newValue) throws Exception {
+	        field.setAccessible(true);
+	        Field modifiersField = Field.class.getDeclaredField("modifiers");
+	        modifiersField.setAccessible(true);
+	        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+	        
+	        field.set(null, newValue);
+	    
+	}
+	
 }

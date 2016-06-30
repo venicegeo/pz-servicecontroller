@@ -217,13 +217,13 @@ public class ServiceControllerTest {
 		// Get a list of services
 		List <Service> services = getServicesList();
 		// Attach pagination information
-		Pagination pagination = new Pagination(1, 1, 1);
+		Pagination pagination = new Pagination(1, 1, 1, "serviceId", "asc");
 
 		ServiceListResponse serviceList = new ServiceListResponse(services, pagination);
 		// Create some temporary mocks for odd call
-		Mockito.when(accessorMock.getServices(1, 25, "", "")).thenReturn(serviceList);
+		Mockito.when(accessorMock.getServices(1, 25, "asc", "serviceId", "", "")).thenReturn(serviceList);
 
-		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "", ""); 
+		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", ""); 
 		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ServiceListResponse.class));
 		
 	}
@@ -237,12 +237,12 @@ public class ServiceControllerTest {
 		// Get a list of services
 		List <Service> services = getServicesList();
 		// Attach pagination information
-		Pagination pagination = new Pagination(1, 1, 1);
+		Pagination pagination = new Pagination(1, 1, 1, "serviceId", "asc");
 
 		// Create some temporary mocks for odd call
-		Mockito.when(accessorMock.getServices(1, 25, "", "")).thenThrow(new MongoException("There was an error"));
+		Mockito.when(accessorMock.getServices(1, 25, "asc", "serviceId", "", "")).thenThrow(new MongoException("There was an error"));
 
-		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "", ""); 
+		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", ""); 
 		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 		
 	}

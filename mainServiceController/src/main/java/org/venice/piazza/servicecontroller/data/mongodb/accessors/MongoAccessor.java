@@ -26,6 +26,7 @@ import javax.annotation.PreDestroy;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBQuery.Query;
+import org.mongojack.DBSort;
 import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
@@ -46,6 +47,7 @@ import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
 import model.data.DataResource;
+import model.job.Job;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
@@ -276,26 +278,43 @@ public class MongoAccessor {
 	 * Get a list of services with pagination
 	 */
 
-	public PiazzaResponse getServices(Integer page, Integer pageSize, String keyword, String userName) {
-		Pattern regex = Pattern.compile(String.format("(?i)%s", keyword != null ? keyword : ""));
+	public PiazzaResponse getServices(Integer page, Integer perPage, String order, String sortBy, String keyword, String userName) {
+		// Create the Query
+		Query query = DBQuery.empty();
 		
-		// Get a DB Cursor to the query for general data
-		DBCursor<Service> cursor = getServiceCollection()
-				.find()
-				.or(DBQuery.regex("resourceMetadata.name", regex),
-						DBQuery.regex("resourceMetadata.description", regex), DBQuery.regex("url", regex),
-						DBQuery.regex("serviceId", regex));
-		if ((userName != null) && !(userName.isEmpty())) {
-			cursor.and(DBQuery.is("resourceMetadata.createdBy", userName));
+		// Keyword clause, if provided
+		if ((keyword != null) && (keyword.isEmpty() == false)) {
+			Pattern regex = Pattern.compile(String.format("(?i)%s", keyword));
+			// Querying specific fields for the keyword
+			query.or(DBQuery.regex("resourceMetadata.name", regex),
+					DBQuery.regex("resourceMetadata.description", regex), DBQuery.regex("url", regex),
+					DBQuery.regex("serviceId", regex));
 		}
+		
+		// Username clause, if provided
+		if ((userName != null) && (userName.isEmpty() == false)) {
+			query.and(DBQuery.is("resourceMetadata.createdBy", userName));
+		}
+		
+		// Execute the Query
+		DBCursor<Service> cursor = getServiceCollection().find(query);
+		
+		// Sort and order the Results
+		if (order.equalsIgnoreCase("asc")) {
+			cursor = cursor.sort(DBSort.asc(sortBy));
+		} else if (order.equalsIgnoreCase("desc")) {
+			cursor = cursor.sort(DBSort.desc(sortBy));
+		}
+		
+		// Get the total count
 		Integer size = new Integer(cursor.size());
-
-		// Filter the data by pages
-		List<Service> data = cursor.skip(page * pageSize).limit(pageSize).toArray();
+		
+		// Paginate the results
+		List<Service> data = cursor.skip(page * perPage).limit(perPage).toArray();
 
 		// Attach pagination information
-		Pagination pagination = new Pagination(size, page, pageSize);
-
+		Pagination pagination = new Pagination(size, page, perPage, sortBy, order);
+		
 		// Create the Response and send back
 		return new ServiceListResponse(data, pagination);
 	}

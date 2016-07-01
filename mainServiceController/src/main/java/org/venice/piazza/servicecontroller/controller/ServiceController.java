@@ -162,13 +162,17 @@ public class ServiceController {
 	@RequestMapping(value = "/service", method = RequestMethod.GET)
 	public PiazzaResponse getServices(
 			@RequestParam(value = "page", required = false, defaultValue = DEFAULT_PAGE) Integer page,
-			@RequestParam(value = "per_page", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
+			@RequestParam(value = "perPage", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer perPage,
+			@RequestParam(value = "order", required = false, defaultValue = "asc") String order,
+			@RequestParam(value = "sortBy", required = false, defaultValue = "serviceId") String sortBy,
 			@RequestParam(value = "keyword", required = false) String keyword,
 			@RequestParam(value = "userName", required = false) String userName) {
 		try {
-			
-			return accessor.getServices(page, pageSize, keyword, userName);
-			
+			// Don't allow for invalid orders
+			if (!(order.equalsIgnoreCase("asc")) && !(order.equalsIgnoreCase("desc"))) {
+				order = "asc";
+			}
+			return accessor.getServices(page, perPage, order, sortBy, keyword, userName);
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);

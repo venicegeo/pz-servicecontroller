@@ -473,7 +473,7 @@ public class ServiceMessageWorker {
 
 		PiazzaJobType jobType = job.getJobType();
 		ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
-		String type = jobItem.data.dataOutput.get(0).getType();
+		String type = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
 		coreLogger.log("The service controller string is " + serviceControlString, PiazzaLogger.DEBUG);
 
 
@@ -511,11 +511,11 @@ public class ServiceMessageWorker {
 			ex.printStackTrace();
 
 			// Checking payload type and settings the correct type
-			if (type.equals(TextDataType.TYPE)) {
+			if (type.equals((new TextDataType()).getClass().getSimpleName())) {
 				TextDataType newDataType = new TextDataType();
 				newDataType.content = serviceControlString;
 				data.dataType = newDataType;
-			} else if (type.equals(GeoJsonDataType.TYPE)) {
+			} else if (type.equals((new GeoJsonDataType()).getClass().getSimpleName())) {
 				GeoJsonDataType newDataType = new GeoJsonDataType();
 				newDataType.setGeoJsonContent(serviceControlString);
 				data.dataType = newDataType;
@@ -532,7 +532,7 @@ public class ServiceMessageWorker {
 		producer.send(newProdRecord);
 		
 		coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(),
-				data.getDataType().getType()), PiazzaLogger.INFO);
+				data.getDataType().getClass().getSimpleName()), PiazzaLogger.INFO);
 
 		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 
@@ -632,7 +632,7 @@ public class ServiceMessageWorker {
 
 				ObjectMapper tempMapper = new ObjectMapper();
 				DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
-				coreLogger.log("dataResource type is " + dataResource.getDataType().getType(), PiazzaLogger.DEBUG);
+				coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), PiazzaLogger.DEBUG);
 
 				dataResource.dataId = uuidFactory.getUUID();
 				coreLogger.log("dataId " + dataResource.dataId, PiazzaLogger.DEBUG);

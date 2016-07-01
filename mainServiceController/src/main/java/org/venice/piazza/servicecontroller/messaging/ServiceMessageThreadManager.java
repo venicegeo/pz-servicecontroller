@@ -179,7 +179,7 @@ public class ServiceMessageThreadManager {
 							// Now get the job type and process the request
 							PiazzaJobType jobType = job.getJobType();
 							if (jobType != null) {
-								coreLogger.log("Received jobType: " + jobType.getType(), PiazzaLogger.INFO);
+								coreLogger.log("Received jobType: " + jobType.getClass().getSimpleName(), PiazzaLogger.INFO);
 							}
 
 							// start a new thread

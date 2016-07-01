@@ -25,20 +25,14 @@ import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.type.ExecuteServiceJob;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 
 @Component
 public class ServiceMessageThreadManager {
 
-	private String DELETE_SERVICE_JOB_TOPIC_NAME;
 	private String EXECUTE_SERVICE_JOB_TOPIC_NAME;
-	private String READ_SERVICE_JOB_TOPIC_NAME;
-	private String REGISTER_SERVICE_JOB_TOPIC_NAME;
-	private String UPDATE_SERVICE_JOB_TOPIC_NAME;
-	private String LIST_SERVICE_JOB_TOPIC_NAME;
-	private String SEARCH_SERVICE_JOB_TOPIC_NAME;
-
 
 	private String KAFKA_HOST;
 	private String KAFKA_PORT;
@@ -81,16 +75,9 @@ public class ServiceMessageThreadManager {
 	public void initialize() {
 		
 		// Initialize dynamic topic names
-		DELETE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "delete-service", SPACE);
-		EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "execute-service", SPACE);
-		READ_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "read-service", SPACE);
-		REGISTER_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "register-service", SPACE);
-		UPDATE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "update-service", SPACE);
-		LIST_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "list-service", SPACE);
-		SEARCH_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", "search-service", SPACE);
+		EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", (new ExecuteServiceJob()).getClass().getSimpleName(), SPACE);
 
-		topics = Arrays.asList(DELETE_SERVICE_JOB_TOPIC_NAME, EXECUTE_SERVICE_JOB_TOPIC_NAME, READ_SERVICE_JOB_TOPIC_NAME,
-				REGISTER_SERVICE_JOB_TOPIC_NAME, UPDATE_SERVICE_JOB_TOPIC_NAME, LIST_SERVICE_JOB_TOPIC_NAME, SEARCH_SERVICE_JOB_TOPIC_NAME);
+		topics = Arrays.asList(EXECUTE_SERVICE_JOB_TOPIC_NAME);
 
 		// Initialize the Kafka consumer/producer
 		String kafkaHostFull = coreServiceProperties.getKafkaHost();
@@ -100,13 +87,7 @@ public class ServiceMessageThreadManager {
 		KAFKA_PORT = kafkaHostFull.split(":")[1];
 
 		coreLogger.log("============================================================", PiazzaLogger.INFO);
-		coreLogger.log("DELETE_SERVICE_JOB_TOPIC_NAME=" + DELETE_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
 		coreLogger.log("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
-		coreLogger.log("READ_SERVICE_JOB_TOPIC_NAME=" + READ_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
-		coreLogger.log("REGISTER_SERVICE_JOB_TOPIC_NAME=" + REGISTER_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
-		coreLogger.log("UPDATE_SERVICE_JOB_TOPIC_NAME=" + UPDATE_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
-		coreLogger.log("LIST_SERVICE_JOB_TOPIC_NAME=" + LIST_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
-		coreLogger.log("SEARCH_SERVICE_JOB_TOPIC_NAME=" + SEARCH_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
 		coreLogger.log("KAFKA_GROUP=" + KAFKA_GROUP, PiazzaLogger.INFO);
 		coreLogger.log("KAFKA_HOST=" + KAFKA_HOST, PiazzaLogger.INFO);
 		coreLogger.log("KAFKA_PORT=" + KAFKA_PORT, PiazzaLogger.INFO);
@@ -179,7 +160,7 @@ public class ServiceMessageThreadManager {
 							// Now get the job type and process the request
 							PiazzaJobType jobType = job.getJobType();
 							if (jobType != null) {
-								coreLogger.log("Received jobType: " + jobType.getType(), PiazzaLogger.INFO);
+								coreLogger.log("Received jobType: " + jobType.getClass().getSimpleName(), PiazzaLogger.INFO);
 							}
 
 							// start a new thread

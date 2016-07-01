@@ -274,7 +274,7 @@ public class ServiceController {
 		for (Map.Entry<String, DataType> entry : data.dataInputs.entrySet()) {
 			String key = entry.getKey();
 			logger.log("dataInput key:" + key, PiazzaLogger.DEBUG);
-			logger.log("dataInput Type:" + entry.getValue().getType(), PiazzaLogger.DEBUG);
+			logger.log("dataInput Type:" + entry.getValue().getClass().getSimpleName(), PiazzaLogger.DEBUG);
 		}
 		ResponseEntity<String> result = null;
 		try {

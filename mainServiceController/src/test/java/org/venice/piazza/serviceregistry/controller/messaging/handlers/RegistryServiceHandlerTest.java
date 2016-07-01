@@ -29,7 +29,6 @@ import model.data.type.URLParameterDataType;
 import model.job.metadata.ResourceMetadata;
 import model.response.ServiceResponse;
 
-import model.service.metadata.ParamDataItem;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -62,13 +61,7 @@ public class RegistryServiceHandlerTest {
 		service.method = "POST";
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
-		ParamDataItem pitem = new ParamDataItem();
 		DataType dataType1 = new URLParameterDataType();
-		pitem.setDataType(dataType1);
-		pitem.setName("aString");
-		pitem.setMinOccurs(1);
-		pitem.setMaxOccurs(1);
-		
 		
 		//DEBUGGING
 		ObjectMapper mapper = new ObjectMapper();

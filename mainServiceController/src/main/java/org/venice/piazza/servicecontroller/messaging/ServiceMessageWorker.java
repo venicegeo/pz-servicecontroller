@@ -105,27 +105,12 @@ public class ServiceMessageWorker {
 	
 	@Autowired
 	private PiazzaLogger coreLogger;
-	
-	@Autowired
-	private DeleteServiceHandler dlHandler;
-
-	@Autowired
-	private DescribeServiceHandler dsHandler;
 
 	@Autowired
 	private ExecuteServiceHandler esHandler;
 
 	@Autowired
-	private ListServiceHandler lsHandler;
-
-	@Autowired
-	private RegisterServiceHandler rsHandler;
-
-	@Autowired
 	private SearchServiceHandler ssHandler;
-
-	@Autowired
-	private UpdateServiceHandler usHandler;
 	
 	/**
 	 * Handles service job requests on a thread
@@ -146,14 +131,7 @@ public class ServiceMessageWorker {
 					PiazzaJobType jobType = job.getJobType();
 					coreLogger.log("Job ID:" + job.getJobId(), PiazzaLogger.DEBUG);
 
-					if (jobType instanceof RegisterServiceJob) {
-						coreLogger.log("RegisterServiceJob Detected", PiazzaLogger.DEBUG);
-
-						// Handle Register Job
-						handleResult = rsHandler.handle(jobType);
-						handleResult = checkResult(handleResult);
-						sendRegisterStatus(job, producer, handleUpdate, handleResult);
-					} else if (jobType instanceof ExecuteServiceJob) {
+					if (jobType instanceof ExecuteServiceJob) {
 						coreLogger.log("ExecuteServiceJob Detected", PiazzaLogger.DEBUG);
 
 						// Get the ResourceMetadata
@@ -176,31 +154,8 @@ public class ServiceMessageWorker {
 							coreLogger.log("Send Execute Status KAFKA", PiazzaLogger.DEBUG);
 							sendExecuteStatus(job, producer, handleUpdate, handleResult);
 						}
-					} else if (jobType instanceof UpdateServiceJob) {
-						coreLogger.log("UpdateServiceJob", PiazzaLogger.DEBUG);
 
-						handleResult = usHandler.handle(jobType);
-						handleResult = checkResult(handleResult);
-						sendUpdateStatus(job, producer, handleUpdate, handleResult);
-
-					} else if (jobType instanceof DeleteServiceJob) {
-						coreLogger.log("DeleteServiceJob", PiazzaLogger.DEBUG);
-
-						handleResult = dlHandler.handle(jobType);
-						handleResult = checkResult(handleResult);
-						sendDeleteStatus(job, producer, handleUpdate, handleResult);
-
-					} else if (jobType instanceof DescribeServiceMetadataJob) {
-						handleResult = dsHandler.handle(jobType);
-						handleResult = checkResult(handleResult);
-						sendDescribeStatus(job, producer, handleUpdate, handleResult);
-
-					} else if (jobType instanceof ListServicesJob) {
-						handleResult = lsHandler.handle(jobType);
-						handleResult = checkResult(handleResult);
-						sendListStatus(job, producer, handleUpdate, handleResult);
-
-					} else if (jobType instanceof SearchServiceJob) {
+					}  else if (jobType instanceof SearchServiceJob) {
 						handleResult = ssHandler.handle(jobType);
 
 						handleResult = checkResult(handleResult);
@@ -272,66 +227,7 @@ public class ServiceMessageWorker {
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
 
-	/**
-	 * Kafka message sending status update
-	 * 
-	 * @param job
-	 * @param status
-	 * @param handleResult
-	 * @throws JsonProcessingException
-	 */
-	private void sendListStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
-		if (handleResult != null) {
-			// Create a text result and update status
-			StatusUpdate su = new StatusUpdate();
-			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-
-			TextResult textResult = new TextResult();
-			textResult.setText(handleResult.getBody());
-			su.setResult(textResult);
-			if (handleResult.getStatusCode() == HttpStatus.OK) {
-                coreLogger.log("The STATUS is " + su.getStatus(), PiazzaLogger.DEBUG);
-                coreLogger.log("The RESULT is " + su.getStatus(), PiazzaLogger.DEBUG);
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
-
-				producer.send(prodRecord);
-			} else {
-				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(handleResult.getBody(), handleResult.getStatusCode().toString()));
-				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
-			}
-		}
-	}
 	
-	/** 
-	 * Sends an update for registering a job
-	 * 
-	 */
-	private void sendRegisterStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {
-		if (handleResult != null) {
-			// Create a text result and update status
-			StatusUpdate su = new StatusUpdate();
-			
-			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			
-			TextResult textResult = new TextResult();
-			textResult.setText(handleResult.getBody());
-			su.setResult(textResult);
-			if (handleResult.getStatusCode() == HttpStatus.OK) {
-
-				coreLogger.log("The STATUS is " + su.getStatus(), PiazzaLogger.DEBUG);
-                coreLogger.log("The RESULT is " + su.getStatus(), PiazzaLogger.DEBUG);
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
-				
-				producer.send(prodRecord);
-			}
-			else {
-				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(handleResult.getBody(), handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
-			}
-		}
-	}
 	
 	/**
 	 * Kafka message sending results of the search.
@@ -379,82 +275,7 @@ public class ServiceMessageWorker {
 		}
 	}
 	
-	/** 
-	 * Sends an update for registering a job
-	 * Message is sent on Kafka Queue
-	 * 
-	 */
-	private void sendUpdateStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
-		ObjectMapper mapper = new ObjectMapper();
-		String serviceControlString = mapper.writeValueAsString(handleResult.getBody());
-		StatusUpdate su = new StatusUpdate();
-		su.setStatus(serviceControlString);
-		ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-				String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), mapper.writeValueAsString(su));
-		producer.send(prodRecord);
-	}
 	
-	/** 
-	 * Sends an update for deleting the resource
-	 * Resource is not deleted but marked as unavailable
-	 * Message is sent on Kafka Queue
-	 * 
-	 */
-	private void sendDeleteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult)  throws JsonProcessingException {	
-		
-		if (handleResult != null) {
-			// Create a text result and update status
-			StatusUpdate su = new StatusUpdate();
-			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-
-			// Get the resource ID and set it as the result
-			TextResult textResult = new TextResult();
-			textResult.setText(handleResult.getBody());
-			su.setResult(textResult);
-			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				coreLogger.log("The STATUS is " + su.getStatus(), PiazzaLogger.DEBUG);
-                coreLogger.log("The RESULT is " + su.getStatus(), PiazzaLogger.DEBUG);
-				ProducerRecord<String,String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
-				
-				producer.send(prodRecord);
-			}
-		
-			else {
-				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(handleResult.getBody(), "Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
-	            producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
-			}
-		}
-		
-	}
-	
-	/**
-	 * Sends an update for describing the resource Message is sent on Kafka
-	 * Queue
-	 * 
-	 */
-	private void sendDescribeStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult) throws JsonProcessingException {
-		if (handleResult != null) {
-			// Create a text result and update status
-			StatusUpdate su = new StatusUpdate();
-			su.setStatus(StatusUpdate.STATUS_SUCCESS);
-			TextResult textResult = new TextResult();
-			textResult.setText(handleResult.getBody());
-			su.setResult(textResult);
-
-			if (handleResult.getStatusCode() == HttpStatus.OK) {
-				
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE);
-				producer.send(prodRecord);
-			} else {
-				su = new StatusUpdate(StatusUpdate.STATUS_ERROR);
-				su.setResult(new ErrorResult(handleResult.getBody(),
-						"Resource cold not be deleted. HTTP Status:" + handleResult.getStatusCode().toString()));
-				producer.send(JobMessageFactory.getUpdateStatusMessage(job.getJobId(), su, SPACE));
-			}
-		}
-	}
-
 	/**
 	 * Send an execute job status and the resource that was used Message is sent
 	 * on Kafka Queue

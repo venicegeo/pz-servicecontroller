@@ -14,17 +14,17 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging;
-/**
- * Class of unit tests to test the deletion of services
- * @author mlynum
- */
+
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.isA;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -34,6 +34,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +43,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.mongojack.JacksonDBCollection;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -69,7 +71,9 @@ import com.mongodb.MongoException;
 import messaging.job.KafkaClientFactory;
 import model.data.DataType;
 import model.data.type.BodyDataType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
+import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
@@ -83,41 +87,62 @@ import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
+import util.UUIDFactory;
+
+/**
+ * Class of unit tests to test the deletion of services
+ * @author mlynum
+ */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(KafkaClientFactory.class)
-public class ServiceMessageThreadManagerTest {
+
+public class ServiceMessageWorkerTest {
+	
+
 	@InjectMocks
-	private ServiceMessageThreadManager smtManager;
+    private ServiceMessageWorker smWorkerMock;
+	
+	@Mock
+	private RegisterServiceHandler rsHandlerMock;
+	
+	@Mock
+	private ExecuteServiceHandler esHandlerMock;
+	
+	@Mock
+	private DescribeServiceHandler dsHandlerMock;
+	
+	@Mock
+	private UpdateServiceHandler usHandlerMock;
+	
+	@Mock
+	private ListServiceHandler lsHandlerMock;
+	
+	@Mock
+	private DeleteServiceHandler dlHandlerMock;
+	
+	@Mock
+	private SearchServiceHandler ssHandlerMock;
+	
+	@Mock
+	private CoreServiceProperties coreServicePropMock;
 	
 	@Mock 
 	private PiazzaLogger loggerMock;
 	
 	@Mock
-	private MongoAccessor accessorMock;
+	private UUIDFactory uuidFactoryMock;
 	
 	@Mock
-	private Service serviceMock;
+	private Producer<String, String> producerMock;
 	
-	@Mock
-	private ObjectMapper omMock;
-	@Mock
-	private KafkaProducer<String, String> producerMock;
-	@Mock
-	private KafkaConsumer<String, String> consumerMock;
-	
-	@Mock
-	private KafkaClientFactory kcFactoryMock;
-
-	
-	@Mock
-	private CoreServiceProperties propertiesMock;
-
-	
+	private Job job;
+	private ExecuteServiceJob esJob;
 	ResourceMetadata rm = null;
 	Service service = null;
-	Service movieService = null;
-	Service convertService = null;
 	
+	ConsumerRecord<String, String> kafkaMessage;
+	
+
 	@Before
 	/** 
 	 * Called for each test setup
@@ -132,118 +157,50 @@ public class ServiceMessageThreadManagerTest {
 		service.method = "POST";
 		service.setResourceMetadata(rm);
 		service.setUrl("http://localhost:8082/string/toUpper");
+		
+		// Create the executeService Job
+		ExecuteServiceJob esJob = new ExecuteServiceJob();
+		// Setup executeServiceData
+		ExecuteServiceData edata = new ExecuteServiceData();
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
+		edata.setServiceId(serviceId);	
+		// Now tie the data to the job
+		esJob.data = edata;
+		job = new Job();
+		job.jobType = esJob;
+		
+		// Mock the Kafka response that Producers will send. This will always
+				// return a Future that completes immediately and simply returns true.
+				Mockito. when(producerMock.send(isA(ProducerRecord.class))).thenAnswer(new Answer<Future<Boolean>>() {
+					@Override
+					public Future<Boolean> answer(InvocationOnMock invocation) throws Throwable {
+						Future<Boolean> future = Mockito.mock(FutureTask.class);
+						Mockito.when(future.isDone()).thenReturn(true);
+						Mockito.when(future.get()).thenReturn(true);
+						return future;
+					}
+		});
+				
+				
 		MockitoAnnotations.initMocks(this);			
 
     }
-	
+		
 	@Test
 	/**
-	 * Test Initialization
+	 * Test an invalid kafka message being received
 	 */
-	public void testInitialization() {
-
-		Mockito.when(propertiesMock.getKafkaGroup()).thenReturn("ServiceController Group");
-		Mockito.when(propertiesMock.getKafkaHost()).thenReturn("localhost:8087");		
-		PowerMockito.mockStatic(KafkaClientFactory.class);
-		PowerMockito.when(KafkaClientFactory.getProducer("localhost", "8087")).thenReturn(producerMock);
-		PowerMockito.when(KafkaClientFactory.getConsumer("localhost", "8087", "ServiceController Group")).thenReturn(consumerMock);
+	public void testWorkerInvalidPayload() {
 		try {
-			
-			smtManager.initialize();
-			
+			// Test exception by sending an invalid ConsumerMessage
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"INVALID_JSON");
+			Future<String> workerFuture = smWorkerMock.run(kafkaMessage, producerMock, job, null);
+			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
 	}
-	
-	@Test
-	/**
-	 * Test Polling
-	 */
-	public void testPollingClosedConnection() {
-		
-		final ServiceMessageThreadManager smtmMock = Mockito.spy (smtManager);
-		try {
-			Mockito.doReturn(new AtomicBoolean(true)).when(smtmMock).makeAtomicBoolean();
-			smtmMock.pollServiceJobs();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		
-	}
-	
-	/**
-	 * Test Abort Polling losed Connection
-	 */
-	public void testAbortPollingClosedConnection() {
-		
-		final ServiceMessageThreadManager smtmMock = Mockito.spy (smtManager);
-		try {
-			Mockito.doReturn(new AtomicBoolean(true)).when(smtmMock).makeAtomicBoolean();
-			smtmMock.pollAbortServiceJobs();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		
-	}
-	
-	@Test
-	/**
-	 * Test Polling
-	 */
-	public void testPollingNoConsumerRecords() {
-		
-		final ServiceMessageThreadManager smtmMock = Mockito.spy (smtManager);
-		try {
-			smtmMock.pollServiceJobs();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		
-	}
-	
-	/**
-	 * Test polling of consumer records when nothing is returned
-	 */
-	@Test
-	public void testPolling() {
-		// Mock
-		Mockito.doNothing().when(consumerMock).subscribe(Mockito.anyList());
-		
-		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<String, String>(null);
-		Mockito.when(consumerMock.poll(Mockito.anyLong())).thenReturn(consumerRecords);
-		smtManager.pollServiceJobs();
 
-    }
-	
-	/**
-	 * Test aborting Polls
-	 */
-	@Test
-	public void testAbortPolling() {
-
-		Mockito.when(propertiesMock.getKafkaGroup()).thenReturn("ServiceController Group");
-		Mockito.when(propertiesMock.getKafkaHost()).thenReturn("localhost:8087");		
-		PowerMockito.mockStatic(KafkaClientFactory.class);
-		PowerMockito.when(KafkaClientFactory.getConsumer(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(consumerMock);
-		Mockito.doNothing().when(consumerMock).subscribe(Mockito.anyList());
-
-		ConsumerRecords<String, String> consumerRecords = new ConsumerRecords<String, String>(null);
-		Mockito.when(consumerMock.poll(Mockito.anyLong())).thenReturn(consumerRecords);
-		smtManager.pollAbortServiceJobs();
-
-    }	
-	 
-
-	static void setFinalStatic(Field field, Object newValue) throws Exception {
-	        field.setAccessible(true);
-	        Field modifiersField = Field.class.getDeclaredField("modifiers");
-	        modifiersField.setAccessible(true);
-	        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-	        
-	        field.set(null, newValue);
-	    
-	}
-	
 }

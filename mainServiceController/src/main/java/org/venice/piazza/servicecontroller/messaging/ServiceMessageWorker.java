@@ -155,11 +155,6 @@ public class ServiceMessageWorker {
 							sendExecuteStatus(job, producer, handleUpdate, handleResult);
 						}
 
-					}  else if (jobType instanceof SearchServiceJob) {
-						handleResult = ssHandler.handle(jobType);
-
-						handleResult = checkResult(handleResult);
-						sendSearchStatus(job, producer, handleUpdate, handleResult);
 					}
 				}
 			} catch (IOException ex) {

@@ -43,7 +43,6 @@ import model.job.type.UpdateServiceJob;
 import model.response.ServiceResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
-import model.service.metadata.ParamDataItem;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -333,7 +332,6 @@ public class HandlerLoggingTest {
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
-		ParamDataItem pitem = new ParamDataItem();
 
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.data = service;

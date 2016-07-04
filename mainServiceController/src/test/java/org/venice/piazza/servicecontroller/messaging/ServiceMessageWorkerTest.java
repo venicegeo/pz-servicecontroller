@@ -16,7 +16,16 @@
 package org.venice.piazza.servicecontroller.messaging;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
+import static org.powermock.api.support.membermodification.MemberMatcher.method;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyCollection;
+import static org.mockito.Matchers.anyMap;
+//import static org.powermock.api.mockito.PowerMockito.when;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -69,8 +78,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoException;
 
 import messaging.job.KafkaClientFactory;
+import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
+import model.data.type.GeoJsonDataType;
+import model.data.type.TextDataType;
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.ExecuteServiceJob;
@@ -86,6 +98,7 @@ import model.response.SuccessResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
+import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
@@ -94,11 +107,15 @@ import util.UUIDFactory;
  * @author mlynum
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(KafkaClientFactory.class)
+@PrepareForTest({KafkaClientFactory.class})
 
 public class ServiceMessageWorkerTest {
 	
-
+	
+	@Mock
+	private PiazzaLogger loggerMock;
+	
+	
 	@InjectMocks
     private ServiceMessageWorker smWorkerMock;
 	
@@ -125,9 +142,7 @@ public class ServiceMessageWorkerTest {
 	
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
-	
-	@Mock 
-	private PiazzaLogger loggerMock;
+
 	
 	@Mock
 	private UUIDFactory uuidFactoryMock;
@@ -135,7 +150,10 @@ public class ServiceMessageWorkerTest {
 	@Mock
 	private Producer<String, String> producerMock;
 	
-	private Job job;
+	@Mock
+	private ObjectMapper omMock;
+	
+	private Job validJob;
 	private ExecuteServiceJob esJob;
 	ResourceMetadata rm = null;
 	Service service = null;
@@ -160,14 +178,20 @@ public class ServiceMessageWorkerTest {
 		
 		// Create the executeService Job
 		ExecuteServiceJob esJob = new ExecuteServiceJob();
-		// Setup executeServiceData
+		// Setup valid data
 		ExecuteServiceData edata = new ExecuteServiceData();
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
 		edata.setServiceId(serviceId);	
+		TextDataType dataType  = new TextDataType();
+		dataType.mimeType = "application/json";
+		List <DataType> dataTypes = new ArrayList <>();
+		dataTypes.add(dataType);
+		edata.setDataOutput(dataTypes);
 		// Now tie the data to the job
-		esJob.data = edata;
-		job = new Job();
-		job.jobType = esJob;
+		esJob.data = edata;		
+		validJob = new Job();
+		validJob.jobId = "b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
+		validJob.jobType = esJob;
 		
 		// Mock the Kafka response that Producers will send. This will always
 				// return a Future that completes immediately and simply returns true.
@@ -185,6 +209,24 @@ public class ServiceMessageWorkerTest {
 		MockitoAnnotations.initMocks(this);			
 
     }
+	
+	@Test
+	/**
+	 * Test a null job being passed
+	 */
+	public void testNullob() {
+		try {
+			// Test exception by sending an invalid ConsumerMessage
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"INVALID_JSON");
+			Future<String> workerFuture = smWorkerMock.run(kafkaMessage, producerMock, null, null);
+			assertTrue(workerFuture.get() != null);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		
+	}
 		
 	@Test
 	/**
@@ -195,12 +237,222 @@ public class ServiceMessageWorkerTest {
 			// Test exception by sending an invalid ConsumerMessage
 			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
 					"INVALID_JSON");
-			Future<String> workerFuture = smWorkerMock.run(kafkaMessage, producerMock, job, null);
+			Future<String> workerFuture = smWorkerMock.run(kafkaMessage, producerMock, createInvalidJobWithoutOuptut(), null);
 			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
+	}
+	
+	@Test
+	/**
+	 * Test an invalid kafka message being received
+	 */
+	public void testWorkerValidPayload() {
+		try {
+			
+		        ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
+				
+				DataResource data = new DataResource();
+		        TextDataType newDataType = new TextDataType();
+				newDataType.content = "This is a result";
+				data.dataType = newDataType;
+				data.dataId="b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
+				ObjectMapper om = new ObjectMapper();
+				
+				String executeResponse = om.writeValueAsString(data);
+		        ResponseEntity<String>  response =  new ResponseEntity<>(executeResponse, HttpStatus.OK);
+		        
+		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+				ExecuteServiceData esData = jobItem.data;
+				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
+				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+		        
+			// Test valid Payload
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"VALID");
+			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			assertTrue(workerFuture.get() != null);
+		
+		
+			// Now try with GeoJson
+			ExecuteServiceJob esJob = new ExecuteServiceJob();
+			ExecuteServiceData edata = new ExecuteServiceData();
+			String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
+			edata.setServiceId(serviceId);	
+			GeoJsonDataType dataType  = new GeoJsonDataType();
+			dataType.mimeType = "application/vnd.geo+json";
+			List <DataType> dataTypes = new ArrayList <>();
+			dataTypes.add(dataType);
+			edata.setDataOutput(dataTypes);
+			// Now tie the data to the job
+			esJob.data = edata;		
+			validJob = new Job();
+			validJob.jobId = "b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
+			validJob.jobType = esJob;
+		
+		     om = new ObjectMapper();
+		
+			// Test valid Payload for GeoJSON
+			kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+				"VALID");
+			workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			assertTrue(workerFuture.get() != null);
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+	@Test
+	/**
+	 * Test what happens if a Null is returned from handling the execute
+	 */
+	public void testNullHandleResult() {
+		try {
+			
+		        ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
+				
+				DataResource data = new DataResource();
+		        TextDataType newDataType = new TextDataType();
+				newDataType.content = "This is a result";
+				data.dataType = newDataType;
+				data.dataId="b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
+				ObjectMapper om = new ObjectMapper();
+				
+				String executeResponse = om.writeValueAsString(data);
+		        ResponseEntity<String>  response =  new ResponseEntity<>(executeResponse, HttpStatus.OK);
+		        
+		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+				ExecuteServiceData esData = jobItem.data;
+				// What happens if the handled executeservice returns a null
+				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(null);
+				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+		        
+			// Test valid Payload
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"VALID");
+			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			assertTrue(workerFuture.get() != null);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * Test an invalid kafka message being received
+	 */
+	@Test
+	public void testBadHTTPResponseServiceResponse() {
+		try {
+			
+		        ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
+				
+				DataResource data = new DataResource();
+		        TextDataType newDataType = new TextDataType();
+				newDataType.content = "This is a result";
+				data.dataType = newDataType;
+				data.dataId="b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
+				ObjectMapper om = new ObjectMapper();
+				
+				String executeResponse = om.writeValueAsString(data);
+		        ResponseEntity<String>  response =  new ResponseEntity<>(executeResponse, HttpStatus.BAD_REQUEST);
+		        
+		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+				ExecuteServiceData esData = jobItem.data;
+				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
+				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+		        
+			// Test valid Payload
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"VALID");
+			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			assertTrue(workerFuture.get() != null);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * Test an invalid kafka message being received
+	 */
+	@Test
+	public void testServicResponseObjectMapperError() {
+		try {
+			
+		        ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
+				
+				DataResource data = new DataResource();
+		        TextDataType newDataType = new TextDataType();
+				newDataType.content = "This is a result";
+				data.dataType = newDataType;
+				data.dataId="b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
+				ObjectMapper om = new ObjectMapper();
+				
+				String executeResponse = om.writeValueAsString(data);
+		        ResponseEntity<String>  response =  new ResponseEntity<>(executeResponse, HttpStatus.OK);
+		        
+		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+				ExecuteServiceData esData = jobItem.data;
+				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
+				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+				Mockito.when(spy.makeNewObjectMapper()).thenReturn(omMock);
+				Mockito.when(omMock.readValue(Mockito.anyString(), eq(DataResource.class))).thenReturn(null);
+		        
+			// Test valid Payload
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"VALID");
+			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			assertTrue(workerFuture.get() != null);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	@Test
+	/**
+	 * Test some other job that is received
+	 */
+	public void testInvalidJob() {
+		try {
+			
+	        ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
+			RegisterServiceJob rsj = new RegisterServiceJob();
+			rsj.data = service;
+			validJob.jobType = rsj;
+			
+			Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+		        
+			// Test valid Payload
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"VALID");
+			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			assertTrue(workerFuture.get() != null);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	private Job createInvalidJobWithoutOuptut() {
+		
+		Job job = new Job();
+		
+		// Create the executeService Job
+		ExecuteServiceJob esJob = new ExecuteServiceJob();
+		// Setup valid data
+		ExecuteServiceData edata = new ExecuteServiceData();
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
+		edata.setServiceId(serviceId);	
+		// Now tie the data to the job
+		esJob.data = edata;		
+		job = new Job();
+		job.jobType = esJob;
+		
+		return job;
 	}
 
 }

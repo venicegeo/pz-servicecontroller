@@ -155,7 +155,7 @@ public class ServiceControllerTest {
 		rsj.data = service;    
 		
 		pjr.jobType = rsj;
-		pjr.userName = "mlynum";
+		pjr.createdBy = "mlynum";
 		service.setServiceId("");
 		
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";

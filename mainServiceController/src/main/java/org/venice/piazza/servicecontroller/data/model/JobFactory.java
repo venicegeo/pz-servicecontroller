@@ -34,9 +34,9 @@ public class JobFactory {
 		Job job = new Job();
 		job.setJobId(jobId);
 		job.jobType = jobRequest.jobType;
-		job.submitterUserName = jobRequest.userName;
+		job.createdBy = jobRequest.createdBy;
 		job.status = "Submitted"; // TODO: Enum
-		job.submitted = new DateTime();
+		job.createdOn = new DateTime();
 		return job;
 	}
 }

@@ -155,7 +155,7 @@ public class ServiceControllerTest {
 		rsj.data = service;    
 		
 		pjr.jobType = rsj;
-		pjr.userName = "mlynum";
+		pjr.createdBy = "mlynum";
 		service.setServiceId("");
 		
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
@@ -165,7 +165,7 @@ public class ServiceControllerTest {
 		// Should check to make sure each of the handlers are not null
 		PiazzaResponse piazzaResponse = sc.registerService(pjr);
 
-		assertEquals("The response String should match", ((ServiceIdResponse)piazzaResponse).serviceId, testServiceId);
+		assertEquals("The response String should match", ((ServiceIdResponse)piazzaResponse).data.getServiceId(), testServiceId);
 	}
 	
 	@Test
@@ -193,7 +193,7 @@ public class ServiceControllerTest {
 		PiazzaResponse piazzaResponse = sc.getServiceInfo(testServiceId);
 		
 		assertThat("SucceessResponse should be returned", piazzaResponse, instanceOf(ServiceResponse.class));
-		assertEquals("The response String should match", ((ServiceResponse)piazzaResponse).service.getServiceId(), testServiceId);
+		assertEquals("The response String should match", ((ServiceResponse)piazzaResponse).data.getServiceId(), testServiceId);
 	}
 	
 	@Test

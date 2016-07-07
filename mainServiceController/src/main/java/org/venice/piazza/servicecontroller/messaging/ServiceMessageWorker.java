@@ -244,7 +244,7 @@ public class ServiceMessageWorker {
 	
 			try {
 				// Now produce a new record
-				pjr.userName = "pz-sc-ingest";
+				pjr.createdBy = "pz-sc-ingest";
 				data.dataId = uuidFactory.getUUID();
 				coreLogger.log("dataId is " + data.dataId, PiazzaLogger.DEBUG);
 	
@@ -398,7 +398,7 @@ public class ServiceMessageWorker {
 				coreLogger.log("dataId " + dataResource.dataId, PiazzaLogger.DEBUG);
 
 				PiazzaJobRequest pjr = new PiazzaJobRequest();
-				pjr.userName = "pz-sc-ingest-raster-test";
+				pjr.createdBy = "pz-sc-ingest-raster-test";
 
 				IngestJob ingestJob = new IngestJob();
 				ingestJob.data = dataResource;

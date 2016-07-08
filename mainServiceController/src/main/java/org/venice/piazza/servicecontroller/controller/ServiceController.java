@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
@@ -118,15 +119,15 @@ public class ServiceController {
 	 * @return A Json message with the resourceID {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-	public PiazzaResponse registerService(@RequestBody PiazzaJobRequest jobRequest) {
+	public ResponseEntity<PiazzaResponse> registerService(@RequestBody PiazzaJobRequest jobRequest) {
 		try {
 			RegisterServiceJob serviceJob = (RegisterServiceJob) jobRequest.jobType;
 			String serviceId = rsHandler.handle(serviceJob.data);
-			return new ServiceIdResponse(serviceId);
+			return new ResponseEntity<PiazzaResponse>(new ServiceIdResponse(serviceId), HttpStatus.OK);
 		} catch (Exception exception) {			
 			logger.log(exception.toString(), PiazzaLogger.ERROR);
-			return new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
-					"Service Controller");
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
+					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -140,15 +141,19 @@ public class ServiceController {
 	 *            The ID of the service.
 	 * @return The service metadata or appropriate error
 	 */
-	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.GET)
-	public PiazzaResponse getServiceInfo(@PathVariable(value = "serviceId") String serviceId) {
+	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<PiazzaResponse> getServiceInfo(@PathVariable(value = "serviceId") String serviceId) {
 		try {
-			Service service = accessor.getServiceById(serviceId);
-			return new ServiceResponse(service);
+			// Check if Service exists
+			try {
+				return new ResponseEntity<PiazzaResponse>(new ServiceResponse(accessor.getServiceById(serviceId)), HttpStatus.OK);
+			} catch(ResourceAccessException rae) {
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
+			}
 		} catch (Exception exception) {
 			logger.log(exception.toString(), PiazzaLogger.ERROR);
-			return new ErrorResponse(String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
-					"Service Controller");
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
+					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -159,8 +164,8 @@ public class ServiceController {
 	 * 
 	 * @return The list of registered services.
 	 */
-	@RequestMapping(value = "/service", method = RequestMethod.GET)
-	public PiazzaResponse getServices(
+	@RequestMapping(value = "/service", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<PiazzaResponse> getServices(
 			@RequestParam(value = "page", required = false, defaultValue = DEFAULT_PAGE) Integer page,
 			@RequestParam(value = "perPage", required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer perPage,
 			@RequestParam(value = "order", required = false, defaultValue = "asc") String order,
@@ -172,11 +177,11 @@ public class ServiceController {
 			if (!(order.equalsIgnoreCase("asc")) && !(order.equalsIgnoreCase("desc"))) {
 				order = "asc";
 			}
-			return accessor.getServices(page, perPage, order, sortBy, keyword, userName);
+			return new ResponseEntity<PiazzaResponse>(accessor.getServices(page, perPage, order, sortBy, keyword, userName), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
-			return new ErrorResponse(error, "Service Controller");
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -190,16 +195,22 @@ public class ServiceController {
 	 * @return Null if service is deleted without error, or error if an
 	 *         exception occurs..
 	 */
-	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.DELETE)
-	public PiazzaResponse unregisterService(@PathVariable(value = "serviceId") String serviceId, @RequestParam(value = "softDelete", required = false) boolean softDelete) {
+	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<PiazzaResponse> unregisterService(@PathVariable(value = "serviceId") String serviceId, @RequestParam(value = "softDelete", required = false) boolean softDelete) {
 		try {
-			// remove from elastic search as well....
+			// Check if Service exists
+			try {
+				accessor.getServiceById(serviceId);
+			} catch(ResourceAccessException rae) {
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
+			}
+			// remove from elastic search as well....			
 			dlHandler.handle(serviceId, softDelete);
-			return new SuccessResponse("Service was deleted successfully.", "ServiceController");
+			return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was deleted successfully.", "ServiceController"), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
-			return new ErrorResponse(error, "Service Controller");
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	
@@ -216,9 +227,16 @@ public class ServiceController {
 	 *         there is one.
 	 */
 	
-	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PiazzaResponse> updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
+			// Check if Service exists
+			try {
+				accessor.getServiceById(serviceId);
+			} catch(ResourceAccessException rae) {
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
+			}
+			
 			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
 				String result = usHandler.handle(serviceData);
 				if (result.length() > 0) {

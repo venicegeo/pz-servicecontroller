@@ -163,7 +163,7 @@ public class ServiceControllerTest {
 
         Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
 		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.registerService(pjr);
+		PiazzaResponse piazzaResponse = sc.registerService(pjr).getBody();
 
 		assertEquals("The response String should match", ((ServiceIdResponse)piazzaResponse).data.getServiceId(), testServiceId);
 	}
@@ -175,7 +175,7 @@ public class ServiceControllerTest {
 	public void testRegisterServiceNullJobRequest() {
 		
 		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.registerService(null);
+		PiazzaResponse piazzaResponse = sc.registerService(null).getBody();
 		assertThat("An ErrorResponse should be returned",piazzaResponse, instanceOf(ErrorResponse.class));
 	}
 	
@@ -190,7 +190,7 @@ public class ServiceControllerTest {
 		
         Mockito.doReturn(service).when(accessorMock).getServiceById(testServiceId);
 		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.getServiceInfo(testServiceId);
+		PiazzaResponse piazzaResponse = sc.getServiceInfo(testServiceId).getBody();
 		
 		assertThat("SucceessResponse should be returned", piazzaResponse, instanceOf(ServiceResponse.class));
 		assertEquals("The response String should match", ((ServiceResponse)piazzaResponse).data.getServiceId(), testServiceId);
@@ -203,7 +203,7 @@ public class ServiceControllerTest {
 	public void testGetServiceInfoWithNull() {
         Mockito.doThrow(new ResourceAccessException("Service not found.")).when(accessorMock).getServiceById(null);
 
-		PiazzaResponse piazzaResponse = sc.getServiceInfo(null);
+		PiazzaResponse piazzaResponse = sc.getServiceInfo(null).getBody();
 		
 		assertThat("ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 	}
@@ -223,7 +223,7 @@ public class ServiceControllerTest {
 		// Create some temporary mocks for odd call
 		Mockito.when(accessorMock.getServices(1, 25, "asc", "serviceId", "", "")).thenReturn(serviceList);
 
-		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", ""); 
+		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", "").getBody();
 		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ServiceListResponse.class));
 		
 	}
@@ -242,7 +242,7 @@ public class ServiceControllerTest {
 		// Create some temporary mocks for odd call
 		Mockito.when(accessorMock.getServices(1, 25, "asc", "serviceId", "", "")).thenThrow(new MongoException("There was an error"));
 
-		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", ""); 
+		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", "").getBody();
 		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 		
 	}
@@ -257,7 +257,7 @@ public class ServiceControllerTest {
 		Mockito.doReturn(testServiceId).when(dlHandlerMock).handle(testServiceId, false);
 
 		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(testServiceId, false);
+		PiazzaResponse piazzaResponse = sc.unregisterService(testServiceId, false).getBody();
 		assertThat("The unregistration  should be successful",piazzaResponse, instanceOf(SuccessResponse.class));
 
 	}
@@ -272,7 +272,7 @@ public class ServiceControllerTest {
 		Mockito.doReturn(testServiceId).when(dlHandlerMock).handle(testServiceId, true);
 
 		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(testServiceId, true);
+		PiazzaResponse piazzaResponse = sc.unregisterService(testServiceId, true).getBody();
 		assertThat("The unregistration  should be successful",piazzaResponse, instanceOf(SuccessResponse.class));
 
 	}
@@ -287,7 +287,7 @@ public class ServiceControllerTest {
 		Mockito.doThrow(new MongoException("Error")).when(dlHandlerMock).handle(null, false);
 
 		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(null, false);
+		PiazzaResponse piazzaResponse = sc.unregisterService(null, false).getBody();
 		
 
 		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
@@ -303,7 +303,7 @@ public class ServiceControllerTest {
 		Mockito.doThrow(new MongoException("Error")).when(dlHandlerMock).handle(null, true);
 
 		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(null, true);
+		PiazzaResponse piazzaResponse = sc.unregisterService(null, true).getBody();
 		
 
 		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));

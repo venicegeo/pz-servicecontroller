@@ -104,9 +104,16 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 		// Accessor throws exception if can't find service
 		Service sMetadata = accessor.getServiceById(serviceId);
-
+        
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
+		try {
+			ObjectMapper om = new ObjectMapper();
+		    String result = om.writeValueAsString(sMetadata);
+		    coreLogger.log("the service retrieved was" + result, PiazzaLogger.INFO);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 		String rawURL = sMetadata.getUrl();
 	    coreLogger.log("URL to use = " +rawURL, PiazzaLogger.INFO);
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);

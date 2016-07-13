@@ -72,7 +72,7 @@ public class SearchServiceHandlerTest {
 		rm.description = "Service to convert string to uppercase";
 
 		service = new Service();
-		service.method = "POST";
+		service.setMethod ("POST");
 		service.setResourceMetadata(rm);
 		service.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
 		service.setUrl("http://localhost:8082/jumpstart/string/toUpper");
@@ -86,7 +86,7 @@ public class SearchServiceHandlerTest {
 		rm.description = "Service to convert string to lower";
 
 		service = new Service();
-		service.method = "POST";
+		service.setMethod ("POST");
 		service.setResourceMetadata(rm);
 		service.setServiceId("a842bte2-bd74-4c4b-9a65-c45e8cdu91");
 		service.setUrl("http://localhost:8082/jumpstart/string/toLower");
@@ -97,7 +97,7 @@ public class SearchServiceHandlerTest {
 		rm.description = "Converts a string to UPPER or LOWER case. POST method";
 		
 		service = new Service();
-		service.method = "POST";
+		service.setMethod ("POST");
 		service.setResourceMetadata(rm);
 		service.setServiceId("9842bze2-bd74-4c4b-0a65-c45e8cdu91");
 		service.setUrl("http://localhost:8082/umpstart/string/convert");

@@ -76,7 +76,7 @@ import util.UUIDFactory;
 			rm.description = "Service to convert string to uppercase";
 
 			service = new Service();
-			service.method = "POST";
+			service.setMethod ("POST");
 			service.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
 			service.setResourceMetadata(rm);
 			service.setUrl("http://localhost:8082/string/toUpper");

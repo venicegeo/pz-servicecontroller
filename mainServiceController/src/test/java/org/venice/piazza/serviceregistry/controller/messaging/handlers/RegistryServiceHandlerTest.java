@@ -58,7 +58,7 @@ public class RegistryServiceHandlerTest {
 		rm.name = "toUpper Params";
 		rm.description = "Service to convert string to uppercase";
 		service = new Service();
-		service.method = "POST";
+		service.setMethod("POST");
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
 		DataType dataType1 = new URLParameterDataType();

@@ -129,7 +129,7 @@ public class ServiceMessageThreadManagerTest {
 		rm.description = "Service to convert string to uppercase";
 
 		service = new Service();
-		service.method = "POST";
+		service.setMethod( "POST");
 		service.setResourceMetadata(rm);
 		service.setUrl("http://localhost:8082/string/toUpper");
 		MockitoAnnotations.initMocks(this);			

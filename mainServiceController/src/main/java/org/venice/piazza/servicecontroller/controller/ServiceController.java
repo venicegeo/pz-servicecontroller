@@ -238,15 +238,16 @@ public class ServiceController {
 			}
 			
 			if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
+				serviceData.setServiceId(serviceId);
 				String result = usHandler.handle(serviceData);
 				if (result.length() > 0) {
 					return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", "ServiceController"), HttpStatus.OK);
 				} else {
 					return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
 				}
+
 			}
-			
-			String errorMessage = String.format("Cannot update service due to metadata ID (%s) not matching the specified ID (%s)", serviceData.getServiceId(), serviceId);
+			String errorMessage = String.format("Cannot update service due to specified service Id (%s).", serviceId);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(errorMessage, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());

@@ -99,88 +99,101 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 */
 	public ResponseEntity<String> handle(ExecuteServiceData data) {
 		coreLogger.log("executeService serviceId=" + data.getServiceId(), PiazzaLogger.INFO);
-		ResponseEntity<String> responseEntity;
+		ResponseEntity<String> responseEntity = null;
 		String serviceId = data.getServiceId();
-
-		// Accessor throws exception if can't find service
-		Service sMetadata = accessor.getServiceById(serviceId);
-
-		// Default request mimeType application/json
+		Service sMetadata = null;
+	 	// Default request mimeType application/json
 		String requestMimeType = "application/json";
-		String rawURL = sMetadata.getUrl();
-	    coreLogger.log("URL to use = " +rawURL, PiazzaLogger.INFO);
-		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);
-
-		Map<String, DataType> postObjects = new HashMap<>();
-		Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
-		String postString = "";
-		while (it.hasNext()) {
-			Entry<String, DataType> entry = it.next();
-			String inputName = entry.getKey();
-			coreLogger.log("The parameter is " + inputName, PiazzaLogger.DEBUG);
-
-
-			if (entry.getValue() instanceof URLParameterDataType) {
-				String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
-				if (inputName.length() == 0) {
-					coreLogger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), PiazzaLogger.DEBUG);
-
-
-					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
-					coreLogger.log("Builder URL is " + builder.toUriString(), PiazzaLogger.DEBUG);
-
-
+		try {
+			// Accessor throws exception if can't find service
+			 sMetadata= accessor.getServiceById(serviceId);
+	
+			ObjectMapper om = new ObjectMapper();
+		    String result = om.writeValueAsString(sMetadata);
+		    coreLogger.log(result, PiazzaLogger.INFO);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		if (sMetadata != null) {
+			String rawURL = sMetadata.getUrl();
+		    coreLogger.log("URL to use = " +rawURL, PiazzaLogger.INFO);
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);
+	
+			Map<String, DataType> postObjects = new HashMap<>();
+			Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
+			String postString = "";
+			while (it.hasNext()) {
+				Entry<String, DataType> entry = it.next();
+				String inputName = entry.getKey();
+				coreLogger.log("The parameter is " + inputName, PiazzaLogger.DEBUG);
+	
+	
+				if (entry.getValue() instanceof URLParameterDataType) {
+					String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
+					if (inputName.length() == 0) {
+						coreLogger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), PiazzaLogger.DEBUG);
+	
+	
+						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
+						coreLogger.log("Builder URL is " + builder.toUriString(), PiazzaLogger.DEBUG);
+	
+	
+					} else {
+						builder.queryParam(inputName, paramValue);
+						coreLogger.log("Input Name=" + inputName + " paramValue=" + paramValue, PiazzaLogger.DEBUG);
+					}
+				} else if (entry.getValue() instanceof BodyDataType) {
+					BodyDataType bdt = (BodyDataType) entry.getValue();
+					postString = bdt.getContent();
+					requestMimeType = bdt.getMimeType();
+					if ((requestMimeType == null) || (requestMimeType.length() == 0)) {
+						coreLogger.log("Body mime type not specified", PiazzaLogger.ERROR);
+						return new ResponseEntity<>("Body mime type not specified", HttpStatus.BAD_REQUEST);
+					}
 				} else {
-					builder.queryParam(inputName, paramValue);
-					coreLogger.log("Input Name=" + inputName + " paramValue=" + paramValue, PiazzaLogger.DEBUG);
+					// Default behavior for other inputs, put them in list of objects
+					// which are transformed into JSON consistent with default requestMimeType
+					coreLogger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), PiazzaLogger.INFO);
+					postObjects.put(inputName, entry.getValue());
 				}
-			} else if (entry.getValue() instanceof BodyDataType) {
-				BodyDataType bdt = (BodyDataType) entry.getValue();
-				postString = bdt.getContent();
-				requestMimeType = bdt.getMimeType();
-				if ((requestMimeType == null) || (requestMimeType.length() == 0)) {
-					coreLogger.log("Body mime type not specified", PiazzaLogger.ERROR);
-					return new ResponseEntity<>("Body mime type not specified", HttpStatus.BAD_REQUEST);
+			}
+	
+			coreLogger.log("Final Builder URL" + builder.toUriString(), PiazzaLogger.INFO);
+			if (postString.length() > 0 && postObjects.size() > 0) {
+				coreLogger.log("String Input not consistent with other Inputs", PiazzaLogger.ERROR);
+				return new ResponseEntity<>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
+			} else if (postObjects.size() > 0) {
+				ObjectMapper mapper = makeObjectMapper();
+				try {
+					postString = mapper.writeValueAsString(postObjects);
+				} catch (JsonProcessingException e) {
+					coreLogger.log(e.getMessage(), PiazzaLogger.ERROR);
+					return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
 				}
-			} else {
-				// Default behavior for other inputs, put them in list of objects
-				// which are transformed into JSON consistent with default requestMimeType
-				coreLogger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), PiazzaLogger.INFO);
-				postObjects.put(inputName, entry.getValue());
 			}
-		}
-
-		coreLogger.log("Final Builder URL" + builder.toUriString(), PiazzaLogger.INFO);
-		if (postString.length() > 0 && postObjects.size() > 0) {
-			coreLogger.log("String Input not consistent with other Inputs", PiazzaLogger.ERROR);
-			return new ResponseEntity<>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
-		} else if (postObjects.size() > 0) {
-			ObjectMapper mapper = makeObjectMapper();
-			try {
-				postString = mapper.writeValueAsString(postObjects);
-			} catch (JsonProcessingException e) {
-				coreLogger.log(e.getMessage(), PiazzaLogger.ERROR);
-				return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
-			}
-		}
-		
-		URI url = URI.create(builder.toUriString());
-		if (sMetadata.getMethod().equals("GET")) {
-			coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
-			responseEntity = template.getForEntity(url, String.class);
-
-		} else {
-			HttpHeaders headers = new HttpHeaders();
-
-			// Set the mimeType of the request
-			MediaType mediaType = createMediaType(requestMimeType);
-			headers.setContentType(mediaType);
-			HttpEntity<String> requestEntity = makeHttpEntity(headers, postString);
 			
-			coreLogger.log("PostForEntity URL=" + url, PiazzaLogger.INFO);
-			responseEntity = template.postForEntity(url, requestEntity, String.class);
-		}
+			URI url = URI.create(builder.toUriString());
+			if (sMetadata.getMethod().equals("GET")) {
+				coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
+				responseEntity = template.getForEntity(url, String.class);
+	
+			} else {
+				HttpHeaders headers = new HttpHeaders();
+	
+				// Set the mimeType of the request
+				MediaType mediaType = createMediaType(requestMimeType);
+				headers.setContentType(mediaType);
+				HttpEntity<String> requestEntity = makeHttpEntity(headers, postString);
+				
+				coreLogger.log("PostForEntity URL=" + url, PiazzaLogger.INFO);
+				responseEntity = template.postForEntity(url, requestEntity, String.class);
+			}
+			
+		} else
+		{
+			return new ResponseEntity<>("Service Id" + data.getServiceId() + "not found", HttpStatus.NOT_FOUND);
 
+		}
 		return responseEntity;
 	}
 	

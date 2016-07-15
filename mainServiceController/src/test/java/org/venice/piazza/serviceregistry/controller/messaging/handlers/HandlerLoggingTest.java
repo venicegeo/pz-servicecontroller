@@ -89,7 +89,7 @@ public class HandlerLoggingTest {
 		rm.name = "toUpper Params";
 		rm.description = "Service to convert string to uppercase";
 		service = new Service();
-		service.method = "POST";
+		service.setMethod("POST");
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8085/string/toUpper");
@@ -293,7 +293,7 @@ public class HandlerLoggingTest {
 		rm.name = "toUpper Params";
 		rm.description = "Service to convert string to uppercase";
 		service.setResourceMetadata(rm);
-		service.method = "POST";
+		service.setMethod("POST");
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
 		
@@ -370,7 +370,7 @@ public class HandlerLoggingTest {
 		rm.description = "Service to convert string to uppercase";
 		
 		service.setResourceMetadata(rm);
-		service.method="POST";
+		service.setMethod("POST");
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
 		

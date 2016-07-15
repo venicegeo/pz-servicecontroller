@@ -101,7 +101,7 @@ public class ExecuteServiceHandlerTest {
 		rm.description = "Service to convert string to uppercase";
 
 		service = new Service();
-		service.method = "POST";
+		service.setMethod ("POST");
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
@@ -112,7 +112,7 @@ public class ExecuteServiceHandlerTest {
 		rm.description = "Service to convert strings to upper case or lower case";
 
 		convertService = new Service();
-		convertService.method = "POST";
+		convertService.setMethod ("POST");
 		convertService.setResourceMetadata(rm);
 		convertService.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
 		convertService.setUrl("http://localhost:8087/jumpstart/string/convert");
@@ -123,7 +123,7 @@ public class ExecuteServiceHandlerTest {
 		rm.description = "A web service that welcomes you to pz-servicecontroller";
 
 		movieService = new Service();
-		movieService.method = "GET";
+		movieService.setMethod ("GET");
 		movieService.setResourceMetadata(rm);
 		movieService.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
 		movieService.setUrl("http://localhost:8087/jumpstart/moviequotewelcome");

@@ -220,6 +220,8 @@ public class ServiceController {
 	public ResponseEntity<PiazzaResponse> updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
 			if ((serviceId != null) && (!serviceId.isEmpty())) {
+				logger.log("The service Id to update is " + serviceId, PiazzaLogger.INFO);
+
 				serviceData.setServiceId(serviceId);
 				String result = usHandler.handle(serviceData);
 				if (result.length() > 0) {

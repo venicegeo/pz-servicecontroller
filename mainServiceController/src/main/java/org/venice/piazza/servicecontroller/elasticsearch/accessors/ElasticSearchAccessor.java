@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.messaging.ServiceMessageWorker;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
+
 import model.job.type.ServiceMetadataIngestJob;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
@@ -116,10 +117,12 @@ public class ElasticSearchAccessor {
 	private PiazzaResponse dispatchElasticSearch(Service service, String url) {
 		try {
 			ServiceMetadataIngestJob job = new ServiceMetadataIngestJob();
+			
 			job.setData(service);
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
-			HttpEntity<Service> entity = new HttpEntity<Service>(service, headers);
+			
+			HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
 
 			return restTemplate.postForObject(url, entity, PiazzaResponse.class);
 		} catch (Exception exception) {

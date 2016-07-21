@@ -101,7 +101,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
         String result = "";
         try {
 	        if (sMetadata != null) {
-		        coreLogger.log("about to update a registered service.", PiazzaLogger.INFO);
+		        coreLogger.log("about to update a registered service.  Service Id = " + sMetadata.getServiceId(), PiazzaLogger.INFO);
 		        // If there is actual contractURL data then you can try and use this information.
 		        if (sMetadata.getContractUrl() != null) {
 					UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getContractUrl());
@@ -110,7 +110,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 					
 					// TODO use contractEntity for something else in the future
 				}
-		        
+		       
 				result = accessor.update(sMetadata);
 		        coreLogger.log("The result of the update is " + result, PiazzaLogger.INFO);
 				

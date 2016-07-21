@@ -330,7 +330,7 @@ public class ServiceControllerTest {
 		Mockito.doReturn("Update Successful").when(usHandlerMock).handle(service);
 
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
-		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
+		assertThat("The update of service metadata should be  successful", piazzaResponse.getBody(), instanceOf(SuccessResponse.class));
 	}
 
 	@Test

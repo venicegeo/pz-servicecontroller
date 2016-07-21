@@ -233,13 +233,13 @@ public class ServiceController {
 			if ((serviceId != null) && (!serviceId.isEmpty())) {
 					logger.log("The service Id to update is " + serviceId, PiazzaLogger.INFO);
 	
-				// Check if Service exists
+				/* // Check if Service exists
 				try {
 					Service sMetadata = accessor.getServiceById(serviceId);
 
 				} catch(ResourceAccessException rae) {
 					return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
-				}
+				} */
 				logger.log("setting the id in the payload to update", PiazzaLogger.INFO);
 				serviceData.setServiceId(serviceId);
 				String result = usHandler.handle(serviceData);

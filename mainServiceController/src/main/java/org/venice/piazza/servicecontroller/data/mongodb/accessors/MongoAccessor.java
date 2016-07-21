@@ -132,6 +132,7 @@ public class MongoAccessor {
 			Query query = DBQuery.is("serviceId",sMetadata.getServiceId());
 			
 			WriteResult<Service, String> writeResult = coll.update(query,sMetadata);
+			logger.log("The result is", writeResult.toString());
 			// Return the id that was used
 			return sMetadata.getServiceId().toString();
 			

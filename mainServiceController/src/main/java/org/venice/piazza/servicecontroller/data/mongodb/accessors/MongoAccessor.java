@@ -330,6 +330,7 @@ public class MongoAccessor {
 	
 		
 		BasicDBObject query = new BasicDBObject("serviceId", serviceId);
+		logger.log("serviceId = ", serviceId);
 		Service service;
 
 		try {

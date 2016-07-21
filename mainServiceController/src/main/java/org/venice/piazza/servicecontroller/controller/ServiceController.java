@@ -235,7 +235,8 @@ public class ServiceController {
 	
 				// Check if Service exists
 				try {
-					accessor.getServiceById(serviceId);
+					Service sMetadata = accessor.getServiceById(serviceId);
+
 				} catch(ResourceAccessException rae) {
 					return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
 				}

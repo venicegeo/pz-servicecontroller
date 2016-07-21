@@ -240,19 +240,16 @@ public class ServiceController {
 				} catch(ResourceAccessException rae) {
 					return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
 				}
-				
-				if (serviceId.equalsIgnoreCase(serviceData.getServiceId())) {
-					serviceData.setServiceId(serviceId);
-					String result = usHandler.handle(serviceData);
-					if (result.length() > 0) {
-						return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", "ServiceController"), HttpStatus.OK);
-					} else {
-						return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
-					}
-	
+				logger.log("setting the id in the payload to update", PiazzaLogger.INFO);
+				serviceData.setServiceId(serviceId);
+				String result = usHandler.handle(serviceData);
+				if (result.length() > 0) {
+					return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", "ServiceController"), HttpStatus.OK);
+				} else {
+					return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
 				}
-				String errorMessage = String.format("Cannot update service due to specified service Id (%s).", serviceId);
-				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(errorMessage, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
+
+
 			} else {
 			 	return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The serviceId was not specified", "Service Controller"), HttpStatus.BAD_REQUEST);
 

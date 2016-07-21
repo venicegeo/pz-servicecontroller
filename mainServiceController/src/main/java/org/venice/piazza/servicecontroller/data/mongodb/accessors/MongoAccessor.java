@@ -328,9 +328,8 @@ public class MongoAccessor {
 	 */
 	public Service getServiceById(String serviceId) throws ResourceAccessException {
 	
-		
+		logger.log("getServiceById called = ", serviceId);
 		BasicDBObject query = new BasicDBObject("serviceId", serviceId);
-		logger.log("serviceId = ", serviceId);
 		Service service;
 
 		try {

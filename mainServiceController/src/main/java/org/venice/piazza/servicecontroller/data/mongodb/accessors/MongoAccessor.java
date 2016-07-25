@@ -321,11 +321,11 @@ public class MongoAccessor {
 
 	
 	/**
-	 * Returns a ResourceMetadata object that matches the specified ID.
+	 * Returns a ResourceMetadata object that matches the specified Id.
 	 * 
 	 * @param jobId
-	 *            Job ID
-	 * @return The Job with the specified ID
+	 *            Job Id
+	 * @return The Job with the specified Id
 	 */
 	public Service getServiceById(String serviceId) throws ResourceAccessException {
 	

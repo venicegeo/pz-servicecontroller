@@ -132,7 +132,7 @@ public class DeleteServiceHandlerTest {
 	
 	@Test 
 	/**
-	 * Test what happens when an invalid ID is sent
+	 * Test what happens when an invalid Id is sent
 	 */
 	public void testInvalidServiceIdNoDeletion() {
 				
@@ -156,7 +156,7 @@ public class DeleteServiceHandlerTest {
 	
 	@Test
 	/**
-	 * Test what happens when an invalid ID is sent
+	 * Test what happens when an invalid Id is sent
 	 */
 	public void testInvalidServiceIdNoDeletion2() {
 				
@@ -181,76 +181,76 @@ public class DeleteServiceHandlerTest {
 	
 	@Test
 	/**
-	 * Test what happens when an valid service ID is sent
+	 * Test what happens when an valid service Id is sent
 	 */
 	public void testSuccessfulDelete() {
 				
-		String serviceID = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
 		// When calling delete from mongo have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
-		Mockito.doReturn("service " + serviceID + " deleted").when(accessorMock).delete(serviceID, true);
+		Mockito.doReturn("service " + serviceId + " deleted").when(accessorMock).delete(serviceId, true);
 
-		String result = dhHandler.handle(serviceID, true);
+		String result = dhHandler.handle(serviceId, true);
 		// Build the actual result which would be built using ObjectMapper
-		String actualResult = "service " + serviceID + " deleted";
-		assertEquals ("The serviceID " + serviceID + " should have deleted successfully!", result, actualResult);
+		String actualResult = "service " + serviceId + " deleted";
+		assertEquals ("The serviceId " + serviceId + " should have deleted successfully!", result, actualResult);
 	}
 	
 	@Test
 	/**
-	 * Test what happens when an valid service ID is sent
+	 * Test what happens when an valid service Id is sent
 	 */
 	public void testSuccessfulSoftDelete() {
 				
-		String serviceID = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
 		// When calling delete from mongo have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
-		Mockito.doReturn("service " + serviceID + " deleted").when(accessorMock).delete(serviceID, false);
+		Mockito.doReturn("service " + serviceId + " deleted").when(accessorMock).delete(serviceId, false);
 
-		String result = dhHandler.handle(serviceID, false);
+		String result = dhHandler.handle(serviceId, false);
 		// Build the actual result which would be built using ObjectMapper
-		String actualResult = "service " + serviceID + " deleted";
-		assertEquals ("The serviceID " + serviceID + " should have deleted successfully!", result, actualResult);
+		String actualResult = "service " + serviceId + " deleted";
+		assertEquals ("The serviceId " + serviceId + " should have deleted successfully!", result, actualResult);
 	}
 	
 	@Test
 	/**
-	 * Test what happens when an valid service ID is sent
+	 * Test what happens when an valid service Id is sent
 	 */
 	public void testInvalidServiceId() {
 				
-		String serviceID = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
 		// When calling delete from mongo have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
-		Mockito.doReturn(null).when(accessorMock).delete(serviceID, false);
+		Mockito.doReturn(null).when(accessorMock).delete(serviceId, false);
 
-		String result = dhHandler.handle(serviceID, false);
+		String result = dhHandler.handle(serviceId, false);
 	
-		assertEquals ("The serviceID " + serviceID + " should have failed deletion!", result, null);
+		assertEquals ("The serviceId " + serviceId + " should have failed deletion!", result, null);
 	}
 	
 	@Test
 	/**
-	 * Test what happens when an valid service ID is sent
+	 * Test what happens when an valid service Id is sent
 	 */
 	public void testInvalidServiceId2() {
 				
-		String serviceID = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
 		// When calling delete from mongo have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
-		Mockito.doReturn("").when(accessorMock).delete(serviceID, false);
+		Mockito.doReturn("").when(accessorMock).delete(serviceId, false);
 
-		String result = dhHandler.handle(serviceID, false);
+		String result = dhHandler.handle(serviceId, false);
 	
-		assertEquals ("The serviceID " + serviceID + " should have failed deletion!", result, "");
+		assertEquals ("The serviceId " + serviceId + " should have failed deletion!", result, "");
 	}
 	
 	@Test

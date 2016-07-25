@@ -75,7 +75,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 
 			if (result.length() > 0) {
 				String jobId = job.getJobId();
-				// TODO Use the result, send a message with the resource ID and jobId
+				// TODO Use the result, send a message with the resource Id and jobId
 				ArrayList<String> resultList = new ArrayList<>();
 				resultList.add(jobId);
 				resultList.add(sMetadata.getServiceId());
@@ -122,8 +122,8 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				} else {
 					   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", PiazzaLogger.INFO);
 				}
-				// If an ID was returned then send a kafka message back updating the job iD 
-				// with the resourceID
+				// If an Id was returned then send a kafka message back updating the job iD 
+				// with the resourceId
 				
 				/*TODO if (ErrorResponse.class.isInstance(response)) {
 					ErrorResponse errResponse = (ErrorResponse)response;

@@ -200,7 +200,7 @@ public class ServiceMessageThreadManager {
 				ConsumerRecords<String, String> consumerRecords = uniqueConsumer.poll(1000);
 				// Handle new Messages on this topic.
 				for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
-					// Determine if this Job ID is being processed by this
+					// Determine if this Job Id is being processed by this
 					// component.
 					String jobId = consumerRecord.key();
 					if (runningServiceRequests.containsKey(jobId)) {

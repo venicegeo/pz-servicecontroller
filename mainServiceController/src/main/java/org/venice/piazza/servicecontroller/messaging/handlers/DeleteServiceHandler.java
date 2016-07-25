@@ -91,7 +91,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 * Deletes resource by removing from mongo, and sends delete request to elastic search
 	 * 
 	 * @param rMetadata
-	 * @return resourceID of the registered service
+	 * @return resourceId of the registered service
 	 */
 	public String handle(String resourceId, boolean softDelete) {
 		coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);

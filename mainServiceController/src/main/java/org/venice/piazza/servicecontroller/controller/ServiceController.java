@@ -116,7 +116,7 @@ public class ServiceController {
 	 *      (SAK) administration and for testing of the serviceController.
 	 * @param serviceMetadata
 	 *            metadata about the service
-	 * @return A Json message with the resourceID {resourceId="<the id>"}
+	 * @return A Json message with the resourceId {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/registerService", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PiazzaResponse> registerService(@RequestBody PiazzaJobRequest jobRequest) {
@@ -132,13 +132,13 @@ public class ServiceController {
 	}
 
 	/**
-	 * Gets service metadata, based on its ID.
+	 * Gets service metadata, based on its Id.
 	 * 
 	 * @see "@see "
 	 *      http://pz-swagger.stage.geointservices.io/#!/Service/post_service"
 	 * 
 	 * @param serviceId
-	 *            The ID of the service.
+	 *            The Id of the service.
 	 * @return The service metadata or appropriate error
 	 */
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -191,7 +191,7 @@ public class ServiceController {
 	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/delete_service_serviceId"
 	 * 
 	 * @param serviceId
-	 *            The ID of the service to delete.
+	 *            The Id of the service to delete.
 	 * @return Null if service is deleted without error, or error if an
 	 *         exception occurs..
 	 */
@@ -220,7 +220,7 @@ public class ServiceController {
 	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/put_service_serviceId"
 	 * 
 	 * @param serviceId
-	 *            Service ID to delete.
+	 *            Service Id to delete.
 	 * @param serviceData
 	 *            The data of the service to update.
 	 * @return Null if the service has been updated, or an appropriate error if
@@ -270,7 +270,7 @@ public class ServiceController {
 	 * 
 	 * @param serviceMetadata
 	 *            metadata bout the service
-	 * @return A Json message with the resourceID {resourceId="<the id>"}
+	 * @return A Json message with the resourceId {resourceId="<the id>"}
 	 */
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers = "Accept=application/json", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {

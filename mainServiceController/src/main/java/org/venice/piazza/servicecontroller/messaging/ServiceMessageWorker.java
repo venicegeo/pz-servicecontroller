@@ -114,7 +114,7 @@ public class ServiceMessageWorker {
 			if (job != null) {
 				try {
 					PiazzaJobType jobType = job.getJobType();
-					coreLogger.log("Job ID:" + job.getJobId(), PiazzaLogger.DEBUG);
+					coreLogger.log("Job Id:" + job.getJobId(), PiazzaLogger.DEBUG);
 
 					if (jobType instanceof ExecuteServiceJob) {
 						coreLogger.log("ExecuteServiceJob Detected", PiazzaLogger.DEBUG);
@@ -289,7 +289,7 @@ public class ServiceMessageWorker {
 			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, SPACE);
 			producer.send(newProdRecord);
 			
-			coreLogger.log(String.format("Sending Ingest Job ID %s for Data ID %s for Data of Type %s", jobId, data.getDataId(),
+			coreLogger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
 					data.getDataType().getClass().getSimpleName()), PiazzaLogger.INFO);
 	
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);

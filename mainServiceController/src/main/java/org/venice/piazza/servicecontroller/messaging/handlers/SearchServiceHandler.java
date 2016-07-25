@@ -22,7 +22,7 @@ import util.PiazzaLogger;
 
 /**
  * Handler for handling search requests.  Searches the databse for 
- * registered services using the name and/or ID provide
+ * registered services using the name and/or Id provide
  * @author mlynum
  * @version 1.0
  *

@@ -87,7 +87,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 * Handler for registering the new service with mongo and elastic search.
 	 * 
 	 * @param service
-	 * @return resourceID of the registered service
+	 * @return resourceId of the registered service
 	 */
 	public String handle(Service service) {
 		String resultServiceId = "";

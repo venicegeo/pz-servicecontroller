@@ -81,7 +81,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			ResponseEntity<String> result = new ResponseEntity<>(handleResult.getBody(), handleResult.getStatusCode());
 			coreLogger.log("The result is " + result, PiazzaLogger.DEBUG);
 			
-			// TODO Use the result, send a message with the resource ID and jobId
+			// TODO Use the result, send a message with the resource Id and jobId
 			return result;
 		}
 		else {

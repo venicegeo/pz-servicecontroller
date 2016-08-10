@@ -25,7 +25,9 @@ import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.type.AbortJob;
 import model.job.type.ExecuteServiceJob;
+import model.request.PiazzaJobRequest;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 
@@ -190,6 +192,8 @@ public class ServiceMessageThreadManager {
 		Consumer<String, String> uniqueConsumer;
 		uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT,
 				String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
+		ObjectMapper mapper = new ObjectMapper();
+		
 		try {
 			// Create the Unique Consumer
 
@@ -202,7 +206,17 @@ public class ServiceMessageThreadManager {
 				for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
 					// Determine if this Job Id is being processed by this
 					// component.
-					String jobId = consumerRecord.key();
+					String jobId = null;
+					try {
+						PiazzaJobRequest request = mapper.readValue(consumerRecord.value(), PiazzaJobRequest.class);
+						jobId = ((AbortJob) request.jobType).getJobId();
+					} catch (Exception exception) {
+						exception.printStackTrace();
+						coreLogger.log(String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
+								exception.getMessage()), PiazzaLogger.ERROR);
+						continue;
+					}
+					
 					if (runningServiceRequests.containsKey(jobId)) {
 						// Cancel the Running Job
 						runningServiceRequests.get(jobId).cancel(true);

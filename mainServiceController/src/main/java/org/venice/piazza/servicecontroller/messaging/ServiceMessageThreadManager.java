@@ -222,6 +222,8 @@ public class ServiceMessageThreadManager {
 						runningServiceRequests.get(jobId).cancel(true);
 						// Remove it from the list of Running Jobs
 						runningServiceRequests.remove(jobId);
+						// Log the cancellation has occurred
+						coreLogger.log(String.format("Successfully terminated Job thread for Job ID %s", jobId), PiazzaLogger.INFO);
 					}
 				}
 			}

@@ -94,7 +94,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 * @return resourceId of the registered service
 	 */
 	public String handle(String resourceId, boolean softDelete) {
-		coreLogger.log("about to delete a registered service.", PiazzaLogger.INFO);
+		coreLogger.log(String.format("Deleting Registered Service: %s with softDelete %s", resourceId, softDelete), PiazzaLogger.INFO);
 		Service service = accessor.getServiceById(resourceId);
 		elasticAccessor.delete(service);
 

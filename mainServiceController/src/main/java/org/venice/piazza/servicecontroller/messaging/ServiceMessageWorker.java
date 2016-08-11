@@ -110,6 +110,7 @@ public class ServiceMessageWorker {
 			ResponseEntity<String> handleResult = null;
 			boolean rasterJob = false;
 			ObjectMapper mapper = makeNewObjectMapper();
+			int statusCode = 400;
 			// if a jobType has been declared
 			if (job != null) {
 				try {
@@ -158,6 +159,7 @@ public class ServiceMessageWorker {
 					coreLogger.log(hex.getMessage(), PiazzaLogger.ERROR);
 					handleUpdate = StatusUpdate.STATUS_ERROR;
 					handleTextUpdate = hex.getResponseBodyAsString();
+					 statusCode = hex.getStatusCode().value();
 				}
 	
 				// if there was no result set then
@@ -169,8 +171,10 @@ public class ServiceMessageWorker {
 						su.setStatus(handleUpdate);
 						// Create a text result and update status
 						ErrorResult errorResult = new ErrorResult();
+						//String message = mapper.writeValueAsString(handleTextUpdate);
+
 						errorResult.setMessage(handleTextUpdate);
-	
+						errorResult.setStatusCode(new Integer(statusCode));
 						su.setResult(errorResult);
 	
 						ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
@@ -186,14 +190,17 @@ public class ServiceMessageWorker {
 	
 							handleResult = checkResult(handleResult);
 	
-							String serviceControlString = mapper.writeValueAsString(handleResult);
+							//String serviceControlString = mapper.writeValueAsString(handleResult);
 	
 							StatusUpdate su = new StatusUpdate();
 							su.setStatus(handleUpdate);
 							// Create a text result and update status
 							ErrorResult errorResult = new ErrorResult();
-							errorResult.setMessage(serviceControlString);
+							errorResult.setMessage(handleResult);
+							errorResult.setStatusCode(new Integer(handleResult.getStatusCode().value()));
+						
 							su.setResult(errorResult);
+						    
 	
 							ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
 									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), mapper.writeValueAsString(su));

@@ -162,7 +162,7 @@ public class ServiceMessageWorker {
 				} catch (HttpClientErrorException hex) {
 					coreLogger.log(hex.getMessage(), PiazzaLogger.ERROR);
 					handleUpdate = StatusUpdate.STATUS_ERROR;
-					handleTextUpdate = hex.getMessage();
+					handleTextUpdate = hex.getResponseBodyAsString();
 				}
 				
 				if (Thread.interrupted()) {

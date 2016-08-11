@@ -95,7 +95,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	/**
 	 * 
 	 * @param rMetadata
-	 * @return resourceID of the registered service
+	 * @return resourceId of the registered service
 	 */
 	public String handle (Service sMetadata) {
         String result = "";

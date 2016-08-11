@@ -49,7 +49,9 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import messaging.job.JobMessageFactory;
@@ -125,11 +127,11 @@ public class ServiceMessageWorker {
 						ExecuteServiceData esData = jobItem.data;
 						if (esData.dataOutput != null) {
 							DataType dataType = esData.dataOutput.get(0);
-							
+
 							if (Thread.interrupted()) {
 								throw new InterruptedException();
 							}
-							
+
 							if ((dataType != null) && (dataType instanceof RasterDataType)) {
 								// Call special method to call and send
 								rasterJob = true;
@@ -137,6 +139,10 @@ public class ServiceMessageWorker {
 							} else {
 								coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
 								handleResult = esHandler.handle(jobType);
+								
+								if (Thread.interrupted()) {
+									throw new InterruptedException();
+								}
 
 								coreLogger.log("Execution handled", PiazzaLogger.DEBUG);
 								handleResult = checkResult(handleResult);
@@ -164,7 +170,7 @@ public class ServiceMessageWorker {
 					handleUpdate = StatusUpdate.STATUS_ERROR;
 					handleTextUpdate = hex.getResponseBodyAsString();
 				}
-				
+
 				if (Thread.interrupted()) {
 					throw new InterruptedException();
 				}
@@ -222,6 +228,8 @@ public class ServiceMessageWorker {
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 		} catch (InterruptedException ex) {
 			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), PiazzaLogger.INFO);
+		} catch (Exception ex) {
+			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 		}
 
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
@@ -236,7 +244,7 @@ public class ServiceMessageWorker {
 	 * @throws JsonProcessingException
 	 */
 	private void sendExecuteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult)
-			throws JsonProcessingException, IOException {
+			throws JsonProcessingException, IOException, InterruptedException {
 		// Initialize ingest job items
 		DataResource data = makeNewDataResource();
 		PiazzaJobRequest pjr = new PiazzaJobRequest();
@@ -292,6 +300,10 @@ public class ServiceMessageWorker {
 				}
 			}
 
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
 			ingestJob.data = data;
 			ingestJob.host = true;
 			pjr.jobType = ingestJob;
@@ -318,8 +330,12 @@ public class ServiceMessageWorker {
 	/**
 	 * This method is for demonstrating ingest of raster data This will be refactored once the API changes have been
 	 * communicated to other team members
+	 * @throws InterruptedException 
+	 * @throws IOException 
+	 * @throws JsonMappingException 
+	 * @throws JsonParseException 
 	 */
-	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer) {
+	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer) throws InterruptedException, JsonParseException, JsonMappingException, IOException {
 		RestTemplate restTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;
 		// Get the id from the data
@@ -389,50 +405,53 @@ public class ServiceMessageWorker {
 			// Create the Request template and execute
 			HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
 
-			try {
-				coreLogger.log("About to call special service " + url, PiazzaLogger.DEBUG);
+			coreLogger.log("About to call special service " + url, PiazzaLogger.DEBUG);
 
-				ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-				coreLogger.log("The Response is " + response.getBody(), PiazzaLogger.DEBUG);
+			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
-				String serviceControlString = response.getBody();
-				coreLogger.log("Service Control String " + serviceControlString, PiazzaLogger.DEBUG);
-
-				ObjectMapper tempMapper = makeNewObjectMapper();
-				DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
-				coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), PiazzaLogger.DEBUG);
-
-				dataResource.dataId = uuidFactory.getUUID();
-				coreLogger.log("dataId " + dataResource.dataId, PiazzaLogger.DEBUG);
-
-				PiazzaJobRequest pjr = new PiazzaJobRequest();
-				pjr.createdBy = "pz-sc-ingest-raster-test";
-
-				IngestJob ingestJob = new IngestJob();
-				ingestJob.data = dataResource;
-				ingestJob.host = true;
-				pjr.jobType = ingestJob;
-
-				ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
-				producer.send(newProdRecord);
-
-				coreLogger.log("newProdRecord sent " + newProdRecord.toString(), PiazzaLogger.DEBUG);
-
-				StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-
-				// Create a text result and update status
-				DataResult textResult = new DataResult(dataResource.dataId);
-				statusUpdate.setResult(textResult);
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
-
-				producer.send(prodRecord);
-				coreLogger.log("prodRecord sent " + prodRecord.toString(), PiazzaLogger.DEBUG);
-
-			} catch (JsonProcessingException jpe) {
-				jpe.printStackTrace();
-			} catch (Exception ex) {
-				ex.printStackTrace();
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
 			}
+
+			coreLogger.log("The Response is " + response.getBody(), PiazzaLogger.DEBUG);
+
+			String serviceControlString = response.getBody();
+			coreLogger.log("Service Control String " + serviceControlString, PiazzaLogger.DEBUG);
+
+			ObjectMapper tempMapper = makeNewObjectMapper();
+			DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
+			coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), PiazzaLogger.DEBUG);
+
+			dataResource.dataId = uuidFactory.getUUID();
+			coreLogger.log("dataId " + dataResource.dataId, PiazzaLogger.DEBUG);
+
+			PiazzaJobRequest pjr = new PiazzaJobRequest();
+			pjr.createdBy = "pz-sc-ingest-raster-test";
+
+			IngestJob ingestJob = new IngestJob();
+			ingestJob.data = dataResource;
+			ingestJob.host = true;
+			pjr.jobType = ingestJob;
+
+			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
+			producer.send(newProdRecord);
+
+			coreLogger.log("newProdRecord sent " + newProdRecord.toString(), PiazzaLogger.DEBUG);
+
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
+			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+
+			// Create a text result and update status
+			DataResult textResult = new DataResult(dataResource.dataId);
+			statusUpdate.setResult(textResult);
+			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
+
+			producer.send(prodRecord);
+			coreLogger.log("prodRecord sent " + prodRecord.toString(), PiazzaLogger.DEBUG);
+
 		}
 
 	}

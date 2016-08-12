@@ -72,9 +72,12 @@ import model.job.type.ExecuteServiceJob;
 import model.job.type.IngestJob;
 
 import model.request.PiazzaJobRequest;
+import model.response.EventTypeListResponse;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
+import model.workflow.Event;
+import model.workflow.EventType;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
@@ -89,6 +92,12 @@ public class ServiceMessageWorker {
 	@Value("${SPACE}")
 	private String SPACE;
 
+	@Value("${workflow.url}")
+	private String WORKFLOW_URL;
+
+	@Autowired
+	private ObjectMapper objectMapper;
+	
 	@Autowired
 	private UUIDFactory uuidFactory;
 
@@ -101,6 +110,8 @@ public class ServiceMessageWorker {
 	@Autowired
 	private ExecuteServiceHandler esHandler;
 
+	private RestTemplate restTemplate = new RestTemplate();
+
 	/**
 	 * Handles service job requests on a thread
 	 */
@@ -112,7 +123,6 @@ public class ServiceMessageWorker {
 			String handleTextUpdate = "";
 			ResponseEntity<String> handleResult = null;
 			boolean rasterJob = false;
-			ObjectMapper mapper = makeNewObjectMapper();
 			int statusCode = 400;
 			// if a jobType has been declared
 			if (job != null) {
@@ -147,9 +157,14 @@ public class ServiceMessageWorker {
 
 								coreLogger.log("Execution handled", PiazzaLogger.DEBUG);
 								handleResult = checkResult(handleResult);
+								
+								String dataId = uuidFactory.getUUID();								
 
 								coreLogger.log("Send Execute Status KAFKA", PiazzaLogger.DEBUG);
-								sendExecuteStatus(job, producer, handleUpdate, handleResult);
+								sendExecuteStatus(job, producer, handleUpdate, handleResult, dataId);
+								
+								coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", PiazzaLogger.DEBUG);
+								fireEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");								
 							}
 						} else {
 							handleResult = new ResponseEntity<>(
@@ -194,7 +209,7 @@ public class ServiceMessageWorker {
 
 						ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
 								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
-								mapper.writeValueAsString(su));
+								objectMapper.writeValueAsString(su));
 						producer.send(prodRecord);
 					} else {
 						// If the status is not ok and the job is not equal to null
@@ -215,8 +230,8 @@ public class ServiceMessageWorker {
 							su.setResult(errorResult);
 						    
 							ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
-									mapper.writeValueAsString(su));
+								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), objectMapper.writeValueAsString(su));
+
 							producer.send(prodRecord);
 						} // if there is a result
 
@@ -239,6 +254,32 @@ public class ServiceMessageWorker {
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
 
+	private void fireEvent(String user, String jobId, String dataId, String message) {
+		
+		try {
+			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.			
+			String url = String.format("%s/%s?name=%s", WORKFLOW_URL, "eventType", "piazza:executionComplete");
+			EventType eventType = objectMapper.readValue(restTemplate.getForObject(url, String.class), EventTypeListResponse.class).data.get(0);
+			
+			// Construct Event object
+			Map<String,Object> data = new HashMap<String,Object>();
+			data.put("jobId", jobId);
+			data.put("status", message);
+			data.put("dataId", dataId);
+			
+			Event event = new Event();
+			event.createdBy = user;
+			event.eventTypeId = eventType.eventTypeId;
+			event.data = data;
+						
+			// Call pz-workflow endpoint to fire Event object
+			restTemplate.postForObject(String.format("%s/%s", WORKFLOW_URL, "event"), objectMapper.writeValueAsString(event), String.class);
+			
+		} catch (Exception ex ) {
+			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);			
+		}		
+	}
+	
 	/**
 	 * Send an execute job status and the resource that was used Message is sent on Kafka Queue
 	 * 
@@ -247,7 +288,7 @@ public class ServiceMessageWorker {
 	 * @param handleResult
 	 * @throws JsonProcessingException
 	 */
-	private void sendExecuteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult)
+	private void sendExecuteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult, String dataId)
 			throws JsonProcessingException, IOException, InterruptedException {
 		// Initialize ingest job items
 		DataResource data = makeNewDataResource();
@@ -268,11 +309,10 @@ public class ServiceMessageWorker {
 			try {
 				// Now produce a new record
 				pjr.createdBy = "pz-sc-ingest";
-				data.dataId = uuidFactory.getUUID();
+				data.dataId = dataId;
 				coreLogger.log("dataId is " + data.dataId, PiazzaLogger.DEBUG);
-
-				ObjectMapper tempMapper = makeNewObjectMapper();
-				data = tempMapper.readValue(serviceControlString, DataResource.class);
+	
+				data = objectMapper.readValue(serviceControlString, DataResource.class);
 
 				// Now check to see if the conversion is actually a proper DataResource
 				// if it is not time to create a TextDataType and return
@@ -281,7 +321,7 @@ public class ServiceMessageWorker {
 							PiazzaLogger.DEBUG);
 
 					data = makeNewDataResource();
-					data.dataId = uuidFactory.getUUID();
+					data.dataId = dataId;
 					TextDataType tr = new TextDataType();
 					tr.content = serviceControlString;
 					coreLogger.log("The data being sent is " + tr.content, PiazzaLogger.DEBUG);
@@ -380,9 +420,8 @@ public class ServiceMessageWorker {
 		if (postString.length() > 0 && postObjects.size() > 0) {
 			return;
 		} else if (postObjects.size() > 0) {
-			ObjectMapper mapper = makeNewObjectMapper();
 			try {
-				postString = mapper.writeValueAsString(postObjects);
+				postString = objectMapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -422,8 +461,7 @@ public class ServiceMessageWorker {
 			String serviceControlString = response.getBody();
 			coreLogger.log("Service Control String " + serviceControlString, PiazzaLogger.DEBUG);
 
-			ObjectMapper tempMapper = makeNewObjectMapper();
-			DataResource dataResource = tempMapper.readValue(serviceControlString, DataResource.class);
+			DataResource dataResource = objectMapper.readValue(serviceControlString, DataResource.class);
 			coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), PiazzaLogger.DEBUG);
 
 			dataResource.dataId = uuidFactory.getUUID();
@@ -503,9 +541,5 @@ public class ServiceMessageWorker {
 
 	public DataResource makeNewDataResource() {
 		return new DataResource();
-	}
-
-	public ObjectMapper makeNewObjectMapper() {
-		return new ObjectMapper();
 	}
 }

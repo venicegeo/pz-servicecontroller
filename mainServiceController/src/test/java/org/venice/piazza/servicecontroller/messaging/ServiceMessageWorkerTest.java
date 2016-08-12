@@ -398,7 +398,6 @@ public class ServiceMessageWorkerTest {
 				ExecuteServiceData esData = jobItem.data;
 				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
 				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
-				Mockito.when(spy.makeNewObjectMapper()).thenReturn(omMock);
 				Mockito.when(omMock.readValue(Mockito.anyString(), eq(DataResource.class))).thenReturn(null);
 		        
 			// Test valid Payload

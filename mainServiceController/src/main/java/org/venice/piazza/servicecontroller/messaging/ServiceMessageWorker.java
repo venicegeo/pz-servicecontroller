@@ -123,9 +123,7 @@ public class ServiceMessageWorker {
 			String handleTextUpdate = "";
 			ResponseEntity<String> handleResult = null;
 			boolean rasterJob = false;
-
 			int statusCode = 400;
-
 			// if a jobType has been declared
 			if (job != null) {
 				try {
@@ -139,7 +137,6 @@ public class ServiceMessageWorker {
 						ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
 						ExecuteServiceData esData = jobItem.data;
 						if (esData.dataOutput != null) {
-
 							DataType dataType = esData.dataOutput.get(0);
 
 							if (Thread.interrupted()) {
@@ -223,8 +220,6 @@ public class ServiceMessageWorker {
 
 							handleResult = checkResult(handleResult);
 
-							String serviceControlString = objectMapper.writeValueAsString(handleResult);
-
 							StatusUpdate su = new StatusUpdate();
 							su.setStatus(handleUpdate);
 							// Create a text result and update status
@@ -258,7 +253,7 @@ public class ServiceMessageWorker {
 
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
-	
+
 	private void fireEvent(String user, String jobId, String dataId, String message) {
 		
 		try {
@@ -462,7 +457,7 @@ public class ServiceMessageWorker {
 			}
 
 			coreLogger.log("The Response is " + response.getBody(), PiazzaLogger.DEBUG);
-			
+
 			String serviceControlString = response.getBody();
 			coreLogger.log("Service Control String " + serviceControlString, PiazzaLogger.DEBUG);
 

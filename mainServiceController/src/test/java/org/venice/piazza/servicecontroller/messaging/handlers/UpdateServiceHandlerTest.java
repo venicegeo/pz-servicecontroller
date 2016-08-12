@@ -200,17 +200,5 @@ public class UpdateServiceHandlerTest {
 		String result = usHandler.handle(service);
         assertEquals("The responding service id shoudl match the id", result, service.getServiceId());
 	}
-	
-	/**
-	 * Test invalid Contract information
-	 */
-	@Test
-	public void testInvalidContractInfo() {
-		service.setContractUrl("htp://pzsvc-hello.int.geointservices.io/");
-		// Mock the response from Mongo
-		Mockito.doReturn(service.getServiceId()).when(accessorMock).update(service);
-		String result = usHandler.handle(service);
-        assertEquals("The response string should be empty", result.length(), 0);
-	}
-	
+
 }

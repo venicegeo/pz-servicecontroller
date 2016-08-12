@@ -8,3 +8,6 @@ SumTestService/.gitignore
 SumTestService/.project
 SumTestService/.settings/
 SumTestService/target/
+mainServiceController/.classpath
+*.project
+mainServiceController/.settings/org.eclipse.core.resources.prefs

@@ -49,7 +49,9 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import messaging.job.JobMessageFactory;
@@ -98,28 +100,32 @@ public class ServiceMessageWorker {
 	
 	@Autowired
 	private UUIDFactory uuidFactory;
-	
+
 	@Autowired
 	private MongoAccessor accessor;
-	
+
 	@Autowired
 	private PiazzaLogger coreLogger;
 
 	@Autowired
 	private ExecuteServiceHandler esHandler;
-	
+
 	private RestTemplate restTemplate = new RestTemplate();
-	
+
 	/**
 	 * Handles service job requests on a thread
 	 */
 	@Async
-	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job, WorkerCallback callback){
+	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job,
+			WorkerCallback callback) {
 		try {
 			String handleUpdate = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
 			ResponseEntity<String> handleResult = null;
 			boolean rasterJob = false;
+
+			int statusCode = 400;
+
 			// if a jobType has been declared
 			if (job != null) {
 				try {
@@ -135,20 +141,28 @@ public class ServiceMessageWorker {
 						if (esData.dataOutput != null) {
 
 							DataType dataType = esData.dataOutput.get(0);
+
+							if (Thread.interrupted()) {
+								throw new InterruptedException();
+							}
+
 							if ((dataType != null) && (dataType instanceof RasterDataType)) {
 								// Call special method to call and send
 								rasterJob = true;
 								handleRasterType(jobItem, job, producer);
-							} 
-							else {
+							} else {
 								coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
 								handleResult = esHandler.handle(jobType);
-	
+								
+								if (Thread.interrupted()) {
+									throw new InterruptedException();
+								}
+
 								coreLogger.log("Execution handled", PiazzaLogger.DEBUG);
 								handleResult = checkResult(handleResult);
 								
 								String dataId = uuidFactory.getUUID();								
-	
+
 								coreLogger.log("Send Execute Status KAFKA", PiazzaLogger.DEBUG);
 								sendExecuteStatus(job, producer, handleUpdate, handleResult, dataId);
 								
@@ -156,12 +170,12 @@ public class ServiceMessageWorker {
 								fireEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");								
 							}
 						} else {
-							handleResult = new ResponseEntity<>("DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
+							handleResult = new ResponseEntity<>(
+									"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
 						}
 
 					}
-					
-				
+
 				} catch (IOException ex) {
 					coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 					handleUpdate = StatusUpdate.STATUS_ERROR;
@@ -173,22 +187,29 @@ public class ServiceMessageWorker {
 				} catch (HttpClientErrorException hex) {
 					coreLogger.log(hex.getMessage(), PiazzaLogger.ERROR);
 					handleUpdate = StatusUpdate.STATUS_ERROR;
-					handleTextUpdate = hex.getMessage();
+					handleTextUpdate = hex.getResponseBodyAsString();
+					 statusCode = hex.getStatusCode().value();
 				}
-	
+
+				if (Thread.interrupted()) {
+					throw new InterruptedException();
+				}
+
 				// if there was no result set then
 				// use the default error messages set.
 				if (!rasterJob) {
 					if (handleResult == null) {
-	
+
 						StatusUpdate su = new StatusUpdate();
 						su.setStatus(handleUpdate);
 						// Create a text result and update status
 						ErrorResult errorResult = new ErrorResult();
+
 						errorResult.setMessage(handleTextUpdate);
-	
+						errorResult.setStatusCode(new Integer(statusCode));
+
 						su.setResult(errorResult);
-	
+
 						ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
 								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
 								objectMapper.writeValueAsString(su));
@@ -196,36 +217,43 @@ public class ServiceMessageWorker {
 					} else {
 						// If the status is not ok and the job is not equal to null
 						// then send an update to the job manager that there was some failure
-						boolean eResult = (handleResult.getStatusCode() != HttpStatus.OK)  ? true : false;
+						boolean eResult = (handleResult.getStatusCode() != HttpStatus.OK) ? true : false;
 						if (eResult) {
 							handleUpdate = StatusUpdate.STATUS_FAIL;
-	
+
 							handleResult = checkResult(handleResult);
-	
+
 							String serviceControlString = objectMapper.writeValueAsString(handleResult);
-	
+
 							StatusUpdate su = new StatusUpdate();
 							su.setStatus(handleUpdate);
 							// Create a text result and update status
 							ErrorResult errorResult = new ErrorResult();
-							errorResult.setMessage(serviceControlString);
+							errorResult.setMessage(handleResult);
+							errorResult.setStatusCode(new Integer(handleResult.getStatusCode().value()));
+						
 							su.setResult(errorResult);
-	
+						    
 							ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), objectMapper.writeValueAsString(su));
+								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), objectMapper.writeValueAsString(su));
+
 							producer.send(prodRecord);
-						}// if there is a result
-	
+						} // if there is a result
+
 					}
 				} // If a raster job was not done
 			}
 			// the job sent in was null so log an error
-			else 
+			else
 				coreLogger.log("The job sent in was a null job", PiazzaLogger.ERROR);
 		} catch (WakeupException ex) {
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 		} catch (JsonProcessingException ex) {
-				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+		} catch (InterruptedException ex) {
+			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), PiazzaLogger.INFO);
+		} catch (Exception ex) {
+			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 		}
 
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
@@ -258,8 +286,7 @@ public class ServiceMessageWorker {
 	}
 	
 	/**
-	 * Send an execute job status and the resource that was used Message is sent
-	 * on Kafka Queue
+	 * Send an execute job status and the resource that was used Message is sent on Kafka Queue
 	 * 
 	 * @param job
 	 * @param status
@@ -267,23 +294,23 @@ public class ServiceMessageWorker {
 	 * @throws JsonProcessingException
 	 */
 	private void sendExecuteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult, String dataId)
-			throws JsonProcessingException, IOException {
+			throws JsonProcessingException, IOException, InterruptedException {
 		// Initialize ingest job items
 		DataResource data = makeNewDataResource();
 		PiazzaJobRequest pjr = new PiazzaJobRequest();
 		IngestJob ingestJob = new IngestJob();
-		
+
 		if (handleResult != null) {
 			coreLogger.log("The result provided from service is " + handleResult.getBody(), PiazzaLogger.DEBUG);
-	
-			//String serviceControlString = handleResult.getBody().get(0).toString();
+
+			// String serviceControlString = handleResult.getBody().get(0).toString();
 			String serviceControlString = handleResult.getBody().toString();
-	
+
 			PiazzaJobType jobType = job.getJobType();
 			ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
 			String type = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
 			coreLogger.log("The service controller string is " + serviceControlString, PiazzaLogger.DEBUG);
-	
+
 			try {
 				// Now produce a new record
 				pjr.createdBy = "pz-sc-ingest";
@@ -291,24 +318,25 @@ public class ServiceMessageWorker {
 				coreLogger.log("dataId is " + data.dataId, PiazzaLogger.DEBUG);
 	
 				data = objectMapper.readValue(serviceControlString, DataResource.class);
-	
+
 				// Now check to see if the conversion is actually a proper DataResource
 				// if it is not time to create a TextDataType and return
 				if ((data == null) || (data.getDataType() == null)) {
-					coreLogger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType", PiazzaLogger.DEBUG);
-	
+					coreLogger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType",
+							PiazzaLogger.DEBUG);
+
 					data = makeNewDataResource();
 					data.dataId = dataId;
 					TextDataType tr = new TextDataType();
 					tr.content = serviceControlString;
 					coreLogger.log("The data being sent is " + tr.content, PiazzaLogger.DEBUG);
-	
+
 					data.dataType = tr;
 				}
-	
+
 			} catch (Exception ex) {
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
-	
+
 				// Checking payload type and settings the correct type
 				if (type.equals((new TextDataType()).getClass().getSimpleName())) {
 					TextDataType newDataType = new TextDataType();
@@ -320,36 +348,43 @@ public class ServiceMessageWorker {
 					data.dataType = newDataType;
 				}
 			}
-	
+
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
 			ingestJob.data = data;
 			ingestJob.host = true;
 			pjr.jobType = ingestJob;
-	
+
 			// Generate 123-456 with UUIDGen
 			String jobId = uuidFactory.getUUID();
 			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, SPACE);
 			producer.send(newProdRecord);
-			
+
 			coreLogger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
 					data.getDataType().getClass().getSimpleName()), PiazzaLogger.INFO);
-	
+
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-	
+
 			// Create a text result and update status via kafka
 			DataResult textResult = new DataResult(data.dataId);
 			statusUpdate.setResult(textResult);
 			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
 			producer.send(prodRecord);
 		}
-		
+
 	}
-	
+
 	/**
-	 * This method is for demonstrating ingest of raster data This will be
-	 * refactored once the API changes have been communicated to other team
-	 * members
+	 * This method is for demonstrating ingest of raster data This will be refactored once the API changes have been
+	 * communicated to other team members
+	 * @throws InterruptedException 
+	 * @throws IOException 
+	 * @throws JsonMappingException 
+	 * @throws JsonParseException 
 	 */
-	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer) {
+	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer) throws InterruptedException, JsonParseException, JsonMappingException, IOException {
 		RestTemplate restTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;
 		// Get the id from the data
@@ -375,8 +410,7 @@ public class ServiceMessageWorker {
 				} else {
 					builder.queryParam(inputName, paramValue);
 				}
-			}
-			else if (entry.getValue() instanceof BodyDataType) {
+			} else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
@@ -409,7 +443,7 @@ public class ServiceMessageWorker {
 		// sMetadata.getOutputs().get(0).getDataType().getMimeType());
 
 		if (postString.length() > 0) {
-	
+
 			coreLogger.log("The postString is " + postString, PiazzaLogger.DEBUG);
 
 			HttpHeaders theHeaders = new HttpHeaders();
@@ -419,53 +453,54 @@ public class ServiceMessageWorker {
 			// Create the Request template and execute
 			HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
 
-			try {
-				coreLogger.log("About to call special service " + url, PiazzaLogger.DEBUG);
-				
+			coreLogger.log("About to call special service " + url, PiazzaLogger.DEBUG);
 
-				ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-				coreLogger.log("The Response is " + response.getBody(), PiazzaLogger.DEBUG);
+			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
-
-				String serviceControlString = response.getBody();
-				coreLogger.log("Service Control String " + serviceControlString, PiazzaLogger.DEBUG);
-
-				DataResource dataResource = objectMapper.readValue(serviceControlString, DataResource.class);
-				coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), PiazzaLogger.DEBUG);
-
-				dataResource.dataId = uuidFactory.getUUID();
-				coreLogger.log("dataId " + dataResource.dataId, PiazzaLogger.DEBUG);
-
-				PiazzaJobRequest pjr = new PiazzaJobRequest();
-				pjr.createdBy = "pz-sc-ingest-raster-test";
-
-				IngestJob ingestJob = new IngestJob();
-				ingestJob.data = dataResource;
-				ingestJob.host = true;
-				pjr.jobType = ingestJob;
-
-				ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
-				producer.send(newProdRecord);
-
-				coreLogger.log("newProdRecord sent " + newProdRecord.toString(), PiazzaLogger.DEBUG);
-
-				StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-
-				// Create a text result and update status
-				DataResult textResult = new DataResult(dataResource.dataId);
-				statusUpdate.setResult(textResult);
-				ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
-
-				producer.send(prodRecord);
-				coreLogger.log("prodRecord sent " + prodRecord.toString(), PiazzaLogger.DEBUG);
-
-			} catch (JsonProcessingException jpe) {
-				jpe.printStackTrace();
-			} catch (Exception ex) {
-				ex.printStackTrace();
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
 			}
+
+			coreLogger.log("The Response is " + response.getBody(), PiazzaLogger.DEBUG);
+			
+			String serviceControlString = response.getBody();
+			coreLogger.log("Service Control String " + serviceControlString, PiazzaLogger.DEBUG);
+
+			DataResource dataResource = objectMapper.readValue(serviceControlString, DataResource.class);
+			coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), PiazzaLogger.DEBUG);
+
+			dataResource.dataId = uuidFactory.getUUID();
+			coreLogger.log("dataId " + dataResource.dataId, PiazzaLogger.DEBUG);
+
+			PiazzaJobRequest pjr = new PiazzaJobRequest();
+			pjr.createdBy = "pz-sc-ingest-raster-test";
+
+			IngestJob ingestJob = new IngestJob();
+			ingestJob.data = dataResource;
+			ingestJob.host = true;
+			pjr.jobType = ingestJob;
+
+			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
+			producer.send(newProdRecord);
+
+			coreLogger.log("newProdRecord sent " + newProdRecord.toString(), PiazzaLogger.DEBUG);
+
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
+			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+
+			// Create a text result and update status
+			DataResult textResult = new DataResult(dataResource.dataId);
+			statusUpdate.setResult(textResult);
+			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
+
+			producer.send(prodRecord);
+			coreLogger.log("prodRecord sent " + prodRecord.toString(), PiazzaLogger.DEBUG);
+
 		}
-		
+
 	}
 
 	private MediaType createMediaType(String mimeType) {
@@ -482,7 +517,6 @@ public class ServiceMessageWorker {
 			coreLogger.log("The type is=" + type, PiazzaLogger.DEBUG);
 			coreLogger.log("The subtype is=" + subtype, PiazzaLogger.DEBUG);
 
-		
 		} else {
 			// Assume there is just a type for the mime, no subtype
 			mediaType = new MediaType(mimeType);
@@ -490,26 +524,26 @@ public class ServiceMessageWorker {
 
 		return mediaType;
 	}
-	
+
 	public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
-		HttpEntity<String> requestEntity = new HttpEntity<String>(data,headers);
+		HttpEntity<String> requestEntity = new HttpEntity<String>(data, headers);
 		return requestEntity;
 	}
-	
-    /**
-     * Check to see if there is a valid handleResult that was created.  If not,
-     * then create a message with No Content
-     * @param handleResult
-     * @return handleResult - Created if the result is not valid
-     */
+
+	/**
+	 * Check to see if there is a valid handleResult that was created. If not, then create a message with No Content
+	 * 
+	 * @param handleResult
+	 * @return handleResult - Created if the result is not valid
+	 */
 	private ResponseEntity<String> checkResult(ResponseEntity<String> handleResult) {
 		if (handleResult == null) {
-			handleResult = new ResponseEntity<String>("",HttpStatus.NO_CONTENT);
+			handleResult = new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
 		}
 
 		return handleResult;
 	}
-	
+
 	public DataResource makeNewDataResource() {
 		return new DataResource();
 	}

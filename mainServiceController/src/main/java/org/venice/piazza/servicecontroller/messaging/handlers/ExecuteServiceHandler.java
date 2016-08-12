@@ -98,7 +98,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * @return the Response as a String
 	 */
 	public ResponseEntity<String> handle(ExecuteServiceData data) {
-		coreLogger.log("executeService serviceId=" + data.getServiceId(), PiazzaLogger.INFO);
+		coreLogger.log(String.format("Beginning execution of Service ID %s", data.getServiceId()), PiazzaLogger.INFO);
 		ResponseEntity<String> responseEntity = null;
 		String serviceId = data.getServiceId();
 		Service sMetadata = null;
@@ -116,7 +116,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		}
 		if (sMetadata != null) {
 			String rawURL = sMetadata.getUrl();
-		    coreLogger.log("URL to use = " +rawURL, PiazzaLogger.INFO);
+		    coreLogger.log(String.format("Executing Service with URL %s with ID %s", rawURL, serviceId),  PiazzaLogger.INFO);
 			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);
 	
 			Map<String, DataType> postObjects = new HashMap<>();

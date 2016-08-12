@@ -231,7 +231,7 @@ public class ServiceController {
 	public ResponseEntity<PiazzaResponse> updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
 			if ((serviceId != null) && (!serviceId.isEmpty())) {
-					logger.log("The service Id to update is " + serviceId, PiazzaLogger.INFO);
+				logger.log(String.format("Updating Service with ID %s", serviceId), PiazzaLogger.INFO);
 	
 				/* // Check if Service exists
 				try {
@@ -240,7 +240,6 @@ public class ServiceController {
 				} catch(ResourceAccessException rae) {
 					return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
 				} */
-				logger.log("setting the id in the payload to update", PiazzaLogger.INFO);
 				serviceData.setServiceId(serviceId);
 				String result = usHandler.handle(serviceData);
 				if (result.length() > 0) {

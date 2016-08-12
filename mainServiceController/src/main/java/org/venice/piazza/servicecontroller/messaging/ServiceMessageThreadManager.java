@@ -150,6 +150,9 @@ public class ServiceMessageThreadManager {
 						job = mapper.readValue(consumerRecord.value(), Job.class);
 
 						if (job != null) {
+							// Log the request.
+							coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(), consumerRecord.key()), PiazzaLogger.INFO);
+							
 							// Update the status to say the job is in progress
 							StatusUpdate su = new StatusUpdate();
 							su.setStatus(StatusUpdate.STATUS_RUNNING);
@@ -158,12 +161,6 @@ public class ServiceMessageThreadManager {
 									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
 									mapper.writeValueAsString(su));
 							producer.send(prodRecord);
-
-							// Now get the job type and process the request
-							PiazzaJobType jobType = job.getJobType();
-							if (jobType != null) {
-								coreLogger.log("Received jobType: " + jobType.getClass().getSimpleName(), PiazzaLogger.INFO);
-							}
 
 							// start a new thread
 							Future<?> workerFuture = serviceMessageWorker.run(consumerRecord, producer, job, callback);

@@ -166,7 +166,7 @@ public class MongoAccessor {
 			if (softDelete) {
 				JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
 				Query query = DBQuery.is("serviceId", serviceId);
-				WriteResult<Service, String> writeResult = coll.update(query, DBUpdate.set("resourceMetadata.availability", "OUT OF SERVICE"));
+				WriteResult<Service, String> writeResult = coll.update(query, DBUpdate.set("resourceMetadata.availability", "OFFLINE"));
 				int recordsChanged = writeResult.getN();
 
 				// Return the id that was used
@@ -233,7 +233,7 @@ public class MongoAccessor {
 			        String.class);
 			
 			DBCursor<Service> metadataCursor = 
-					coll.find(DBQuery.notEquals("resourceMetadata.availability", "OUT OF SERVICE"));
+					coll.find(DBQuery.notEquals("resourceMetadata.availability", "OFFLINE"));
 			while (metadataCursor.hasNext()) {
 				result.add(metadataCursor.next());
 			}

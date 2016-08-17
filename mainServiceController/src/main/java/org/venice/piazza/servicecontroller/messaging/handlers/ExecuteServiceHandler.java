@@ -191,7 +191,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			
 		} else
 		{
-			return new ResponseEntity<>("Service Id" + data.getServiceId() + "not found", HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>("Service Id " + data.getServiceId() + " not found", HttpStatus.NOT_FOUND);
 
 		}
 		return responseEntity;

@@ -161,7 +161,7 @@ public class ServiceMessageWorker {
 						}
 
 						// If the Response was null, create an empty Response placeholder
-						externalServiceResponse = externalServiceResponse == null ? externalServiceResponse
+						externalServiceResponse = externalServiceResponse != null ? externalServiceResponse
 								: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
 
 						// Process the Response and handle any Ingest that may result
@@ -214,7 +214,7 @@ public class ServiceMessageWorker {
 				// then send an update to the job manager that there was some failure
 				boolean eResult = (externalServiceResponse.getStatusCode() != HttpStatus.OK) ? true : false;
 				if (eResult) {
-					externalServiceResponse = externalServiceResponse == null ? externalServiceResponse
+					externalServiceResponse = externalServiceResponse != null ? externalServiceResponse
 							: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
 					sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse,
 							new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());

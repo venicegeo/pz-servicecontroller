@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -27,10 +28,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -111,7 +113,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			ObjectMapper om = new ObjectMapper();
 		    String result = om.writeValueAsString(sMetadata);
 		    coreLogger.log(result, PiazzaLogger.INFO);
-		} catch (Exception ex) {
+		} catch (ResourceAccessException | JsonProcessingException ex) {
 			ex.printStackTrace();
 		}
 		if (sMetadata != null) {

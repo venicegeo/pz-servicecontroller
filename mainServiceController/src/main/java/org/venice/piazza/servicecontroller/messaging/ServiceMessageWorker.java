@@ -26,8 +26,6 @@ import java.util.concurrent.Future;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.errors.WakeupException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -40,13 +38,12 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -67,10 +64,8 @@ import model.job.Job;
 import model.job.PiazzaJobType;
 import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
-
 import model.job.type.ExecuteServiceJob;
 import model.job.type.IngestJob;
-
 import model.request.PiazzaJobRequest;
 import model.response.EventTypeListResponse;
 import model.service.metadata.ExecuteServiceData;
@@ -97,7 +92,7 @@ public class ServiceMessageWorker {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-	
+
 	@Autowired
 	private UUIDFactory uuidFactory;
 
@@ -119,180 +114,202 @@ public class ServiceMessageWorker {
 	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job,
 			WorkerCallback callback) {
 		try {
-			String handleUpdate = StatusUpdate.STATUS_SUCCESS;
+			String executeJobStatus = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
-			ResponseEntity<String> handleResult = null;
-			boolean rasterJob = false;
+			ResponseEntity<String> externalServiceResponse = null;
 			int statusCode = 400;
-			// if a jobType has been declared
-			if (job != null) {
-				try {
-					PiazzaJobType jobType = job.getJobType();
-					coreLogger.log("Job Id:" + job.getJobId(), PiazzaLogger.DEBUG);
 
-					if (jobType instanceof ExecuteServiceJob) {
-						coreLogger.log("ExecuteServiceJob Detected", PiazzaLogger.DEBUG);
+			// Ensure a valid Job has been received through Kafka
+			if (job == null) {
+				throw new Exception("A Null Job has been received by the Service Controller Worker.");
+			}
 
-						// Get the ResourceMetadata
-						ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
-						ExecuteServiceData esData = jobItem.data;
-						if (esData.dataOutput != null) {
-							DataType dataType = esData.dataOutput.get(0);
+			// Ensure the Job Type is of Execute Service Job
+			if ((job.getJobType() == null) || (job.getJobType() instanceof ExecuteServiceJob == false)) {
+				throw new Exception("An Invalid Job Type has been received by the Service Controller Worker.");
+			}
 
-							if (Thread.interrupted()) {
-								throw new InterruptedException();
-							}
+			// Process the Execution of the External Service
+			try {
+				PiazzaJobType jobType = job.getJobType();
 
-							if ((dataType != null) && (dataType instanceof RasterDataType)) {
-								// Call special method to call and send
-								rasterJob = true;
-								handleRasterType(jobItem, job, producer);
-							} else {
-								coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
-								handleResult = esHandler.handle(jobType);
-								
-								if (Thread.interrupted()) {
-									throw new InterruptedException();
-								}
+				coreLogger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), PiazzaLogger.DEBUG);
 
-								coreLogger.log("Execution handled", PiazzaLogger.DEBUG);
-								handleResult = checkResult(handleResult);
-								
-								String dataId = uuidFactory.getUUID();								
+				// Get the ResourceMetadata
+				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
+				ExecuteServiceData esData = jobItem.data;
+				if (esData.dataOutput != null) {
+					DataType dataType = esData.dataOutput.get(0);
 
-								coreLogger.log("Send Execute Status KAFKA", PiazzaLogger.DEBUG);
-								sendExecuteStatus(job, producer, handleUpdate, handleResult, dataId);
-								
-								coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", PiazzaLogger.DEBUG);
-								fireEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");								
-							}
-						} else {
-							handleResult = new ResponseEntity<>(
-									"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
+					if (Thread.interrupted()) {
+						throw new InterruptedException();
+					}
+
+					if ((dataType != null) && (dataType instanceof RasterDataType)) {
+						// Call special method to call and send
+						handleRasterType(jobItem, job, producer);
+
+						// No more to do. Return.
+						return new AsyncResult<String>("ServiceMessageWorker_Thread");
+					} else {
+						coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
+						// Execute the external Service and get the Response Entity
+						externalServiceResponse = esHandler.handle(jobType);
+
+						if (Thread.interrupted()) {
+							throw new InterruptedException();
 						}
 
-					}
+						// If the Response was null, create an empty Response placeholder
+						externalServiceResponse = externalServiceResponse == null ? externalServiceResponse
+								: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
 
-				} catch (IOException ex) {
-					coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
-					handleUpdate = StatusUpdate.STATUS_ERROR;
-					handleTextUpdate = ex.getMessage();
-				} catch (ResourceAccessException rex) {
-					coreLogger.log(rex.getMessage(), PiazzaLogger.ERROR);
-					handleTextUpdate = rex.getMessage();
-					handleUpdate = StatusUpdate.STATUS_ERROR;
-				} catch (HttpClientErrorException hex) {
-					coreLogger.log(hex.getMessage(), PiazzaLogger.ERROR);
-					handleUpdate = StatusUpdate.STATUS_ERROR;
-					handleTextUpdate = hex.getResponseBodyAsString();
-					 statusCode = hex.getStatusCode().value();
-				}
+						// Process the Response and handle any Ingest that may result
+						String dataId = uuidFactory.getUUID();
+						DataResult result = processExecutionResult(job, producer, executeJobStatus, externalServiceResponse, dataId);
 
-				if (Thread.interrupted()) {
-					throw new InterruptedException();
-				}
+						if (Thread.interrupted()) {
+							throw new InterruptedException();
+						}
 
-				// if there was no result set then
-				// use the default error messages set.
-				if (!rasterJob) {
-					if (handleResult == null) {
-
-						StatusUpdate su = new StatusUpdate();
-						su.setStatus(handleUpdate);
-						// Create a text result and update status
-						ErrorResult errorResult = new ErrorResult();
-
-						errorResult.setMessage(handleTextUpdate);
-						errorResult.setStatusCode(new Integer(statusCode));
-
-						su.setResult(errorResult);
-
-						ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
-								objectMapper.writeValueAsString(su));
-						producer.send(prodRecord);
-					} else {
-						// If the status is not ok and the job is not equal to null
-						// then send an update to the job manager that there was some failure
-						boolean eResult = (handleResult.getStatusCode() != HttpStatus.OK) ? true : false;
-						if (eResult) {
-							handleUpdate = StatusUpdate.STATUS_FAIL;
-
-							handleResult = checkResult(handleResult);
-
-							StatusUpdate su = new StatusUpdate();
-							su.setStatus(handleUpdate);
-							// Create a text result and update status
-							ErrorResult errorResult = new ErrorResult();
-							errorResult.setMessage(handleResult);
-							errorResult.setStatusCode(new Integer(handleResult.getStatusCode().value()));
-						
-							su.setResult(errorResult);
-						    
-							ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-								String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(), objectMapper.writeValueAsString(su));
-
+						// If there is a Result, Send the Status Update with Result to the Job Manager component
+						if (result != null) {
+							StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+							statusUpdate.setResult(result);
+							ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(),
+									statusUpdate, SPACE);
 							producer.send(prodRecord);
-						} // if there is a result
+						}
 
+						// Fire Event to Workflow
+						fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");
+
+						// Return.
+						return new AsyncResult<String>("ServiceMessageWorker_Thread");
 					}
-				} // If a raster job was not done
+				} else {
+					externalServiceResponse = new ResponseEntity<>(
+							"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
+				}
+			} catch (IOException | ResourceAccessException ex) {
+				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+				executeJobStatus = StatusUpdate.STATUS_ERROR;
+				handleTextUpdate = ex.getMessage();
+			} catch (HttpClientErrorException | HttpServerErrorException hex) {
+				coreLogger.log(hex.getMessage(), PiazzaLogger.ERROR);
+				executeJobStatus = StatusUpdate.STATUS_ERROR;
+				handleTextUpdate = hex.getResponseBodyAsString();
+				statusCode = hex.getStatusCode().value();
 			}
-			// the job sent in was null so log an error
-			else
-				coreLogger.log("The job sent in was a null job", PiazzaLogger.ERROR);
-		} catch (WakeupException ex) {
-			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
-		} catch (JsonProcessingException ex) {
-			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
+			// If there was no result set then use the default error messages set.
+			if (externalServiceResponse == null) {
+				sendErrorStatus(executeJobStatus, handleTextUpdate, statusCode, producer, job.getJobId());
+			} else {
+				// If the status is not OK and the job is not null
+				// then send an update to the job manager that there was some failure
+				boolean eResult = (externalServiceResponse.getStatusCode() != HttpStatus.OK) ? true : false;
+				if (eResult) {
+					externalServiceResponse = externalServiceResponse == null ? externalServiceResponse
+							: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
+					sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse,
+							new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
+				}
+			}
+
 		} catch (InterruptedException ex) {
 			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), PiazzaLogger.INFO);
+			// No need to update Status in this case. Job Manager has done that already at this point.
 		} catch (Exception ex) {
+			// Catch any General Exceptions that occur during runtime.
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),
+					HttpStatus.INTERNAL_SERVER_ERROR.value(), producer, job.getJobId());
 		}
 
+		// Return Future
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
 
-	private void fireEvent(String user, String jobId, String dataId, String message) {
-		
+	/**
+	 * Sends an error Status to the Job Manager.
+	 * 
+	 * @param status
+	 *            The status. Corresponds with StatusUpdate constants.
+	 * @param message
+	 *            The message, detailing the error.
+	 * @param statusCode
+	 *            The numeric HTTP status code.
+	 */
+	private void sendErrorStatus(String status, Object message, Integer statusCode, Producer<String, String> producer, String jobId) {
+		StatusUpdate statusUpdate = new StatusUpdate();
+		statusUpdate.setStatus(status);
+		// Create a text result and update status
+		ErrorResult errorResult = new ErrorResult();
+		errorResult.setMessage(message);
+		errorResult.setStatusCode(statusCode);
+		statusUpdate.setResult(errorResult);
+
 		try {
-			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.			
+			ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
+					String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+					objectMapper.writeValueAsString(statusUpdate));
+			producer.send(prodRecord);
+		} catch (JsonProcessingException exception) {
+			// The message could not be serialized. Record this.
+			exception.printStackTrace();
+			coreLogger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
+					PiazzaLogger.ERROR);
+		}
+	}
+
+	/**
+	 * Fires the event to the Workflow service that a Service has completed execution.
+	 */
+	private void fireWorkflowEvent(String user, String jobId, String dataId, String message) {
+		coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", PiazzaLogger.DEBUG);
+		try {
+			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.
 			String url = String.format("%s/%s?name=%s", WORKFLOW_URL, "eventType", "piazza:executionComplete");
-			EventType eventType = objectMapper.readValue(restTemplate.getForObject(url, String.class), EventTypeListResponse.class).data.get(0);
-			
+			EventType eventType = objectMapper.readValue(restTemplate.getForObject(url, String.class), EventTypeListResponse.class).data
+					.get(0);
+
 			// Construct Event object
-			Map<String,Object> data = new HashMap<String,Object>();
+			Map<String, Object> data = new HashMap<String, Object>();
 			data.put("jobId", jobId);
 			data.put("status", message);
 			data.put("dataId", dataId);
-			
+
 			Event event = new Event();
 			event.createdBy = user;
 			event.eventTypeId = eventType.eventTypeId;
 			event.data = data;
-						
+
 			// Call pz-workflow endpoint to fire Event object
 			restTemplate.postForObject(String.format("%s/%s", WORKFLOW_URL, "event"), objectMapper.writeValueAsString(event), String.class);
-			
-		} catch (Exception ex ) {
-			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);			
-		}		
+		} catch (HttpClientErrorException | HttpServerErrorException exception) {
+			coreLogger.log(String.format("Could not successfully send Event to Workflow Service. Returned with code %s and message %s",
+					exception.getStatusCode().toString(), exception.getResponseBodyAsString()), PiazzaLogger.ERROR);
+		} catch (IOException exception) {
+			coreLogger.log(String.format("Could not send Event to Workflow Service. Serialization of Event failed with Error: %s",
+					exception.getMessage()), PiazzaLogger.ERROR);
+		}
 	}
-	
+
 	/**
-	 * Send an execute job status and the resource that was used Message is sent on Kafka Queue
-	 * 
-	 * @param job
-	 * @param status
-	 * @param handleResult
-	 * @throws JsonProcessingException
+	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
+	 * return the Result of the data.
 	 */
-	private void sendExecuteStatus(Job job, Producer<String, String> producer, String status, ResponseEntity<String> handleResult, String dataId)
-			throws JsonProcessingException, IOException, InterruptedException {
+	private DataResult processExecutionResult(Job job, Producer<String, String> producer, String status,
+			ResponseEntity<String> handleResult, String dataId) throws JsonProcessingException, IOException, InterruptedException {
+		coreLogger.log("Send Execute Status Kafka", PiazzaLogger.DEBUG);
 		// Initialize ingest job items
-		DataResource data = makeNewDataResource();
-		PiazzaJobRequest pjr = new PiazzaJobRequest();
+		DataResource data = new DataResource();
+		PiazzaJobRequest jobRequest = new PiazzaJobRequest();
 		IngestJob ingestJob = new IngestJob();
 
 		if (handleResult != null) {
@@ -308,10 +325,10 @@ public class ServiceMessageWorker {
 
 			try {
 				// Now produce a new record
-				pjr.createdBy = "pz-sc-ingest";
+				jobRequest.createdBy = "pz-sc-ingest";
 				data.dataId = dataId;
 				coreLogger.log("dataId is " + data.dataId, PiazzaLogger.DEBUG);
-	
+
 				data = objectMapper.readValue(serviceControlString, DataResource.class);
 
 				// Now check to see if the conversion is actually a proper DataResource
@@ -320,7 +337,7 @@ public class ServiceMessageWorker {
 					coreLogger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType",
 							PiazzaLogger.DEBUG);
 
-					data = makeNewDataResource();
+					data = new DataResource();
 					data.dataId = dataId;
 					TextDataType tr = new TextDataType();
 					tr.content = serviceControlString;
@@ -350,36 +367,33 @@ public class ServiceMessageWorker {
 
 			ingestJob.data = data;
 			ingestJob.host = true;
-			pjr.jobType = ingestJob;
+			jobRequest.jobType = ingestJob;
 
-			// Generate 123-456 with UUIDGen
 			String jobId = uuidFactory.getUUID();
-			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, jobId, SPACE);
+			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(jobRequest, jobId, SPACE);
 			producer.send(newProdRecord);
 
 			coreLogger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
 					data.getDataType().getClass().getSimpleName()), PiazzaLogger.INFO);
 
-			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-
-			// Create a text result and update status via kafka
+			// Return the Result of the Data.
 			DataResult textResult = new DataResult(data.dataId);
-			statusUpdate.setResult(textResult);
-			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
-			producer.send(prodRecord);
+			return textResult;
 		}
-
+		return null;
 	}
 
 	/**
 	 * This method is for demonstrating ingest of raster data This will be refactored once the API changes have been
 	 * communicated to other team members
-	 * @throws InterruptedException 
-	 * @throws IOException 
-	 * @throws JsonMappingException 
-	 * @throws JsonParseException 
+	 * 
+	 * @throws InterruptedException
+	 * @throws IOException
+	 * @throws JsonMappingException
+	 * @throws JsonParseException
 	 */
-	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer) throws InterruptedException, JsonParseException, JsonMappingException, IOException {
+	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer)
+			throws InterruptedException, JsonParseException, JsonMappingException, IOException {
 		RestTemplate restTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;
 		// Get the id from the data
@@ -483,6 +497,8 @@ public class ServiceMessageWorker {
 			if (Thread.interrupted()) {
 				throw new InterruptedException();
 			}
+			
+			fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataResource.dataId, "Service completed successfully.");
 
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 
@@ -520,26 +536,4 @@ public class ServiceMessageWorker {
 		return mediaType;
 	}
 
-	public HttpEntity<String> buildHttpEntity(Service sMetadata, MultiValueMap<String, String> headers, String data) {
-		HttpEntity<String> requestEntity = new HttpEntity<String>(data, headers);
-		return requestEntity;
-	}
-
-	/**
-	 * Check to see if there is a valid handleResult that was created. If not, then create a message with No Content
-	 * 
-	 * @param handleResult
-	 * @return handleResult - Created if the result is not valid
-	 */
-	private ResponseEntity<String> checkResult(ResponseEntity<String> handleResult) {
-		if (handleResult == null) {
-			handleResult = new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
-		}
-
-		return handleResult;
-	}
-
-	public DataResource makeNewDataResource() {
-		return new DataResource();
-	}
 }

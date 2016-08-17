@@ -160,6 +160,12 @@ public class ServiceMessageWorker {
 							throw new InterruptedException();
 						}
 
+						// If an internal error occurred during Service Handling, then throw an exception.
+						if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
+							throw new Exception(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
+									externalServiceResponse.getStatusCode().toString()));
+						}
+
 						// If the Response was null, create an empty Response placeholder
 						externalServiceResponse = externalServiceResponse != null ? externalServiceResponse
 								: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
@@ -497,7 +503,7 @@ public class ServiceMessageWorker {
 			if (Thread.interrupted()) {
 				throw new InterruptedException();
 			}
-			
+
 			fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataResource.dataId, "Service completed successfully.");
 
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);

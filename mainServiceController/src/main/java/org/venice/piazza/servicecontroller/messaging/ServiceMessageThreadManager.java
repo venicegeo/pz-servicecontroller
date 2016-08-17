@@ -219,7 +219,7 @@ public class ServiceMessageThreadManager {
 						boolean cancelled = runningServiceRequests.get(jobId).cancel(true);
 						if (cancelled) {
 							// Log the cancellation has occurred
-							coreLogger.log(String.format("Successfully terminated Job thread for Job ID %s", jobId), PiazzaLogger.INFO);
+							coreLogger.log(String.format("Successfully requested termination of Job thread for Job ID %s", jobId), PiazzaLogger.INFO);
 						} else {
 							coreLogger.log(String.format("Attempted to Cancel running job thread for ID %s, but the thread could not be forcefully cancelled.", jobId), PiazzaLogger.ERROR);
 						}

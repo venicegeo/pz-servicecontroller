@@ -50,6 +50,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoInterruptedException;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
@@ -154,7 +155,14 @@ public class ServiceMessageWorker {
 					} else {
 						coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
 						// Execute the external Service and get the Response Entity
-						externalServiceResponse = esHandler.handle(jobType);
+						try {
+							externalServiceResponse = esHandler.handle(jobType);
+						} catch (MongoInterruptedException exception) {
+							// Mongo implements a thread interrupted check, but it doesn't throw an InterruptedException. It throws
+							// its own custom exception type. We will catch that exception type here, and then rethrow with a standard
+							// InterruptedException to ensure a common handled exception type.
+							throw new InterruptedException();
+						}
 
 						if (Thread.interrupted()) {
 							throw new InterruptedException();

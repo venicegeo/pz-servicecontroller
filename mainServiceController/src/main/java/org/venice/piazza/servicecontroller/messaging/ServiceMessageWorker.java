@@ -151,11 +151,7 @@ public class ServiceMessageWorker {
 
 						// No more to do. Return.
 						return new AsyncResult<String>("ServiceMessageWorker_Thread");
-
-						// TODO: Marge, do we need to fire the Workflow event here too?
 					} else {
-						// TODO: Marge, what is the original way, can this be consolidated by removing the raster method
-						// and moving it into this method?
 						coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
 						// Execute the external Service and get the Response Entity
 						externalServiceResponse = esHandler.handle(jobType);
@@ -384,7 +380,6 @@ public class ServiceMessageWorker {
 			DataResult textResult = new DataResult(data.dataId);
 			return textResult;
 		}
-		// TODO: Marge, what happens when no data is created?
 		return null;
 	}
 
@@ -502,6 +497,8 @@ public class ServiceMessageWorker {
 			if (Thread.interrupted()) {
 				throw new InterruptedException();
 			}
+			
+			fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataResource.dataId, "Service completed successfully.");
 
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 

@@ -48,6 +48,7 @@ import com.mongodb.MongoTimeoutException;
 
 import model.data.DataResource;
 import model.job.Job;
+import model.job.metadata.ResourceMetadata;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
@@ -166,7 +167,7 @@ public class MongoAccessor {
 			if (softDelete) {
 				JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
 				Query query = DBQuery.is("serviceId", serviceId);
-				WriteResult<Service, String> writeResult = coll.update(query, DBUpdate.set("resourceMetadata.availability", "OFFLINE"));
+				WriteResult<Service, String> writeResult = coll.update(query, DBUpdate.set("resourceMetadata.availability", ResourceMetadata.STATUS_TYPE.OFFLINE.toString()));
 				int recordsChanged = writeResult.getN();
 
 				// Return the id that was used
@@ -233,7 +234,7 @@ public class MongoAccessor {
 			        String.class);
 			
 			DBCursor<Service> metadataCursor = 
-					coll.find(DBQuery.notEquals("resourceMetadata.availability", "OFFLINE"));
+					coll.find(DBQuery.notEquals("resourceMetadata.availability", ResourceMetadata.STATUS_TYPE.OFFLINE.toString()));
 			while (metadataCursor.hasNext()) {
 				result.add(metadataCursor.next());
 			}

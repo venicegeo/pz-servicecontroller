@@ -249,7 +249,7 @@ public class ServiceController {
 			
 			// Ensure the Service is still valid, with the new merged changes
 			Errors errors = new BeanPropertyBindingResult(existingService, existingService.getClass().getName());
-			validator.validate(existingService, errors, Service.class);
+			validator.validate(existingService, errors);
 			if ((errors != null) && (errors.hasErrors())) {
 				// Build up the list of Errors
 				StringBuilder builder = new StringBuilder();

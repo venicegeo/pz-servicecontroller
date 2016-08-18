@@ -19,7 +19,9 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  * Class of unit tests to test the deletion of services
  * @author mlynum
  */
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,11 +34,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
 import org.mongojack.JacksonDBCollection;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.controller.ServiceController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
@@ -61,9 +63,9 @@ import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
+import model.response.ServiceIdResponse;
 import model.response.ServiceListResponse;
 import model.response.ServiceResponse;
-import model.response.ServiceIdResponse;
 import model.response.SuccessResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
@@ -109,6 +111,9 @@ public class ServiceControllerTest {
 	
 	@Mock 
 	private PiazzaLogger loggerMock;
+	
+	@Mock
+	private LocalValidatorFactoryBean validator;
 	
 	@InjectMocks
 	private org.mongojack.DBCursor<Service> dbCursorMock;
@@ -310,11 +315,12 @@ public class ServiceControllerTest {
 	}
 
 	@Test
-	public void testUpdateServiceMetadata() {
+	public void testUpdateServiceMetadata() throws Exception{
 
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doReturn("Update Successful").when(usHandlerMock).handle(service);
+		Mockito.doReturn(service).when(accessorMock).getServiceById(Mockito.eq("9a6baae2-bd74-4c4b-9a65-c45e8cd9060"));
 
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
 		assertThat("The update of service metadata should be successful", piazzaResponse.getBody(), instanceOf(SuccessResponse.class));
@@ -328,6 +334,7 @@ public class ServiceControllerTest {
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId("123-23323bsr");
 		Mockito.doReturn("Update Successful").when(usHandlerMock).handle(service);
+		Mockito.doReturn(service).when(accessorMock).getServiceById(Mockito.eq(testServiceId));
 
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
 		assertThat("The update of service metadata should be  successful", piazzaResponse.getBody(), instanceOf(SuccessResponse.class));
@@ -343,6 +350,7 @@ public class ServiceControllerTest {
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doReturn("").when(usHandlerMock).handle(service);
+		Mockito.doReturn(service).when(accessorMock).getServiceById(Mockito.eq(testServiceId));
 
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
 		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
@@ -357,6 +365,7 @@ public class ServiceControllerTest {
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
 		Mockito.doThrow(new MongoException("There was an error")).when(usHandlerMock).handle(service);
+		Mockito.doReturn(service).when(accessorMock).getServiceById(Mockito.eq(testServiceId));
 
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
 		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));

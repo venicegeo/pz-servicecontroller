@@ -20,12 +20,15 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -48,14 +51,13 @@ import model.data.DataType;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
-import model.response.SuccessResponse;
 import model.response.PiazzaResponse;
-import model.response.ServiceResponse;
 import model.response.ServiceIdResponse;
+import model.response.ServiceResponse;
+import model.response.SuccessResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
-
 import util.PiazzaLogger;
 
 /**
@@ -69,7 +71,9 @@ import util.PiazzaLogger;
 @RestController
 @RequestMapping({ "/servicecontroller", "" })
 public class ServiceController {
-
+	@Autowired
+	private LocalValidatorFactoryBean validator;
+	
 	@Autowired
 	private DeleteServiceHandler dlHandler;
 
@@ -226,34 +230,46 @@ public class ServiceController {
 	 * @return Null if the service has been updated, or an appropriate error if
 	 *         there is one.
 	 */
-	
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PiazzaResponse> updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
 		try {
-			if ((serviceId != null) && (!serviceId.isEmpty())) {
-				logger.log(String.format("Updating Service with ID %s", serviceId), PiazzaLogger.INFO);
-	
-				/* // Check if Service exists
-				try {
-					Service sMetadata = accessor.getServiceById(serviceId);
-
-				} catch(ResourceAccessException rae) {
-					return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
-				} */
-				serviceData.setServiceId(serviceId);
-				String result = usHandler.handle(serviceData);
-				if (result.length() > 0) {
-					return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", "ServiceController"), HttpStatus.OK);
-				} else {
-					return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
-				}
-
-
-			} else {
-			 	return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The serviceId was not specified", "Service Controller"), HttpStatus.BAD_REQUEST);
-
+			// Ensure valid input
+			if ((serviceId == null) || (serviceId.isEmpty())) {
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The serviceId was not specified", "Service Controller"), HttpStatus.BAD_REQUEST);
 			}
+			
+			// Get the existing service.
+			Service existingService = accessor.getServiceById(serviceId);
+			
+			// Log
+			logger.log(String.format("Updating Service with ID %s", serviceId), PiazzaLogger.INFO);
+			
+			// Merge the new defined properties into the existing service
+			existingService.merge(serviceData, false);
+			
+			// Ensure the Service is still valid, with the new merged changes
+			Errors errors = new BeanPropertyBindingResult(existingService, existingService.getClass().getName());
+			validator.validate(existingService, errors);
+			if ((errors != null) && (errors.hasErrors())) {
+				// Build up the list of Errors
+				StringBuilder builder = new StringBuilder();
+				for (ObjectError error : errors.getAllErrors()) {
+					builder.append(error.getDefaultMessage() + ".");
+				}
+				throw new Exception(String.format("Error validating updated Service Metadata. Validation Errors: %s", builder.toString()));
+			}
+
+			// Update Existing Service in mongo
+			existingService.setServiceId(serviceId);
+			String result = usHandler.handle(existingService);
+			if (result.length() > 0) {
+				return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", "ServiceController"), HttpStatus.OK);
+			} else {
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+
 		} catch (Exception exception) {
+			exception.printStackTrace();
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
 			logger.log(error, PiazzaLogger.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);

@@ -23,7 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import model.job.PiazzaJobType;
+
+import model.job.Job;
 import model.job.type.RegisterServiceJob;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
@@ -60,9 +61,9 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 */
 	@SuppressWarnings("deprecation")
 	@Override
-	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
+	public ResponseEntity<String> handle(Job jobRequest) {
 		coreLogger.log("Registering a Service", PiazzaLogger.INFO);
-		RegisterServiceJob job = (RegisterServiceJob) jobRequest;
+		RegisterServiceJob job = (RegisterServiceJob) jobRequest.jobType;
 
 		if (job != null) {
 			// Get the Service metadata

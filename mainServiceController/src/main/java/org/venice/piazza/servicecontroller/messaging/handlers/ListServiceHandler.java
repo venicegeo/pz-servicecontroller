@@ -27,7 +27,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
@@ -49,7 +49,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 	 * ListService handler
 	 */
 	@Override
-	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
+	public ResponseEntity<String> handle (Job jobRequest ) {
 		coreLogger.log("listing service", PiazzaLogger.INFO);
         ResponseEntity<String> handleResourceReturn = handle();
         if (handleResourceReturn.getBody().length() > 0) {

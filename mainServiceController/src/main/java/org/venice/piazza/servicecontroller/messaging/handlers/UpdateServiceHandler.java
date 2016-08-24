@@ -16,7 +16,6 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
 
-import java.net.URI;
 import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +24,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import model.job.PiazzaJobType;
+
+import model.job.Job;
 import model.job.type.UpdateServiceJob;
 import model.response.PiazzaResponse;
 import model.service.metadata.Service;
@@ -62,10 +61,10 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
      * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in MongoDB
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
-	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
+	public ResponseEntity<String> handle(Job jobRequest) {
 
 		LOGGER.debug("Updating a service");
-		UpdateServiceJob job = (UpdateServiceJob) jobRequest;
+		UpdateServiceJob job = (UpdateServiceJob) jobRequest.jobType;
 		if (job != null) {
 			// Get the ResourceMetadata
 			Service sMetadata = job.data;

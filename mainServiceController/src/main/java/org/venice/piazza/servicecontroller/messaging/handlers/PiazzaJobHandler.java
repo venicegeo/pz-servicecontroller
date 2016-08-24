@@ -15,8 +15,7 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
-import model.job.PiazzaJobType;
-
+import model.job.Job;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -32,5 +31,5 @@ public interface PiazzaJobHandler {
 	 * @param jobRequest
 	 * @return
 	 */
-	public ResponseEntity<String> handle(PiazzaJobType jobRequest);
+	public ResponseEntity<String> handle(Job jobRequest);
 }

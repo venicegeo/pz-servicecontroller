@@ -35,8 +35,7 @@ import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearch
 
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
-
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
 import model.response.ErrorResponse;
@@ -86,7 +85,7 @@ public class RegisterServiceHandlerTest {
 	 * Test what happens when a null is sent to register a service
 	 */
 	public void testHandleJobRequestNull() {
-		PiazzaJobType jobRequest = null;
+		Job jobRequest = new Job();
 		ResponseEntity<String> result = rsHandler.handle(jobRequest);
         assertEquals("The response to a null JobRequest update should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
@@ -96,9 +95,9 @@ public class RegisterServiceHandlerTest {
 	 */
 	@Test
 	public void testSuccessRegistration() {
-		RegisterServiceJob job = new RegisterServiceJob();
+		RegisterServiceJob rsj = new RegisterServiceJob();
 		String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-		job.data = service;
+		rsj.data = service;
 
 		String responseString = "{\"resourceId\":" + "\"" + testServiceId + "\"}";
 
@@ -108,6 +107,9 @@ public class RegisterServiceHandlerTest {
 		final RegisterServiceHandler rshMock = Mockito.spy (rsHandler);
 
 		Mockito.doReturn(testServiceId).when(rshMock).handle(service);
+		
+		Job job = new Job();
+		job.jobType = rsj;
 		
 		ResponseEntity<String> result = rshMock.handle(job);
 	
@@ -123,14 +125,17 @@ public class RegisterServiceHandlerTest {
 	 */
 	@Test
 	public void testUnsuccessfulRegistration() {
-		RegisterServiceJob job = new RegisterServiceJob();
+		RegisterServiceJob rsj = new RegisterServiceJob();
 		
-		job.data = service;
+		rsj.data = service;
 
 		
 		final RegisterServiceHandler rsMock = Mockito.spy (rsHandler);
 
 		Mockito.doReturn("").when(rsMock).handle(service);
+		
+		Job job = new Job();
+		job.jobType = rsj;		
 		
 		ResponseEntity<String> result = rsMock.handle(job);
 	

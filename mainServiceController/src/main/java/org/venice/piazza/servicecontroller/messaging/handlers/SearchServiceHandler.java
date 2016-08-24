@@ -12,7 +12,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.type.SearchServiceJob;
 import model.service.SearchCriteria;
 import model.service.metadata.Service;
@@ -43,8 +43,8 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
 	 */
 	@Override
-	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
-		SearchServiceJob job = (SearchServiceJob) jobRequest;
+	public ResponseEntity<String> handle(Job jobRequest) {
+		SearchServiceJob job = (SearchServiceJob) jobRequest.jobType;
 		ResponseEntity<String>responseEntity;
 		if ((job != null) && (job.data != null)) {
 			// Get the criteria to use for the search

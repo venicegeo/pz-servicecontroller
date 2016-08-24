@@ -25,8 +25,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.type.DescribeServiceMetadataJob;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -48,9 +47,9 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 	/**
 	 * Describe service handler
 	 */
-	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
+	public ResponseEntity<String> handle(Job jobRequest) {
 		coreLogger.log("Describing a service", PiazzaLogger.INFO);
-		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob) jobRequest;
+		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob) jobRequest.jobType;
 		if (job != null ) {
 			ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
 	        if (handleResourceReturn.getBody().length() > 0) {

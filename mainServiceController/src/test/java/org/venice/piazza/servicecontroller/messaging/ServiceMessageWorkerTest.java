@@ -266,7 +266,10 @@ public class ServiceMessageWorkerTest {
 		        
 		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
 				ExecuteServiceData esData = jobItem.data;
-				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
+				Job job = new Job();
+				job.jobType = jobItem;
+				
+				Mockito.when(esHandlerMock.handle(job)).thenReturn(response);
 				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
 		        
 			// Test valid Payload
@@ -325,8 +328,12 @@ public class ServiceMessageWorkerTest {
 		        
 		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
 				ExecuteServiceData esData = jobItem.data;
+				
+				Job job = new Job();
+				job.jobType = jobItem;
+				
 				// What happens if the handled executeservice returns a null
-				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(null);
+				Mockito.when(esHandlerMock.handle(job)).thenReturn(null);
 				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
 		        
 			// Test valid Payload
@@ -361,7 +368,11 @@ public class ServiceMessageWorkerTest {
 		        
 		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
 				ExecuteServiceData esData = jobItem.data;
-				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
+				
+				Job job = new Job();
+				job.jobType = jobItem;
+				
+				Mockito.when(esHandlerMock.handle(job)).thenReturn(response);
 				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
 		        
 			// Test valid Payload
@@ -396,7 +407,11 @@ public class ServiceMessageWorkerTest {
 		        
 		        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
 				ExecuteServiceData esData = jobItem.data;
-				Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
+				
+				Job job = new Job();
+				job.jobType = jobItem;
+				
+				Mockito.when(esHandlerMock.handle(job)).thenReturn(response);
 				Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
 				Mockito.when(omMock.readValue(Mockito.anyString(), eq(DataResource.class))).thenReturn(null);
 		        

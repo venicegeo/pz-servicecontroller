@@ -57,7 +57,9 @@ import com.mongodb.MongoException;
 
 import model.data.DataType;
 import model.data.type.BodyDataType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
+import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
@@ -404,7 +406,7 @@ public class ServiceControllerTest {
 		
 		String responseString = "\"jobId:1234567\"";
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>(responseString, HttpStatus.OK); 
-        Mockito.doReturn(responseEntity).when(esHandlerMock).handle(edata);
+        Mockito.doReturn(responseEntity).when(esHandlerMock).handle(edata, "sakuser");
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);
         assertEquals("The response should be the same", responseString, retVal.getBody());
@@ -426,7 +428,13 @@ public class ServiceControllerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-        Mockito.doThrow(new MongoException("An error occured")).when(esHandlerMock).handle(edata);
+		ExecuteServiceJob esj = new ExecuteServiceJob();
+		esj.data = edata;
+		
+		Job job = new Job();
+		job.jobType = esj;
+		
+        Mockito.doThrow(new MongoException("An error occured")).when(esHandlerMock).handle(job);
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);
         assertEquals("The response should be a null", retVal, null);

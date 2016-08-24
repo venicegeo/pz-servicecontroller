@@ -18,7 +18,7 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import java.util.ArrayList;
 
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.type.DeleteServiceJob;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -57,12 +57,12 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 *      model.job.PiazzaJobType)
 	 */
 	@Override
-	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
+	public ResponseEntity<String> handle(Job jobRequest) {
 		ResponseEntity<String> responseEntity;
-
-		if (jobRequest != null) {
+		DeleteServiceJob job = (DeleteServiceJob) jobRequest.jobType;
+		
+		if (job != null) {
 			coreLogger.log("Deleting a service", PiazzaLogger.DEBUG);
-			DeleteServiceJob job = (DeleteServiceJob) jobRequest;
 
 			// Get the ResourceMetadata
 			String resourceId = job.serviceID;

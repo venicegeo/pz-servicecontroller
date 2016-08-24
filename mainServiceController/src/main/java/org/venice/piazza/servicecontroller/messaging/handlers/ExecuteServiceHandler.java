@@ -16,14 +16,17 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import java.net.URI;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -39,8 +42,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import model.data.DataType;
 import model.data.type.BodyDataType;
 import model.data.type.URLParameterDataType;
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.type.ExecuteServiceJob;
+import model.response.UUIDResponse;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -60,8 +64,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private PiazzaLogger coreLogger;
 
-	private RestTemplate template = new RestTemplate();
-
+	@Value("${security.url}")
+	private String SECURITY_URL;
+	@Value("${vcap.services.pz-servicecontroller.credentials.username}")
+	private String SYSTEM_PZSERVICECONTROLLER_USER;
+	@Value("${vcap.services.pz-servicecontroller.credentials.credential}")
+	private String SYSTEM_PZSERVICECONTROLLER_CRED;
+	
+	private RestTemplate restTemplate = new RestTemplate();
 
     /**
      * Handler for handling execute service requests. This method will execute a service given 
@@ -70,16 +80,15 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
 	@Override
-	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
+	public ResponseEntity<String> handle (Job jobRequest) {
 		coreLogger.log("Executing a Service.", PiazzaLogger.DEBUG);
 
-
-		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
+		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest.jobType;
 		// Check to see if this is a valid request
 		if (job != null)  {
 			// Get the ResourceMetadata
 			ExecuteServiceData esData = job.data;
-			ResponseEntity<String> handleResult = handle(esData);
+			ResponseEntity<String> handleResult = handle(esData, retrieveUserUUID(jobRequest.createdBy));
 			ResponseEntity<String> result = new ResponseEntity<>(handleResult.getBody(), handleResult.getStatusCode());
 			coreLogger.log("The result is " + result, PiazzaLogger.DEBUG);
 			
@@ -99,7 +108,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * @param message
 	 * @return the Response as a String
 	 */
-	public ResponseEntity<String> handle(ExecuteServiceData data) {
+	public ResponseEntity<String> handle(ExecuteServiceData data, String userUUID) {
 		coreLogger.log(String.format("Beginning execution of Service ID %s", data.getServiceId()), PiazzaLogger.INFO);
 		ResponseEntity<String> responseEntity = null;
 		String serviceId = data.getServiceId();
@@ -175,20 +184,24 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			}
 			
 			URI url = URI.create(builder.toUriString());
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Authorization", "BASIC " + Base64.getEncoder().encodeToString((userUUID + ":").getBytes()));
+			
 			if (sMetadata.getMethod().equals("GET")) {
 				coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
-				responseEntity = template.getForEntity(url, String.class);
+
+				responseEntity = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<String>("parameters", headers), String.class);
+//				responseEntity = restTemplate.getForEntity(url, String.class);
 	
 			} else {
-				HttpHeaders headers = new HttpHeaders();
-	
+				coreLogger.log("PostForEntity URL=" + url, PiazzaLogger.INFO);
+
 				// Set the mimeType of the request
 				MediaType mediaType = createMediaType(requestMimeType);
 				headers.setContentType(mediaType);
-				HttpEntity<String> requestEntity = makeHttpEntity(headers, postString);
 				
-				coreLogger.log("PostForEntity URL=" + url, PiazzaLogger.INFO);
-				responseEntity = template.postForEntity(url, requestEntity, String.class);
+				responseEntity = restTemplate.exchange(url, HttpMethod.POST, makeHttpEntity(headers, postString), String.class);				
+//				responseEntity = restTemplate.postForEntity(url, makeHttpEntity(headers, postString), String.class);
 			}
 			
 		} else
@@ -199,6 +212,23 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		return responseEntity;
 	}
 	
+	public String retrieveUserUUID(String username) {
+		
+		// 1 Retrieve pz-servicecontroller API Key
+		HttpHeaders theHeaders = new HttpHeaders();		
+		theHeaders.add("Authorization", "BASIC " + Base64.getEncoder().encodeToString((SYSTEM_PZSERVICECONTROLLER_USER + ":" + SYSTEM_PZSERVICECONTROLLER_CRED).getBytes()));
+		theHeaders.setContentType(MediaType.APPLICATION_JSON);
+		UUIDResponse response1 = restTemplate.exchange(String.format("%s/%s", SECURITY_URL, "key"), HttpMethod.GET, new HttpEntity<String>("parameters", theHeaders), UUIDResponse.class).getBody();
+		
+		// 2 Retrieve user's API Key
+		theHeaders = new HttpHeaders();		
+		theHeaders.add("Authorization", "BASIC " + Base64.getEncoder().encodeToString((response1.getUuid() + ":").getBytes()));
+		theHeaders.setContentType(MediaType.APPLICATION_JSON);
+		UUIDResponse response2 = restTemplate.exchange(String.format("%s/%s?username=%s", SECURITY_URL, "clientkey", username), HttpMethod.GET, new HttpEntity<String>("parameters", theHeaders), UUIDResponse.class).getBody();
+
+		return response2.getUuid();
+	}
+
 	/**
 	 * This method creates a MediaType based on the mimetype that was provided
 	 * 

@@ -37,8 +37,7 @@ import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearch
 
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
-
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.DeleteServiceJob;
 import model.job.type.RegisterServiceJob;
@@ -95,7 +94,7 @@ public class DeleteServiceHandlerTest {
 	 */
 	@Test
 	public void testHandleJobRequestNull() {
-		PiazzaJobType jobRequest = null;
+		Job jobRequest = new Job();
 		Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
 		ResponseEntity<String> result = dhHandler.handle(jobRequest);
 
@@ -126,7 +125,10 @@ public class DeleteServiceHandlerTest {
 		 DeleteServiceHandler dshMock = Mockito.spy (dhHandler);
 		Mockito.doReturn(testResponse).when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
-		ResponseEntity<String> result = dshMock.handle(dsj);
+		Job job = new Job();
+		job.jobType = dsj;
+		
+		ResponseEntity<String> result = dshMock.handle(job);
 		assertEquals ("The response entity was correct for the deletion", responseEntity, result);
 	}
 	
@@ -150,7 +152,10 @@ public class DeleteServiceHandlerTest {
 		final DeleteServiceHandler dshMock = Mockito.spy (dhHandler);
 		Mockito.doReturn("").when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
-		ResponseEntity<String> result = dshMock.handle(dsj);
+		Job job = new Job();
+		job.jobType = dsj;
+		
+		ResponseEntity<String> result = dshMock.handle(job);
 		assertEquals ("The should not be found.", result.getStatusCode(), HttpStatus.NOT_FOUND);
 	}
 	
@@ -174,7 +179,10 @@ public class DeleteServiceHandlerTest {
 		final DeleteServiceHandler dshMock = Mockito.spy (dhHandler);
 		Mockito.doReturn(null).when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
-		ResponseEntity<String> result = dshMock.handle(dsj);
+		Job job = new Job();
+		job.jobType = dsj;
+		
+		ResponseEntity<String> result = dshMock.handle(job);
 		assertEquals ("The should not be found.", result.getStatusCode(), HttpStatus.NOT_FOUND);
 	}
 	

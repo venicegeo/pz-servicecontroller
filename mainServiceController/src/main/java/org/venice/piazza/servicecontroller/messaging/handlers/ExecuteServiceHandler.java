@@ -212,7 +212,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		return responseEntity;
 	}
 	
-	private String retrieveUserUUID(String username) {
+	public String retrieveUserUUID(String username) {
 		
 		// 1 Retrieve pz-servicecontroller API Key
 		HttpHeaders theHeaders = new HttpHeaders();		

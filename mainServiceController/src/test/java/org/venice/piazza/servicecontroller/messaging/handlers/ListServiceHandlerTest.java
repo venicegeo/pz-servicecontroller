@@ -38,6 +38,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.ListServicesJob;
 import model.service.metadata.Service;
@@ -122,7 +123,7 @@ public class ListServiceHandlerTest {
 	 */
 	@Test
 	public void testListServicesSuccess() {
-		ListServicesJob job = new ListServicesJob();
+		ListServicesJob lsj = new ListServicesJob();
 	
 		try {
 			ObjectMapper mapper = new ObjectMapper();
@@ -132,13 +133,15 @@ public class ListServiceHandlerTest {
 
 			final ListServiceHandler lsMock = Mockito.spy (lsHandler);
 
-			Mockito.doReturn(responseEntity).when(lsMock).handle();				
+			Mockito.doReturn(responseEntity).when(lsMock).handle();		
+			Job job = new Job();
+			job.jobType = lsj;			
+			
 			ResponseEntity<String> result = lsMock.handle(job);
 		
 			assertEquals ("The response entity was correct for this describe request", responseEntity, result);
 			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
 			assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
-
 
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
@@ -151,13 +154,17 @@ public class ListServiceHandlerTest {
 	 */
 	@Test
 	public void testListServicesFailure() {
-		ListServicesJob job = new ListServicesJob();
+		ListServicesJob lsj = new ListServicesJob();
 
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>("", HttpStatus.NOT_FOUND);
 
 		final ListServiceHandler lsMock = Mockito.spy (lsHandler);
 
-		Mockito.doReturn(responseEntity).when(lsMock).handle();				
+		Mockito.doReturn(responseEntity).when(lsMock).handle();
+		
+		Job job = new Job();
+		job.jobType = lsj;		
+		
 		ResponseEntity<String> result = lsMock.handle(job);
 	
 		assertEquals ("The status code should be HttpStatus.NOT_FOUND.", result.getStatusCode(), HttpStatus.NOT_FOUND);

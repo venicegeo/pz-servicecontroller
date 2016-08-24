@@ -35,6 +35,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.SearchServiceJob;
 import model.service.SearchCriteria;
@@ -112,23 +113,26 @@ public class SearchServiceHandlerTest {
 	 */
 	@Test
 	public void testSearchSuccess() {
-		SearchServiceJob job = new SearchServiceJob();
+		SearchServiceJob ssj = new SearchServiceJob();
 		
 		SearchCriteria criteria = new SearchCriteria();
 		criteria.field="animalType";
 		criteria.pattern="A*r";
 	
-		job.data =criteria;
+		ssj.data =criteria;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			String responseServiceString = mapper.writeValueAsString(services);
-			
 
 			ResponseEntity<String> responseEntity = new  ResponseEntity<String>(responseServiceString, HttpStatus.OK);
 
 			final SearchServiceHandler ssMock = Mockito.spy (ssHandler);
 
-			Mockito.doReturn(responseEntity).when(ssMock).handle(criteria);				
+			Mockito.doReturn(responseEntity).when(ssMock).handle(criteria);
+			
+			Job job = new Job();
+			job.jobType = ssj;
+			
 			ResponseEntity<String> result = ssMock.handle(job);
 		
 			assertEquals ("The response entity is correct", responseEntity, result);
@@ -147,11 +151,9 @@ public class SearchServiceHandlerTest {
 	 */
 	@Test
 	public void testSearchNullValue() {
-		SearchServiceJob job = null;
-	
+		Job job = new Job();
 		ResponseEntity<String> result = ssHandler.handle(job);
 		assertEquals ("The response code is 404", result.getStatusCode(), HttpStatus.BAD_REQUEST);
-
 	}
 	
 	/**

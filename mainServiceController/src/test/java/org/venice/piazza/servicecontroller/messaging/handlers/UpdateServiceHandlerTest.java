@@ -38,8 +38,7 @@ import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearch
 
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
-
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.UpdateServiceJob;
 import model.service.metadata.Service;
@@ -98,7 +97,7 @@ public class UpdateServiceHandlerTest {
 	 * Test that the handle method returns null
 	 */
 	public void testHandleJobRequestNull() {
-		PiazzaJobType jobRequest = null;
+		Job jobRequest = new Job();
 		ResponseEntity<String> result = usHandler.handle(jobRequest);
         assertEquals("The response to a null JobRequest update should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
@@ -109,12 +108,12 @@ public class UpdateServiceHandlerTest {
 	 */
 	@Test
 	public void testValidUpdate() {
-		UpdateServiceJob job = new UpdateServiceJob();
-		job.data = service;
-		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		UpdateServiceJob usj = new UpdateServiceJob();
+		usj.data = service;
+		usj.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
 		
 		ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(job.jobId);
+		resultList.add(usj.jobId);
 		resultList.add(service.getServiceId());
 		
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
@@ -122,6 +121,9 @@ public class UpdateServiceHandlerTest {
 		final UpdateServiceHandler ushMock = Mockito.spy (usHandler);
 
 		Mockito.doReturn("success").when(ushMock).handle(service);
+		
+		Job job = new Job();
+		job.jobType = usj;
 		
 		ResponseEntity<String> result = ushMock.handle(job);
 	
@@ -134,12 +136,12 @@ public class UpdateServiceHandlerTest {
 	 */
 	@Test
 	public void testUnsuccessfulUpdate() {
-		UpdateServiceJob job = new UpdateServiceJob();
-		job.data = service;
-		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		UpdateServiceJob usj = new UpdateServiceJob();
+		usj.data = service;
+		usj.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
 		
 		ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(job.jobId);
+		resultList.add(usj.jobId);
 		resultList.add(service.getServiceId());
 		
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
@@ -147,6 +149,9 @@ public class UpdateServiceHandlerTest {
 		final UpdateServiceHandler ushMock = Mockito.spy (usHandler);
 
 		Mockito.doReturn("").when(ushMock).handle(service);
+		
+		Job job = new Job();
+		job.jobType = usj;		
 		
 		ResponseEntity<String> result = ushMock.handle(job);
 	

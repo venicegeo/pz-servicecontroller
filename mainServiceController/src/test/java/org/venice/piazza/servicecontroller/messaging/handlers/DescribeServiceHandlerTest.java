@@ -34,7 +34,7 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import model.job.PiazzaJobType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.DescribeServiceMetadataJob;
 import model.service.metadata.Service;
@@ -88,7 +88,7 @@ import util.UUIDFactory;
 		 * Test what happens when a null is sent to register a service
 		 */
 		public void testHandleJobRequestNull() {
-			PiazzaJobType jobRequest = null;
+			Job jobRequest = new Job();
 			ResponseEntity<String> result = dsHandler.handle(jobRequest);
 	        assertEquals("The response to a null JobRequest update should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 		}
@@ -98,9 +98,9 @@ import util.UUIDFactory;
 		 */
 		@Test
 		public void testSuccessDescribe() {
-			DescribeServiceMetadataJob job = new DescribeServiceMetadataJob();
+			DescribeServiceMetadataJob dsm = new DescribeServiceMetadataJob();
 			String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-			job.serviceID = testServiceId;
+			dsm.serviceID = testServiceId;
 			try {
 				ObjectMapper mapper = new ObjectMapper();
 				String responseServiceString = mapper.writeValueAsString(service);
@@ -109,6 +109,9 @@ import util.UUIDFactory;
 	
 				final DescribeServiceHandler dsMock = Mockito.spy (dsHandler);
 	
+				Job job = new Job();
+				job.jobType = dsm;
+				
 				Mockito.doReturn(responseEntity).when(dsMock).handle(job);				
 				ResponseEntity<String> result = dsMock.handle(job);
 			
@@ -127,13 +130,16 @@ import util.UUIDFactory;
 		 */
 		@Test
 		public void testUnsuccessful() {
-			DescribeServiceMetadataJob job = new DescribeServiceMetadataJob();
+			DescribeServiceMetadataJob dsm = new DescribeServiceMetadataJob();
 			
 			String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-			job.serviceID = testServiceId;
+			dsm.serviceID = testServiceId;
 			final DescribeServiceHandler dsMock = Mockito.spy (dsHandler);
 			ResponseEntity<String> responseEntity = new  ResponseEntity<String>("", HttpStatus.NOT_FOUND);
 
+			Job job = new Job();
+			job.jobType = dsm;			
+			
 			Mockito.doReturn(responseEntity).when(dsMock).handle(testServiceId);			
 			ResponseEntity<String> result = dsMock.handle(job);
 		

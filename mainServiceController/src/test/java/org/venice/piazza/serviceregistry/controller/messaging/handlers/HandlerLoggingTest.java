@@ -34,8 +34,10 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import model.data.DataType;
 import model.data.type.BodyDataType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.DescribeServiceMetadataJob;
+import model.job.type.ExecuteServiceJob;
 import model.job.type.ListServicesJob;
 import model.job.type.RegisterServiceJob;
 import model.job.type.SearchServiceJob;
@@ -61,13 +63,13 @@ public class HandlerLoggingTest {
 
 	@Mock
 	private RegisterServiceHandler rsHandler;
-	
+
 	@Mock
 	private SearchServiceHandler ssHandler;
 
 	@Mock
 	private UpdateServiceHandler usHandler;
-	
+
 	static String logString = "";
 	ResourceMetadata rm = null;
 	Service service = null;
@@ -76,14 +78,15 @@ public class HandlerLoggingTest {
 	ElasticSearchAccessor mockElasticAccessor = null;
 	PiazzaLogger logger = null;
 	CoreServiceProperties props = null;
+
 	@Before
-    public void setup() {
+	public void setup() {
 		template = mock(RestTemplate.class);
 		try {
 			whenNew(RestTemplate.class).withNoArguments().thenReturn(template);
 		} catch (Exception e) {
-		 	// TODO Auto-generated catch block
-				e.printStackTrace();
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		rm = new ResourceMetadata();
 		rm.name = "toUpper Params";
@@ -93,7 +96,7 @@ public class HandlerLoggingTest {
 		service.setResourceMetadata(rm);
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8085/string/toUpper");
-		
+
 		mockMongo = mock(MongoAccessor.class);
 		when(mockMongo.save(service)).thenReturn("8");
 		when(mockMongo.getServiceById("8")).thenReturn(service);
@@ -101,32 +104,35 @@ public class HandlerLoggingTest {
 		props = mock(CoreServiceProperties.class);
 		mockElasticAccessor = mock(ElasticSearchAccessor.class);
 		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
-    }
+	}
 
 	@Test
 	@Ignore
 	public void TestExecuteServiceHandlerMimeTypeErrorLogging() {
-		String upperServiceDef = "{  \"name\":\"toUpper Params\"," +
-		        "\"description\":\"Service to convert string to uppercase\"," + 
-		        "\"url\":\"http://localhost:8082/string/toUpper\"," + 
-		         "\"method\":\"POST\"," + "\"params\": [\"aString\"]" +
-		         /*"\"params\": [\"aString\"]," + 
-		         "\"mimeType\":\"application/json\"" +*/
-		       "}";
-		
+		String upperServiceDef = "{  \"name\":\"toUpper Params\","
+				+ "\"description\":\"Service to convert string to uppercase\","
+				+ "\"url\":\"http://localhost:8082/string/toUpper\"," + "\"method\":\"POST\","
+				+ "\"params\": [\"aString\"]" +
+				/*
+				 * "\"params\": [\"aString\"]," +
+				 * "\"mimeType\":\"application/json\"" +
+				 */
+				"}";
+
 		ExecuteServiceData edata = new ExecuteServiceData();
-		
+
 		edata.setServiceId("8");
-		
-		HashMap<String,DataType> dataInputs = new HashMap<String,DataType>();
+
+		HashMap<String, DataType> dataInputs = new HashMap<String, DataType>();
 		String istring = "The rain in Spain falls mainly in the plain";
 		BodyDataType body = new BodyDataType();
 		body.content = istring;
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
-		
+
 		URI uri = URI.create("http://localhost:8085//string/toUpper");
-		when(template.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
+		when(template.postForEntity(Mockito.eq(uri), Mockito.any(Object.class), Mockito.eq(String.class)))
+				.thenReturn(new ResponseEntity<String>("testExecuteService", HttpStatus.FOUND));
 		String mimeError = "Body mime type not specified";
 		doAnswer(new Answer() {
 			public Object answer(InvocationOnMock invocation) {
@@ -137,11 +143,16 @@ public class HandlerLoggingTest {
 				return null;
 			}
 		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
-		
-		ResponseEntity<String> retVal = esHandler.handle(edata);
+		ExecuteServiceJob esj = new ExecuteServiceJob();
+		esj.data = edata;
+
+		Job job = new Job();
+		job.jobType = esj;
+
+		ResponseEntity<String> retVal = esHandler.handle(job);
 		assertTrue(logString.contains("Body mime type not specified"));
 	}
-	
+
 	@Test
 	@Ignore
 	public void TestSearchServiceHandlerCorrectLogging() {
@@ -166,7 +177,9 @@ public class HandlerLoggingTest {
 		ArrayList<Service> services = new ArrayList<Service>();
 		services.add(service);
 		when(mockMongo.search(criteria)).thenReturn(services);
-		ssHandler.handle(sjob);
+		Job job = new Job();
+		job.jobType = sjob;
+		ssHandler.handle(job);
 		assertTrue(logString.contains("About to search using criteria"));
 
 	}
@@ -180,41 +193,48 @@ public class HandlerLoggingTest {
 		criteria.setPattern("*bird*");
 		sjob.data = criteria;
 		logString = "";
-		
+
 		doAnswer(new Answer() {
-					
-				    public Object answer(InvocationOnMock invocation) {
-				
-				        Object[] args = invocation.getArguments();
-				        logString = args[0].toString();
-				        return null;
-				
-		}}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
 		when(mockMongo.search(criteria)).thenReturn(new ArrayList<Service>());
-		ssHandler.handle(sjob);
+		Job job = new Job();
+		job.jobType = sjob;
+		ssHandler.handle(job);
 		assertTrue(logString.contains("No results"));
 	}
-	
+
 	@Test
 	@Ignore
 	public void TestDescribeServiceHandlerSuccessLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.serviceID = "8";
-		//DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
+		// DescribeServiceHandler handler = new
+		// DescribeServiceHandler(mockMongo,props,logger);
 		doAnswer(new Answer() {
-			
-		    public Object answer(InvocationOnMock invocation) {
-		
-		        Object[] args = invocation.getArguments();
-		        logString = args[0].toString();
-		        return null;
-		
-		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
-		 when(mockMongo.getServiceById("8")).thenReturn(service);
-		 dsHandler.handle(dsmJob);
-		 assertTrue(logString.contains("Describing a service"));
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
+		when(mockMongo.getServiceById("8")).thenReturn(service);
+		Job job = new Job();
+		job.jobType = dsmJob;
+		dsHandler.handle(job);
+		assertTrue(logString.contains("Describing a service"));
 	}
-	
+
 	@Test
 	@Ignore
 	public void TestListServiceHandlerFailLogging() {
@@ -222,17 +242,20 @@ public class HandlerLoggingTest {
 		ArrayList<Service> services = new ArrayList<Service>();
 		services.add(service);
 		doAnswer(new Answer() {
-			
-		    public Object answer(InvocationOnMock invocation) {
-		
-		        Object[] args = invocation.getArguments();
-		        logString = args[0].toString();
-		        return null;
-		
-		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
 		NullPointerException ex = new NullPointerException("Test Error");
 		when(mockMongo.list()).thenThrow(ex);
-		lsHandler.handle(lsj);
+		Job job = new Job();
+		job.jobType = lsj;
+		lsHandler.handle(job);
 		assertTrue(logString.contains(ex.getMessage()));
 	}
 
@@ -243,16 +266,19 @@ public class HandlerLoggingTest {
 		ArrayList<Service> services = new ArrayList<Service>();
 		services.add(service);
 		doAnswer(new Answer() {
-			
-		    public Object answer(InvocationOnMock invocation) {
-		
-		        Object[] args = invocation.getArguments();
-		        logString = args[0].toString();
-		        return null;
-		
-		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
 		when(mockMongo.list()).thenReturn(services);
-		lsHandler.handle(lsj);
+		Job job = new Job();
+		job.jobType = lsj;
+		lsHandler.handle(job);
 		assertTrue(logString.contains("listing service"));
 	}
 
@@ -261,27 +287,32 @@ public class HandlerLoggingTest {
 	public void TestDescribeServiceHandlerFailLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.serviceID = "8";
-		//DescribeServiceHandler handler = new DescribeServiceHandler(mockMongo,props,logger);
+		// DescribeServiceHandler handler = new
+		// DescribeServiceHandler(mockMongo,props,logger);
 		doAnswer(new Answer() {
-			
-		    public Object answer(InvocationOnMock invocation) {
-		
-		        Object[] args = invocation.getArguments();
-		        logString = args[0].toString();
-		        return null;
-		
-		 }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
 		NullPointerException ex = new NullPointerException();
-		 when(mockMongo.getServiceById("8")).thenThrow(ex);
-		 dsHandler.handle(dsmJob);
-		 assertTrue(logString.contains("Could not retrieve resourceId"));
+		when(mockMongo.getServiceById("8")).thenThrow(ex);
+
+		Job job = new Job();
+		job.jobType = dsmJob;
+		dsHandler.handle(job);
+		assertTrue(logString.contains("Could not retrieve resourceId"));
 	}
 
 	@Test
 	@Ignore
 	public void TestRegisterServiceHandlerLogging() {
 		UUIDFactory uuidFactory = mock(UUIDFactory.class);
-	    when(uuidFactory.getUUID()).thenReturn("NoDoz");
+		when(uuidFactory.getUUID()).thenReturn("NoDoz");
 		template = mock(RestTemplate.class);
 		try {
 			whenNew(RestTemplate.class).withNoArguments().thenReturn(template);
@@ -296,24 +327,27 @@ public class HandlerLoggingTest {
 		service.setMethod("POST");
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
-		
+
 		RegisterServiceJob rjob = new RegisterServiceJob();
 		rjob.data = service;
-		
+
 		doAnswer(new Answer() {
-			
-		    public Object answer(InvocationOnMock invocation) {
-		
-		        Object[] args = invocation.getArguments();
-		        logString = args[0].toString();
-		        return null;
-		
-		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
-	
-	     rsHandler.handle(rjob);
-	     assertTrue(logString.contains("serviceMetadata received"));
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
+
+		Job job = new Job();
+		job.jobType = rjob;
+		rsHandler.handle(job);
+		assertTrue(logString.contains("serviceMetadata received"));
 	}
-	
+
 	@Test
 	@Ignore
 	public void TestUpdateServiceHandlerSuccessLogging() {
@@ -349,7 +383,9 @@ public class HandlerLoggingTest {
 
 		when(mockMongo.update(service)).thenReturn("8");
 		when(mockElasticAccessor.update(service)).thenReturn(new ServiceResponse());
-		usHandler.handle(rjob);
+		Job job = new Job();
+		job.jobType = rjob;
+		usHandler.handle(job);
 		assertTrue(logString.contains("was updated"));
 	}
 
@@ -357,7 +393,7 @@ public class HandlerLoggingTest {
 	@Ignore
 	public void TestUpdateServiceHandlerFailLogging() {
 		UUIDFactory uuidFactory = mock(UUIDFactory.class);
-	    when(uuidFactory.getUUID()).thenReturn("NoDoz");
+		when(uuidFactory.getUUID()).thenReturn("NoDoz");
 		template = mock(RestTemplate.class);
 		try {
 			whenNew(RestTemplate.class).withNoArguments().thenReturn(template);
@@ -368,27 +404,31 @@ public class HandlerLoggingTest {
 		rm = new ResourceMetadata();
 		rm.name = "toUpper Params";
 		rm.description = "Service to convert string to uppercase";
-		
+
 		service.setResourceMetadata(rm);
 		service.setMethod("POST");
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8082/string/toUpper");
-		
+
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.data = service;
-		
+
 		doAnswer(new Answer() {
-			
-		    public Object answer(InvocationOnMock invocation) {
-		
-		        Object[] args = invocation.getArguments();
-		        logString = args[0].toString();
-		        return null;
-		
-		    }}).when(logger).log(Mockito.anyString(),Mockito.anyString());
-	
+
+			public Object answer(InvocationOnMock invocation) {
+
+				Object[] args = invocation.getArguments();
+				logString = args[0].toString();
+				return null;
+
+			}
+		}).when(logger).log(Mockito.anyString(), Mockito.anyString());
+
 		when(mockMongo.update(service)).thenReturn("");
-	     usHandler.handle(rjob);
-	     assertTrue(logString.contains("something went wrong"));
+		Job job = new Job();
+		job.jobType = rjob;
+
+		usHandler.handle(job);
+		assertTrue(logString.contains("something went wrong"));
 	}
 }

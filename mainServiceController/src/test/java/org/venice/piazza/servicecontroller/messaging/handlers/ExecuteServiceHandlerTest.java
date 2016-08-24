@@ -33,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -47,11 +48,10 @@ import model.data.DataType;
 import model.data.type.BodyDataType;
 import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.ExecuteServiceJob;
-import model.job.type.ListServicesJob;
-import model.job.type.SearchServiceJob;
-import model.service.SearchCriteria;
+import model.response.UUIDResponse;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -136,13 +136,13 @@ public class ExecuteServiceHandlerTest {
 	 */
 	@Test
 	public void testExecuteServiceSuccess() {
-		ExecuteServiceJob job = new ExecuteServiceJob();
+		ExecuteServiceJob esj1 = new ExecuteServiceJob();
 		// Setup executeServiceData
-		ExecuteServiceData edata = new ExecuteServiceData();
+		ExecuteServiceData esd1 = new ExecuteServiceData();
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
-		edata.setServiceId(serviceId);	
+		esd1.setServiceId(serviceId);	
 		// Now tie the data to the job
-		job.data = edata;
+		esj1.data = esd1;
 		
 		String responseServiceString = "Run results";
 
@@ -150,8 +150,11 @@ public class ExecuteServiceHandlerTest {
 
 		final ExecuteServiceHandler esMock = Mockito.spy (executeServiceHandler);
 
-		Mockito.doReturn(responseEntity).when(esMock).handle(edata);				
-		ResponseEntity<String> result = esMock.handle(job);
+		Job job1 = new Job();
+		job1.jobType = esj1;
+
+		Mockito.doReturn(responseEntity).when(esMock).handle(job1);				
+		ResponseEntity<String> result = esMock.handle(job1);
 	
 		assertEquals ("The response entity was correct for this describe request", responseEntity, result);
 		assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
@@ -165,8 +168,8 @@ public class ExecuteServiceHandlerTest {
 	 */
 	@Test
 	public void testExecuteNullJob() {
-		ExecuteServiceJob job = null;
-	
+		Job job = new Job();
+
 		ResponseEntity<String> result = executeServiceHandler.handle(job);
 		assertEquals ("The response code is 404", result.getStatusCode(), HttpStatus.BAD_REQUEST);
 
@@ -194,10 +197,17 @@ public class ExecuteServiceHandlerTest {
 		Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(convertService);
         Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
         Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
+		Mockito.when(restTemplateMock.exchange(Mockito.anyString(),Mockito.eq(HttpMethod.GET), Mockito.any(), Mockito.eq(UUIDResponse.class))).thenReturn(new ResponseEntity<UUIDResponse>(new UUIDResponse("uuid"), HttpStatus.OK));
 
-		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
+        ExecuteServiceJob esj = new ExecuteServiceJob();
+        esj.data = edata;
+        
+        Job job = new Job();
+        job.jobType = esj;
+        job.createdBy = "testuser";
+        
+		ResponseEntity<String> retVal = executeServiceHandler.handle(job);
 		System.out.println(retVal);
-		
 
 		assertEquals(retVal.getStatusCode(), HttpStatus.BAD_REQUEST);
 		assertTrue("The proper message was returned", retVal.getBody().contains("Body mime type not specified"));
@@ -205,7 +215,6 @@ public class ExecuteServiceHandlerTest {
 	}
     @Test
 	public void testHandleWithNoParamsBodyPayload() {
-		
 		
 		ExecuteServiceData edata = new ExecuteServiceData();
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
@@ -221,12 +230,20 @@ public class ExecuteServiceHandlerTest {
 		
 		URI uri = URI.create("http://localhost:8087/jumpstart/string/convert");
 		// Setup mocks
-		Mockito.when(restTemplateMock.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.OK));
+		Mockito.when(restTemplateMock.exchange(Mockito.any(URI.class), Mockito.eq(HttpMethod.POST), Mockito.any(), Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService", HttpStatus.OK));
 		Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(convertService);
         Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
         Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
+		Mockito.when(restTemplateMock.exchange(Mockito.anyString(),Mockito.eq(HttpMethod.GET), Mockito.any(), Mockito.eq(UUIDResponse.class))).thenReturn(new ResponseEntity<UUIDResponse>(new UUIDResponse("uuid"), HttpStatus.OK));
 
-		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
+		ExecuteServiceJob esj = new ExecuteServiceJob();
+        esj.data = edata;
+        
+        Job job = new Job();
+        job.jobType = esj;        
+        job.createdBy = "testuser";
+
+        ResponseEntity<String> retVal = executeServiceHandler.handle(job);
 		System.out.println(retVal);
 	    
 		assertTrue(retVal.getBody().contains("testExecuteService"));
@@ -249,11 +266,20 @@ public class ExecuteServiceHandlerTest {
         Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
         Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(service);
         Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
-		when(restTemplateMock.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
+		Mockito.when(restTemplateMock.exchange(Mockito.any(URI.class), Mockito.eq(HttpMethod.POST), Mockito.any(), Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService", HttpStatus.OK));
+		Mockito.when(restTemplateMock.exchange(Mockito.anyString(),Mockito.eq(HttpMethod.GET), Mockito.any(), Mockito.eq(UUIDResponse.class))).thenReturn(new ResponseEntity<UUIDResponse>(new UUIDResponse("uuid"), HttpStatus.OK));
 
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
 		when(mockMongo.getServiceById("8")).thenReturn(service);
-		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
+		
+        ExecuteServiceJob esj = new ExecuteServiceJob();
+        esj.data = edata;
+        
+        Job job = new Job();
+        job.jobType = esj;
+        job.createdBy = "testuser";
+
+		ResponseEntity<String> retVal = executeServiceHandler.handle(job);
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
 	}
 
@@ -285,11 +311,18 @@ public class ExecuteServiceHandlerTest {
 		Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
 	    Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(movieService);
 	    Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
-		Mockito.when(restTemplateMock.getForEntity(Mockito.eq(uri),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
-			
+		Mockito.when(restTemplateMock.exchange(Mockito.any(URI.class), Mockito.eq(HttpMethod.GET), Mockito.any(), Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService", HttpStatus.OK));
+		Mockito.when(restTemplateMock.exchange(Mockito.anyString(), Mockito.eq(HttpMethod.GET), Mockito.any(), Mockito.eq(UUIDResponse.class))).thenReturn(new ResponseEntity<UUIDResponse>(new UUIDResponse("uuid"), HttpStatus.OK));
 		when(accessorMock.getServiceById(serviceId)).thenReturn(movieService);
 
-		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
+        ExecuteServiceJob esj = new ExecuteServiceJob();
+        esj.data = edata;
+        
+        Job job = new Job();
+        job.jobType = esj;		
+        job.createdBy = "testuser";
+
+		ResponseEntity<String> retVal = executeServiceHandler.handle(job);
 	    assertTrue(retVal.getBody().contains("testExecuteService"));
 	}
 	
@@ -322,7 +355,14 @@ public class ExecuteServiceHandlerTest {
 			Mockito.when(accessorMock.getServiceById("8")).thenReturn(service);
 			Mockito.doReturn(omMock).when(esMock).makeObjectMapper();
 			Mockito.when(omMock.writeValueAsString(postObjects)).thenThrow( new JsonMappingException("Test Exception") );
-			ResponseEntity<String> retVal = esMock.handle(edata);
+			
+	        ExecuteServiceJob esj = new ExecuteServiceJob();
+	        esj.data = edata;
+	        
+	        Job job = new Job();
+	        job.jobType = esj;
+	        
+			ResponseEntity<String> retVal = esMock.handle(job);
 	
 			assertEquals ("The response code is 400 for BAD_REQUEST", retVal.getStatusCode(), HttpStatus.BAD_REQUEST);
 		} catch (JsonProcessingException jpe) {

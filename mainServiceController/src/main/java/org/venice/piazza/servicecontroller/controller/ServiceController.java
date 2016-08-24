@@ -317,7 +317,7 @@ public class ServiceController {
 		}
 		ResponseEntity<String> result = null;
 		try {
-			result = esHandler.handle(data);
+			result = esHandler.handle(data, "sakuser");
 		} catch (Exception ex) {
 			logger.log("Service Controller Error Caused Exception: " + ex.toString(), PiazzaLogger.ERROR);
 		}

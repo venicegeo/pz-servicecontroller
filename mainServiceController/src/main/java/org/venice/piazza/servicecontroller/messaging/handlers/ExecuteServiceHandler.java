@@ -27,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -177,6 +178,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			URI url = URI.create(builder.toUriString());
 			if (sMetadata.getMethod().equals("GET")) {
 				coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
+				// execute job
+		        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+		        factory.setReadTimeout(5000);
+		        factory.setConnectTimeout(5000);
+		        template = new RestTemplate(factory);
 				responseEntity = template.getForEntity(url, String.class);
 	
 			} else {

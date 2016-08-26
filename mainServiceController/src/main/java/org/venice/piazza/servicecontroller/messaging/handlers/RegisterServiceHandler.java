@@ -52,6 +52,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	private UUIDFactory uuidFactory;
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
+	private static final long HTTP_REQUEST_TIMEOUT = 600000;
 
 	/**
 	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in MongoDB
@@ -95,6 +96,11 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			resultServiceId = uuidFactory.getUUID();
 			service.setServiceId(resultServiceId);
 			
+			// set default request timeout			
+			if (null == service.getTimeout()) {
+				service.setTimeout(HTTP_REQUEST_TIMEOUT);
+			}
+
 			resultServiceId = mongoAccessor.save(service);
 			coreLogger.log("The result of the save is " + resultServiceId, PiazzaLogger.DEBUG);
 

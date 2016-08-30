@@ -237,7 +237,15 @@ public class ServiceMessageWorker {
 
 		} catch (InterruptedException ex) {
 			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), PiazzaLogger.INFO);
-			// No need to update Status in this case. Job Manager has done that already at this point.
+			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
+			try {
+				producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate, SPACE));
+			} catch (JsonProcessingException jsonException) {
+				jsonException.printStackTrace();
+				coreLogger.log(String.format(
+						"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
+						consumerRecord.key(), jsonException.getMessage()), PiazzaLogger.ERROR);
+			}
 		} catch (Exception ex) {
 			// Catch any General Exceptions that occur during runtime.
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);

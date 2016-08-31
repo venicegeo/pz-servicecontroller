@@ -54,6 +54,8 @@ public class PollStatusWorker {
 	private String KAFKA_HOST_PORT;
 	@Value("${SPACE}")
 	private String SPACE;
+	@Value("${async.status.error.limit}")
+	private int STATUS_ERROR_LIMIT;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -127,8 +129,21 @@ public class PollStatusWorker {
 	private void updateFailureCount(AsyncServiceInstance instance) {
 		// Increment the failure count
 		instance.setNumberErrorResponses(instance.getNumberErrorResponses() + 1);
-		// Update the Database that this instance has failed.
-		accessor.updateAsyncServiceInstance(instance);
+		// Check if the Failure count is above the threshold. If so, then fail the job.
+		if (instance.getNumberErrorResponses() < STATUS_ERROR_LIMIT) {
+			// Failure threshold has been reached. Fail the job.
+			logger.log(String.format(
+					"Job ID %s for Service ID %s Instance ID %s has failed too many times during periodic Status Checks. This Job is being marked as a failure.",
+					instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.ERROR);
+			// Remove this from the Collection of tracked instance Jobs.
+			accessor.deleteAsyncServiceInstance(instance.getJobId());
+			// Send a Failure message back to the Job Manager via Kafka.
+			// TODO: 
+		} else {
+			// Update the Database that this instance has failed.
+			accessor.updateAsyncServiceInstance(instance);
+		}
+
 	}
 
 	/**

@@ -41,8 +41,6 @@ public class AsyncServiceInstanceManager {
 	private int STALE_INSTANCE_THRESHOLD_SECONDS;
 	@Value("${async.poll.frequency.seconds}")
 	private int POLL_FREQUENCY_SECONDS;
-	@Value("${async.status.error.limit}")
-	private int STATUS_ERROR_LIMIT;
 
 	@Autowired
 	private MongoAccessor accessor;
@@ -89,19 +87,7 @@ public class AsyncServiceInstanceManager {
 			// Get the list of all stale User Services and poll each.
 			List<AsyncServiceInstance> staleInstances = accessor.getStaleServiceInstances();
 			for (AsyncServiceInstance instance : staleInstances) {
-				// Ensure the Service has not failed an inordiante number of times.
-				if (instance.getNumberErrorResponses() < STATUS_ERROR_LIMIT) {
-					// Poll for Status
-					pollStatusWorker.pollStatus(instance);
-				} else {
-					// The Server has timed out too often. Send a failure Status.
-					logger.log(String.format(
-							"Job ID %s for Service ID %s Instance ID %s has failed too many times during periodic Status Checks. This Job is being marked as a failure.",
-							instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.ERROR);
-					// Remove this from the Collection of tracked instance Jobs.
-					accessor.deleteAsyncServiceInstance(instance.getJobId());
-					// TODO: Mark as failure
-				}
+				pollStatusWorker.pollStatus(instance);
 			}
 		}
 	}

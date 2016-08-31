@@ -34,6 +34,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
@@ -146,7 +147,7 @@ public class ServiceMessageWorker {
 						throw new InterruptedException();
 					}
 
-					if ((dataType != null) && (dataType instanceof RasterDataType)) {
+					if ((dataType != null) && (dataType instanceof RasterDataType) && false) {
 						// Call special method to call and send
 						handleRasterType(jobItem, job, producer);
 
@@ -359,6 +360,10 @@ public class ServiceMessageWorker {
 
 					data.dataType = tr;
 				}
+				else
+				{
+					data.dataId = dataId;
+				}
 
 			} catch (Exception ex) {
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
@@ -478,6 +483,12 @@ public class ServiceMessageWorker {
 
 			coreLogger.log("About to call special service " + url, PiazzaLogger.DEBUG);
 
+			if (null != sMetadata.getTimeout()) {
+				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+				factory.setReadTimeout(sMetadata.getTimeout().intValue());
+				factory.setConnectTimeout(sMetadata.getTimeout().intValue());
+				restTemplate = new RestTemplate(factory);
+			}
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
 			if (Thread.interrupted()) {

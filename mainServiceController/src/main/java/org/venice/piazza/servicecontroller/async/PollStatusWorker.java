@@ -15,6 +15,10 @@
  **/
 package org.venice.piazza.servicecontroller.async;
 
+import javax.annotation.PostConstruct;
+
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +29,12 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import messaging.job.JobMessageFactory;
+import messaging.job.KafkaClientFactory;
+import model.job.result.type.ErrorResult;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
@@ -40,12 +50,26 @@ import util.PiazzaLogger;
 public class PollStatusWorker {
 	@Value("${async.status.endpoint}")
 	private String STATUS_ENDPOINT;
+	@Value("${vcap.services.pz-kafka.credentials.host}")
+	private String KAFKA_HOST_PORT;
+	@Value("${SPACE}")
+	private String SPACE;
+
 	@Autowired
 	private MongoAccessor accessor;
 	@Autowired
 	private PiazzaLogger logger;
 
 	private RestTemplate restTemplate = new RestTemplate();
+	private Producer<String, String> producer;
+	private ObjectMapper objectMapper = new ObjectMapper();
+
+	@PostConstruct
+	public void initialize() {
+		String KAFKA_HOST = KAFKA_HOST_PORT.split(":")[0];
+		String KAFKA_PORT = KAFKA_HOST_PORT.split(":")[1];
+		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
+	}
 
 	/**
 	 * Polls for the Status of the Asynchronous Service Instance. This will update any status information in the Status
@@ -65,25 +89,87 @@ public class PollStatusWorker {
 			// Get the Status of the job.
 			StatusUpdate status = restTemplate.getForObject(url, StatusUpdate.class);
 
-			// Check if the service is done or not.
-			if (isDoneProcessing(status.getStatus())) {
-				// If this service is done, then process that.
-				// TODO: Handle completed status
-			} else {
+			// Act appropriately based on the status received
+			if ((status.getStatus().equals(StatusUpdate.STATUS_PENDING)) || (status.getStatus().equals(StatusUpdate.STATUS_RUNNING))
+					|| (status.getStatus().equals(StatusUpdate.STATUS_SUBMITTED))) {
 				// If this service is not done, then mark the status and we'll poll again later.
 				instance.setStatus(status);
 				instance.setLastCheckedOn(new DateTime());
 				accessor.updateAsyncServiceInstance(instance);
+			} else if (status.getStatus().equals(StatusUpdate.STATUS_SUCCESS)) {
+				// TODO: Handle success
+			} else if ((status.getStatus().equals(StatusUpdate.STATUS_ERROR)) || (status.getStatus().equals(StatusUpdate.STATUS_FAIL))
+					|| (status.getStatus().equals(StatusUpdate.STATUS_CANCELLED))) {
+				// Errors encountered. Report this and bubble it back up through the Job ID.
+				processErrorStatus(instance, status);
 			}
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
-			// Increment the failure count
-			instance.setNumberErrorResponses(instance.getNumberErrorResponses() + 1);
-			// Update the Database that this instance has failed.
+			updateFailureCount(instance);
 			logger.log(String.format(
-					"HTTP Error Status %s encountered for Running Service ID %s Instance %s. The number of Errors has been increments (%s)",
-					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(),
+					"HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
+					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
 					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
-			accessor.updateAsyncServiceInstance(instance);
+		} catch (Exception exception) {
+			updateFailureCount(instance);
+			logger.log(String.format(
+					"Unexpected Error %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
+					exception.getMessage(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
+					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+		}
+	}
+
+	/**
+	 * Updates the failure count for the Instance.
+	 * 
+	 * @param instance
+	 *            The Instance.
+	 */
+	private void updateFailureCount(AsyncServiceInstance instance) {
+		// Increment the failure count
+		instance.setNumberErrorResponses(instance.getNumberErrorResponses() + 1);
+		// Update the Database that this instance has failed.
+		accessor.updateAsyncServiceInstance(instance);
+	}
+
+	/**
+	 * Handles a non-success completed Status message.
+	 * 
+	 * @param instance
+	 *            The service instance.
+	 * @param serviceStatus
+	 *            The StatusUpdate received from the external User Service
+	 */
+	private void processErrorStatus(AsyncServiceInstance instance, StatusUpdate serviceStatus) {
+		// Remove the Instance from the Instance Table
+		accessor.deleteAsyncServiceInstance(instance.getJobId());
+
+		// Form the message.
+		String error = String.format("Instance %s reported back Status %s. ", instance.getInstanceId(), serviceStatus.getStatus());
+		if (serviceStatus.getResult() instanceof ErrorResult) {
+			// If we can parse any further details on the error, then do so here.
+			ErrorResult errorResult = (ErrorResult) serviceStatus.getResult();
+			error = String.format("%s Details: %s, %s", error, errorResult.getMessage(), errorResult.getDetails());
+		}
+
+		// Create a new Status Update to send to the Job Manager.
+		StatusUpdate statusUpdate = new StatusUpdate();
+		statusUpdate.setStatus(serviceStatus.getStatus());
+		// Create the Message for the Error Result of the Status
+		ErrorResult errorResult = new ErrorResult();
+		errorResult.setMessage(error);
+		statusUpdate.setResult(errorResult);
+
+		// Send the Job Status through Kafka.
+		try {
+			ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
+					String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), instance.getJobId(),
+					objectMapper.writeValueAsString(statusUpdate));
+			producer.send(prodRecord);
+		} catch (JsonProcessingException exception) {
+			// The message could not be serialized. Record this.
+			exception.printStackTrace();
+			logger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
+					PiazzaLogger.ERROR);
 		}
 	}
 
@@ -95,8 +181,8 @@ public class PollStatusWorker {
 	 * @return True if done, false if not.
 	 */
 	private boolean isDoneProcessing(String status) {
-		if ((status.equals(StatusUpdate.STATUS_CANCELLED)) || (status.equals(StatusUpdate.STATUS_ERROR))
-				|| (status.equals(StatusUpdate.STATUS_FAIL)) || (status.equals(StatusUpdate.STATUS_SUCCESS))) {
+		if ((status.equals(StatusUpdate.STATUS_ERROR)) || (status.equals(StatusUpdate.STATUS_FAIL))
+				|| (status.equals(StatusUpdate.STATUS_SUCCESS))) {
 			return true;
 		} else {
 			return false;

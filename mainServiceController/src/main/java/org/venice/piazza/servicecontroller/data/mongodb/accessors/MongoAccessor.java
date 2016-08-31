@@ -432,17 +432,17 @@ public class MongoAccessor {
 	 * Updates an Async Service instance.
 	 */
 	public void updateAsyncServiceInstance(AsyncServiceInstance instance) {
-		getAsyncServiceInstancesCollection().update(DBQuery.is("id", instance.getId()), instance);
+		getAsyncServiceInstancesCollection().update(DBQuery.is("jobId", instance.getJobId()), instance);
 	}
 
 	/**
-	 * Deletese an Async Service Instance by ID. This is done when the Service has been processed to completion and the
-	 * instance is no longer needed.
+	 * Deletese an Async Service Instance by Job ID. This is done when the Service has been processed to completion and
+	 * the instance is no longer needed.
 	 * 
 	 * @param id
-	 *            The ID of the Async Service Instance.
+	 *            The Job ID of the Async Service Instance.
 	 */
-	public void deleteAsyncServiceInstance(String id) {
-		getAsyncServiceInstancesCollection().remove(DBQuery.is("id", id));
+	public void deleteAsyncServiceInstance(String jobId) {
+		getAsyncServiceInstancesCollection().remove(DBQuery.is("jobId", jobId));
 	}
 }

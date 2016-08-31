@@ -96,10 +96,10 @@ public class AsyncServiceInstanceManager {
 				} else {
 					// The Server has timed out too often. Send a failure Status.
 					logger.log(String.format(
-							"Asynchronous Service Instance ID %s for Service ID %s Instance ID %s has failed too many times during periodic Status Checks. This Job is being marked as a failure.",
-							instance.getId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.ERROR);
+							"Job ID %s for Service ID %s Instance ID %s has failed too many times during periodic Status Checks. This Job is being marked as a failure.",
+							instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.ERROR);
 					// Remove this from the Collection of tracked instance Jobs.
-					accessor.deleteAsyncServiceInstance(instance.getId());
+					accessor.deleteAsyncServiceInstance(instance.getJobId());
 					// TODO: Mark as failure
 				}
 			}

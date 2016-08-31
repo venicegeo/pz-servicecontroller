@@ -34,7 +34,7 @@ import model.status.StatusUpdate;
  *
  */
 public class AsyncServiceInstance {
-	private String id;
+	private String jobId;
 	private String serviceId;
 	private String instanceId;
 	private StatusUpdate status;
@@ -49,7 +49,7 @@ public class AsyncServiceInstance {
 	/**
 	 * 
 	 * @param id
-	 *            The unique ID for this Instance. Generate by UUIDGen.
+	 *            The unique Job ID for this Instance. Generate by UUIDGen.
 	 * @param serviceId
 	 *            The unique ID of the User Service
 	 * @param instanceId
@@ -58,7 +58,7 @@ public class AsyncServiceInstance {
 	 *            The current status of this execution. @see StatusUpdate
 	 */
 	public AsyncServiceInstance(String id, String serviceId, String instanceId, StatusUpdate status) {
-		this.id = id;
+		this.jobId = id;
 		this.serviceId = serviceId;
 		this.instanceId = instanceId;
 		this.status = status;
@@ -67,14 +67,14 @@ public class AsyncServiceInstance {
 	}
 
 	/**
-	 * @return The unique ID for this Instance. Generate by UUIDGen.
+	 * @return The unique Job ID for this Instance. Generate by UUIDGen.
 	 */
-	public String getId() {
-		return id;
+	public String getJobId() {
+		return jobId;
 	}
 
-	public void setId(String id) {
-		this.id = id;
+	public void setJobId(String jobId) {
+		this.jobId = jobId;
 	}
 
 	/**

@@ -119,20 +119,20 @@ public class AsyncServiceInstance {
 	}
 
 	/**
-	 * @return The timestamp that this instance was last checked for Status.
+	 * @return The timestamp that this instance was last checked for Status. Epoch.
 	 */
 	@JsonProperty("lastCheckedOn")
-	public String getCreatedOnString() {
+	public Long getCheckedOnEpoch() {
 		if (lastCheckedOn != null) {
 			// Defaults to ISO8601
-			return lastCheckedOn.toString();
+			return lastCheckedOn.getMillis();
 		} else {
 			return null;
 		}
 	}
 
 	@JsonProperty("lastCheckedOn")
-	public void setCreatedOnString(String lastCheckedOn) {
-		this.lastCheckedOn = new DateTime(lastCheckedOn);
+	public void setCheckedOnEpoch(Long lastCheckedOn) {
+		this.lastCheckedOn = new DateTime(lastCheckedOn.longValue());
 	}
 }

@@ -22,9 +22,11 @@ import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.joda.time.DateTime;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBQuery.Query;
+import org.mongojack.DBUpdate.Builder;
 import org.mongojack.DBSort;
 import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
@@ -66,6 +68,7 @@ public class MongoAccessor {
 	private String DATABASE_NAME;
 	private String SERVICE_COLLECTION_NAME;
 	private static final String ASYNC_INSTANCE_COLLECTION_NAME = "AsyncServiceInstances";
+	public static final int STALE_INSTANCE_THRESHOLD_SECONDS = 10;
 	private MongoClient mongoClient;
 
 	@Autowired
@@ -412,4 +415,43 @@ public class MongoAccessor {
 		getAsyncServiceInstancesCollection().insert(instance);
 	}
 
+	/**
+	 * @return Gets all Instances that require a status check.
+	 */
+	public List<AsyncServiceInstance> getStaleServiceInstances() {
+		// Get the time to query. Threshold seconds ago, in epoch.
+		long thresholdEpoch = new DateTime().minusSeconds(STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
+		// Query for all results that are older than the threshold time
+		DBCursor<AsyncServiceInstance> cursor = getAsyncServiceInstancesCollection()
+				.find(DBQuery.lessThan("lastCheckedOn", thresholdEpoch));
+		return cursor.toArray();
+	}
+
+	/**
+	 * Updates an Async Service instance. The ID of this instance is used to uniquely identify the service.
+	 * 
+	 * @param id
+	 *            The ID of the Instance to update. Corresponds with AsyncServiceInstance.id
+	 * @param status
+	 *            The Status of the Instance
+	 * @param lastCheckedOn
+	 *            The Timestamp of the last check
+	 */
+	public void updateAsyncServiceInstance(String id, String status, DateTime lastCheckedOn) {
+		Builder update = new Builder();
+		update.set("lastCheckedOn", lastCheckedOn.getMillis());
+		update.set("status", status);
+		getAsyncServiceInstancesCollection().update(DBQuery.is("id", id), update);
+	}
+
+	/**
+	 * Deletese an Async Service Instance by ID. This is done when the Service has been processed to completion and the
+	 * instance is no longer needed.
+	 * 
+	 * @param id
+	 *            The ID of the Async Service Instance.
+	 */
+	public void deleteAsyncServiceInstance(String id) {
+		getAsyncServiceInstancesCollection().remove(DBQuery.is("id", id));
+	}
 }

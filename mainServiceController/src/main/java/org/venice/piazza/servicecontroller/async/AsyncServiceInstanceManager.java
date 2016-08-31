@@ -22,8 +22,11 @@ import java.util.TimerTask;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+
+import util.PiazzaLogger;
 
 /**
  * This component manages the full cycle of Asynchronous User Service Instances. It handles execution, polling, and
@@ -34,19 +37,19 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
  */
 @Component
 public class AsyncServiceInstanceManager {
-	/**
-	 * The number of seconds that the Service Controller will query an Asynchronous User Service for status.
-	 */
-	public static final int STALE_INSTANCE_THRESHOLD_SECONDS = 10;
-	/**
-	 * The frequency (in seconds) that Asynchronous User Services will be polled.
-	 */
-	public static final int POLL_FREQUENCY_SECONDS = 10;
+	@Value("${async.stale.instance.threshold.seconds}")
+	private int STALE_INSTANCE_THRESHOLD_SECONDS;
+	@Value("${async.poll.frequency.seconds}")
+	private int POLL_FREQUENCY_SECONDS;
+	@Value("${async.status.error.limit}")
+	private int STATUS_ERROR_LIMIT;
 
 	@Autowired
 	private MongoAccessor accessor;
 	@Autowired
 	private PollStatusWorker pollStatusWorker;
+	@Autowired
+	private PiazzaLogger logger;
 
 	private PollServiceTask pollTask = new PollServiceTask();
 	private Timer pollTimer = new Timer();
@@ -69,6 +72,12 @@ public class AsyncServiceInstanceManager {
 
 	/**
 	 * Timer Task that will, on a schedule, poll for the Status of Stale asynchronous user services.
+	 * <p>
+	 * This component is responsible for polling the status of asynchronous user service instances. It will use the
+	 * Mongo AsyncServiceInstances collection in order to store persistence related to each running instance of an
+	 * asynchronous user service. This component will poll each instance, at a regular interval, and make a note of its
+	 * status and query time.
+	 * </p>
 	 */
 	public class PollServiceTask extends TimerTask {
 		/**
@@ -80,7 +89,19 @@ public class AsyncServiceInstanceManager {
 			// Get the list of all stale User Services and poll each.
 			List<AsyncServiceInstance> staleInstances = accessor.getStaleServiceInstances();
 			for (AsyncServiceInstance instance : staleInstances) {
-				pollStatusWorker.pollStatus(instance);
+				// Ensure the Service has not failed an inordiante number of times.
+				if (instance.getNumberErrorResponses() < STATUS_ERROR_LIMIT) {
+					// Poll for Status
+					pollStatusWorker.pollStatus(instance);
+				} else {
+					// The Server has timed out too often. Send a failure Status.
+					logger.log(String.format(
+							"Asynchronous Service Instance ID %s for Service ID %s Instance ID %s has failed too many times during periodic Status Checks. This Job is being marked as a failure.",
+							instance.getId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.ERROR);
+					// Remove this from the Collection of tracked instance Jobs.
+					accessor.deleteAsyncServiceInstance(instance.getId());
+					// TODO: Mark as failure
+				}
 			}
 		}
 	}

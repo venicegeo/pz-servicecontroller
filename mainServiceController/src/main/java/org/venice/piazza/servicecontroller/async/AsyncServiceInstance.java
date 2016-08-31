@@ -20,6 +20,8 @@ import org.joda.time.DateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import model.status.StatusUpdate;
+
 /**
  * This POJO Model represents a single run of an Asynchronous User Service. This marks the Unique ID of the Piazza
  * Service, the Unique ID of the User Service instance that was reported back by the User Service, and the current
@@ -35,7 +37,8 @@ public class AsyncServiceInstance {
 	private String id;
 	private String serviceId;
 	private String instanceId;
-	private String status;
+	private StatusUpdate status;
+	private Integer numberErrorResponses;
 	@JsonIgnore
 	private DateTime lastCheckedOn;
 
@@ -54,12 +57,13 @@ public class AsyncServiceInstance {
 	 * @param status
 	 *            The current status of this execution. @see StatusUpdate
 	 */
-	public AsyncServiceInstance(String id, String serviceId, String instanceId, String status) {
+	public AsyncServiceInstance(String id, String serviceId, String instanceId, StatusUpdate status) {
 		this.id = id;
 		this.serviceId = serviceId;
 		this.instanceId = instanceId;
 		this.status = status;
 		this.lastCheckedOn = new DateTime();
+		this.numberErrorResponses = 0;
 	}
 
 	/**
@@ -98,11 +102,11 @@ public class AsyncServiceInstance {
 	/**
 	 * @return The current status of this execution. @see StatusUpdate
 	 */
-	public String getStatus() {
+	public StatusUpdate getStatus() {
 		return status;
 	}
 
-	public void setStatus(String status) {
+	public void setStatus(StatusUpdate status) {
 		this.status = status;
 	}
 
@@ -135,5 +139,17 @@ public class AsyncServiceInstance {
 	@JsonProperty("lastCheckedOn")
 	public void setCheckedOnEpoch(Long lastCheckedOn) {
 		this.lastCheckedOn = new DateTime(lastCheckedOn.longValue());
+	}
+
+	/**
+	 * @return The number of timeouts/errors a Status Check has received. If too many timeouts are encountered, then an
+	 *         Error might be flagged and the Async Instance may be set as a Failure.
+	 */
+	public Integer getNumberErrorResponses() {
+		return numberErrorResponses;
+	}
+
+	public void setNumberErrorResponses(Integer numberErrorResponses) {
+		this.numberErrorResponses = numberErrorResponses;
 	}
 }

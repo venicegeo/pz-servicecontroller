@@ -28,16 +28,15 @@ import org.mongojack.DBQuery;
 import org.mongojack.DBQuery.Query;
 import org.mongojack.DBSort;
 import org.mongojack.DBUpdate;
-import org.mongojack.DBUpdate.Builder;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.async.AsyncServiceInstance;
-import org.venice.piazza.servicecontroller.async.AsyncServiceInstanceManager;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
@@ -71,6 +70,8 @@ public class MongoAccessor {
 	private static final String ASYNC_INSTANCE_COLLECTION_NAME = "AsyncServiceInstances";
 	private MongoClient mongoClient;
 
+	@Value("${async.stale.instance.threshold.seconds}")
+	private int STALE_INSTANCE_THRESHOLD_SECONDS;
 	@Autowired
 	private PiazzaLogger logger;
 	@Autowired
@@ -420,7 +421,7 @@ public class MongoAccessor {
 	 */
 	public List<AsyncServiceInstance> getStaleServiceInstances() {
 		// Get the time to query. Threshold seconds ago, in epoch.
-		long thresholdEpoch = new DateTime().minusSeconds(AsyncServiceInstanceManager.STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
+		long thresholdEpoch = new DateTime().minusSeconds(STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
 		// Query for all results that are older than the threshold time
 		DBCursor<AsyncServiceInstance> cursor = getAsyncServiceInstancesCollection()
 				.find(DBQuery.lessThan("lastCheckedOn", thresholdEpoch));
@@ -428,20 +429,10 @@ public class MongoAccessor {
 	}
 
 	/**
-	 * Updates an Async Service instance. The ID of this instance is used to uniquely identify the service.
-	 * 
-	 * @param id
-	 *            The ID of the Instance to update. Corresponds with AsyncServiceInstance.id
-	 * @param status
-	 *            The Status of the Instance
-	 * @param lastCheckedOn
-	 *            The Timestamp of the last check
+	 * Updates an Async Service instance.
 	 */
-	public void updateAsyncServiceInstance(String id, String status, DateTime lastCheckedOn) {
-		Builder update = new Builder();
-		update.set("lastCheckedOn", lastCheckedOn.getMillis());
-		update.set("status", status);
-		getAsyncServiceInstancesCollection().update(DBQuery.is("id", id), update);
+	public void updateAsyncServiceInstance(AsyncServiceInstance instance) {
+		getAsyncServiceInstancesCollection().update(DBQuery.is("id", instance.getId()), instance);
 	}
 
 	/**

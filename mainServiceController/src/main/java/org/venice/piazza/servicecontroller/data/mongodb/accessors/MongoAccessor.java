@@ -26,9 +26,9 @@ import org.joda.time.DateTime;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBQuery.Query;
-import org.mongojack.DBUpdate.Builder;
 import org.mongojack.DBSort;
 import org.mongojack.DBUpdate;
+import org.mongojack.DBUpdate.Builder;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.slf4j.Logger;
@@ -36,7 +36,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.data.mongodb.AsyncServiceInstance;
+import org.venice.piazza.servicecontroller.async.AsyncServiceInstance;
+import org.venice.piazza.servicecontroller.async.AsyncServiceInstanceManager;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
@@ -68,7 +69,6 @@ public class MongoAccessor {
 	private String DATABASE_NAME;
 	private String SERVICE_COLLECTION_NAME;
 	private static final String ASYNC_INSTANCE_COLLECTION_NAME = "AsyncServiceInstances";
-	public static final int STALE_INSTANCE_THRESHOLD_SECONDS = 10;
 	private MongoClient mongoClient;
 
 	@Autowired
@@ -420,7 +420,7 @@ public class MongoAccessor {
 	 */
 	public List<AsyncServiceInstance> getStaleServiceInstances() {
 		// Get the time to query. Threshold seconds ago, in epoch.
-		long thresholdEpoch = new DateTime().minusSeconds(STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
+		long thresholdEpoch = new DateTime().minusSeconds(AsyncServiceInstanceManager.STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
 		// Query for all results that are older than the threshold time
 		DBCursor<AsyncServiceInstance> cursor = getAsyncServiceInstancesCollection()
 				.find(DBQuery.lessThan("lastCheckedOn", thresholdEpoch));

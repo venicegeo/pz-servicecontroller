@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package org.venice.piazza.servicecontroller.data.mongodb;
+package org.venice.piazza.servicecontroller.async;
 
 import org.joda.time.DateTime;
 
@@ -21,9 +21,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * This object represents a single run of an Asynchronous User Service. This marks the Unique ID of the Piazza Service,
- * the Unique ID of the User Service instance that was reported back by the User Service, and the current status of the
- * User Service. This also stores the date that the Service Controller last pinged this instance for status.
+ * This POJO Model represents a single run of an Asynchronous User Service. This marks the Unique ID of the Piazza
+ * Service, the Unique ID of the User Service instance that was reported back by the User Service, and the current
+ * status of the User Service. This also stores the date that the Service Controller last pinged this instance for
+ * status.
  * <p/>
  * This is used internally by Service Controller to track the state of all running Asynchronous Jobs.
  * 
@@ -39,7 +40,7 @@ public class AsyncServiceInstance {
 	private DateTime lastCheckedOn;
 
 	public AsyncServiceInstance() {
-
+		// Required for serialization
 	}
 
 	/**

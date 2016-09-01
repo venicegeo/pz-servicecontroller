@@ -15,6 +15,8 @@
  **/
 package org.venice.piazza.servicecontroller.async;
 
+import java.io.IOException;
+
 import javax.annotation.PostConstruct;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -30,6 +32,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.ServiceMessageWorker;
+import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,20 +41,21 @@ import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
+import model.job.type.ExecuteServiceJob;
+import model.response.JobResponse;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
 
 /**
- * This Worker will make the direct REST request to that User Service, and update the Instance table based on the status
- * and poll time.
+ * This Worker will make the direct REST requests to that User Service, for execution, cancelling, and updating status.
  * 
  * @author Patrick.Doody
  *
  */
 @Component
-public class PollStatusWorker {
+public class AsynchronousServiceWorker {
 	@Value("${async.status.endpoint}")
 	private String STATUS_ENDPOINT;
 	@Value("${async.results.endpoint}")
@@ -72,6 +76,8 @@ public class PollStatusWorker {
 	@Autowired
 	private ServiceMessageWorker serviceMessageWorker;
 	@Autowired
+	private ExecuteServiceHandler executeServiceHandler;
+	@Autowired
 	private UUIDFactory uuidFactory;
 
 	private RestTemplate restTemplate = new RestTemplate();
@@ -83,6 +89,40 @@ public class PollStatusWorker {
 		String KAFKA_HOST = KAFKA_HOST_PORT.split(":")[0];
 		String KAFKA_PORT = KAFKA_HOST_PORT.split(":")[1];
 		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
+	}
+
+	/**
+	 * Executes the Piazza Job Type
+	 * 
+	 * @param jobType
+	 *            The Piazza Job Type, describing everything about the Service execution.
+	 */
+	@Async
+	public void executeService(ExecuteServiceJob job) {
+		// Log the Request
+		logger.log(String.format("Processing Asynchronous User Service with Job ID %s", job.getJobId()), PiazzaLogger.INFO);
+		// Handle the external HTTP execution to the Service
+		ResponseEntity<String> response = executeServiceHandler.handle(job);
+		if (response.getStatusCode().is2xxSuccessful() == false) {
+			// Execution has failed. Log this as a failure, and send an error status.
+			// TODO:
+
+		}
+		try {
+			// Convert the response entity into a JobResponse object in order to get the Instance ID
+			JobResponse jobResponse = objectMapper.readValue(response.getBody(), JobResponse.class);
+			// Create an persist the Async Service Instance Object for this Instance
+			AsyncServiceInstance instance = new AsyncServiceInstance(job.getJobId(), job.data.getServiceId(), jobResponse.data.getJobId(),
+					null, job.data.dataOutput.get(0).getClass().getSimpleName());
+			accessor.addAsyncServiceInstance(instance);
+			// Log the successful start of asynchronous service execution
+			logger.log(String.format("Successful start of Asynchronous Execution for Job ID %S with Service ID %s and Instance ID %s",
+					instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.INFO);
+		} catch (IOException exception) {
+			// The response from the User Service did not conform to the proper model. Log this and flag as a failure.
+			// TODO:
+
+		}
 	}
 
 	/**
@@ -260,6 +300,7 @@ public class PollStatusWorker {
 	 * @param instance
 	 *            The instance to be cancelled
 	 */
+	@Async
 	public void sendCancellationStatus(AsyncServiceInstance instance) {
 		// Send the DELETE request to the external User Service
 		Service service = accessor.getServiceById(instance.getServiceId());

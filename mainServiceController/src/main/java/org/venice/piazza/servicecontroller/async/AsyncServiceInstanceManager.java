@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
-import util.PiazzaLogger;
+import model.job.type.ExecuteServiceJob;
 
 /**
  * This component manages the full cycle of Asynchronous User Service Instances. It handles execution, polling, and
@@ -45,9 +45,7 @@ public class AsyncServiceInstanceManager {
 	@Autowired
 	private MongoAccessor accessor;
 	@Autowired
-	private PollStatusWorker pollStatusWorker;
-	@Autowired
-	private PiazzaLogger logger;
+	private AsynchronousServiceWorker worker;
 
 	private PollServiceTask pollTask = new PollServiceTask();
 	private Timer pollTimer = new Timer();
@@ -69,6 +67,18 @@ public class AsyncServiceInstanceManager {
 	}
 
 	/**
+	 * Executes an Asynchronous User Service
+	 * 
+	 * @param jobType
+	 *            The Execute Job Type, describing all of the information related to the Service. This includes the
+	 *            inputs and outputs of the service.
+	 */
+	public void executeJob(ExecuteServiceJob jobType) {
+		// Send the Execution to the Worker thread
+		worker.executeService(jobType);
+	}
+
+	/**
 	 * Cancels a running Instance by removing it from the persistence table.
 	 * 
 	 * @param jobId
@@ -78,7 +88,7 @@ public class AsyncServiceInstanceManager {
 		// Get the Instance to cancel
 		AsyncServiceInstance instance = accessor.getInstanceByJobId(jobId);
 		// Handle the cancellation
-		pollStatusWorker.sendCancellationStatus(instance);
+		worker.sendCancellationStatus(instance);
 	}
 
 	/**
@@ -100,7 +110,7 @@ public class AsyncServiceInstanceManager {
 			// Get the list of all stale User Services and poll each.
 			List<AsyncServiceInstance> staleInstances = accessor.getStaleServiceInstances();
 			for (AsyncServiceInstance instance : staleInstances) {
-				pollStatusWorker.pollStatus(instance);
+				worker.pollStatus(instance);
 			}
 		}
 	}

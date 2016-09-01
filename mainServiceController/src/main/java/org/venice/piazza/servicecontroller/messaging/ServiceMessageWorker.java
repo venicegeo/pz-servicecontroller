@@ -43,6 +43,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.venice.piazza.servicecontroller.async.AsyncServiceInstanceManager;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
@@ -102,6 +103,9 @@ public class ServiceMessageWorker {
 
 	@Autowired
 	private PiazzaLogger coreLogger;
+	
+	@Autowired
+	private AsyncServiceInstanceManager asyncServiceInstanceManager;
 
 	@Autowired
 	private ExecuteServiceHandler esHandler;
@@ -153,6 +157,17 @@ public class ServiceMessageWorker {
 						// No more to do. Return.
 						return new AsyncResult<String>("ServiceMessageWorker_Thread");
 					} else {
+						// Determine if this is a Synchronous or an Asynchronous Job. 
+						Service service = accessor.getServiceById(esData.getServiceId());
+						if (service.getIsAsynchronous().equals(true)) {
+							// Perform Asynchronous Logic
+							asyncServiceInstanceManager.executeJob(jobItem);
+							// Return null. This future will not be tracked by the Service Thread Manager.
+							// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
+							// we don't have to scatter return statements throughout this method.
+							return null;
+						}
+						
 						coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
 						// Execute the external Service and get the Response Entity
 						try {

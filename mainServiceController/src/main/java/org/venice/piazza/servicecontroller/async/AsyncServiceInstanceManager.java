@@ -69,6 +69,19 @@ public class AsyncServiceInstanceManager {
 	}
 
 	/**
+	 * Cancels a running Instance by removing it from the persistence table.
+	 * 
+	 * @param jobId
+	 *            The Piazza Job ID of the Instance to be cancelled
+	 */
+	public void cancelInstance(String jobId) {
+		// Get the Instance to cancel
+		AsyncServiceInstance instance = accessor.getInstanceByJobId(jobId);
+		// Handle the cancellation
+		pollStatusWorker.sendCancellationStatus(instance);
+	}
+
+	/**
 	 * Timer Task that will, on a schedule, poll for the Status of Stale asynchronous user services.
 	 * <p>
 	 * This component is responsible for polling the status of asynchronous user service instances. It will use the

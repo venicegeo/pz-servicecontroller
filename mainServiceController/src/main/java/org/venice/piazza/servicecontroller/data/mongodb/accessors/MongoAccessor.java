@@ -46,6 +46,7 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
+import model.data.deployment.Deployment;
 import model.job.metadata.ResourceMetadata;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
@@ -426,6 +427,19 @@ public class MongoAccessor {
 		DBCursor<AsyncServiceInstance> cursor = getAsyncServiceInstancesCollection()
 				.find(DBQuery.lessThan("lastCheckedOn", thresholdEpoch));
 		return cursor.toArray();
+	}
+
+	/**
+	 * Gets the Async Service Instance for the Piazza Job ID
+	 * 
+	 * @param jobId
+	 *            The piazza Job ID
+	 * @return The async service instance
+	 */
+	public AsyncServiceInstance getInstanceByJobId(String jobId) {
+		BasicDBObject query = new BasicDBObject("jobId", jobId);
+		AsyncServiceInstance instance = getAsyncServiceInstancesCollection().findOne(query);
+		return instance;
 	}
 
 	/**

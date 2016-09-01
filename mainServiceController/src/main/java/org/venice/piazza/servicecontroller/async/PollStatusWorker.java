@@ -56,6 +56,8 @@ public class PollStatusWorker {
 	private String STATUS_ENDPOINT;
 	@Value("${async.results.endpoint}")
 	private String RESULTS_ENDPOINT;
+	@Value("${async.delete.endpoint}")
+	private String DELETE_ENDPOINT;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String KAFKA_HOST_PORT;
 	@Value("${SPACE}")
@@ -252,4 +254,36 @@ public class PollStatusWorker {
 		}
 	}
 
+	/**
+	 * Sends the cancellation status to the external User Service for the specified instance.
+	 * 
+	 * @param instance
+	 *            The instance to be cancelled
+	 */
+	public void sendCancellationStatus(AsyncServiceInstance instance) {
+		// Send the DELETE request to the external User Service
+		Service service = accessor.getServiceById(instance.getServiceId());
+		String url = String.format("%s/%s/%s", service.getUrl(), DELETE_ENDPOINT, instance.getInstanceId());
+		try {
+			restTemplate.delete(url);
+		} catch (HttpClientErrorException | HttpServerErrorException exception) {
+			// The cancellation sent back an error. Log it.
+			logger.log(String.format(
+					"Error Cancelling Service Instance on external User Service: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. No subsequent calls will be made.",
+					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
+					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+		}
+		// Remove this from the Instance Table
+		accessor.deleteAsyncServiceInstance(instance.getJobId());
+		// Send the Kafka Message for successful Cancellation status
+		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
+		try {
+			producer.send(JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), statusUpdate, SPACE));
+		} catch (JsonProcessingException jsonException) {
+			jsonException.printStackTrace();
+			logger.log(String.format(
+					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
+					instance.getJobId(), jsonException.getMessage()), PiazzaLogger.ERROR);
+		}
+	}
 }

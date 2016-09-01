@@ -7,24 +7,27 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.annotation.PostConstruct;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.venice.piazza.servicecontroller.async.AsyncServiceInstanceManager;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import messaging.job.WorkerCallback;
 import model.job.Job;
-import model.job.PiazzaJobType;
 import model.job.type.AbortJob;
 import model.job.type.ExecuteServiceJob;
 import model.request.PiazzaJobRequest;
@@ -61,6 +64,9 @@ public class ServiceMessageThreadManager {
 
 	@Autowired
 	ServiceMessageWorker serviceMessageWorker;
+	
+	@Autowired
+	private AsyncServiceInstanceManager asyncServiceInstanceManager;
 
 	/**
 	 * Constructor for ServiceMessageThreadManager
@@ -214,8 +220,9 @@ public class ServiceMessageThreadManager {
 						continue;
 					}
 					
+					// Determine if this a Sync or Async job
 					if (runningServiceRequests.containsKey(jobId)) {
-						// Cancel the Running Job
+						// Cancel the Running Synchronous Job by terminating its thread
 						boolean cancelled = runningServiceRequests.get(jobId).cancel(true);
 						if (cancelled) {
 							// Log the cancellation has occurred
@@ -225,7 +232,11 @@ public class ServiceMessageThreadManager {
 						}
 						// Remove it from the list of Running Jobs
 						runningServiceRequests.remove(jobId);
+					} else {
+						// Cancel the running Asynchronous Job
+						asyncServiceInstanceManager.cancelInstance(jobId);
 					}
+
 				}
 			}
 		} catch (WakeupException wex) {

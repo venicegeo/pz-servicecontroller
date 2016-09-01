@@ -31,7 +31,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.messaging.ServiceMessageWorker;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,8 +72,6 @@ public class AsynchronousServiceWorker {
 	private MongoAccessor accessor;
 	@Autowired
 	private PiazzaLogger logger;
-	@Autowired
-	private ServiceMessageWorker serviceMessageWorker;
 	@Autowired
 	private ExecuteServiceHandler executeServiceHandler;
 	@Autowired
@@ -242,8 +239,8 @@ public class AsynchronousServiceWorker {
 			ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 			String dataId = uuidFactory.getUUID();
 			// Get the Result of the Service
-			DataResult result = serviceMessageWorker.processExecutionResult(instance.getOutputType(), producer, StatusUpdate.STATUS_SUCCESS,
-					response, dataId);
+			DataResult result = executeServiceHandler.processExecutionResult(instance.getOutputType(), producer,
+					StatusUpdate.STATUS_SUCCESS, response, dataId);
 			// Send the Completed Status to the Job Manager, including the Result
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 			statusUpdate.setResult(result);

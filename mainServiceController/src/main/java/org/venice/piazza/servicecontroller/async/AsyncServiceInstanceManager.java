@@ -26,11 +26,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
-import model.job.type.ExecuteServiceJob;
-
 /**
- * This component manages the full cycle of Asynchronous User Service Instances. It handles execution, polling, and
- * processing results.
+ * This component manages the polling cycle of Asynchronous Service Instances.
  * 
  * @author Patrick.Doody
  *
@@ -64,18 +61,6 @@ public class AsyncServiceInstanceManager {
 	 */
 	public void stopPolling() {
 		pollTimer.cancel();
-	}
-
-	/**
-	 * Executes an Asynchronous User Service
-	 * 
-	 * @param jobType
-	 *            The Execute Job Type, describing all of the information related to the Service. This includes the
-	 *            inputs and outputs of the service.
-	 */
-	public void executeJob(ExecuteServiceJob jobType) {
-		// Send the Execution to the Worker thread
-		worker.executeService(jobType);
 	}
 
 	/**

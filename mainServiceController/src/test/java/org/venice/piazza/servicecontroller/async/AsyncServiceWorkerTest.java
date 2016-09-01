@@ -29,6 +29,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
@@ -40,6 +42,7 @@ import model.data.type.TextDataType;
 import model.job.type.ExecuteServiceJob;
 import model.response.JobResponse;
 import model.service.metadata.ExecuteServiceData;
+import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -62,6 +65,8 @@ public class AsyncServiceWorkerTest {
 	private UUIDFactory uuidFactory;
 	@Mock
 	private Producer<String, String> producer;
+	@Mock
+	private RestTemplate restTemplate;
 
 	@InjectMocks
 	private AsynchronousServiceWorker worker;
@@ -69,6 +74,7 @@ public class AsyncServiceWorkerTest {
 	private ObjectMapper objectMapper = new ObjectMapper();
 	private ExecuteServiceJob mockJob = new ExecuteServiceJob("jobId");
 	private AsyncServiceInstance mockInstance = new AsyncServiceInstance();
+	private Service mockService = new Service();
 
 	/**
 	 * Test initialization
@@ -93,6 +99,19 @@ public class AsyncServiceWorkerTest {
 		mockInstance.setOutputType("geojson");
 		mockInstance.setServiceId("serviceId");
 		mockInstance.setStatus(new StatusUpdate(StatusUpdate.STATUS_RUNNING));
+
+		// Mock a Service to grab URL and other things from
+		mockService.setUrl("test.local");
+		mockService.setMethod("GET");
+		mockService.setIsAsynchronous(true);
+		mockService.setServiceId("serviceId");
+
+		// Mock the property variables for URL
+		ReflectionTestUtils.setField(worker, "STATUS_ENDPOINT", "status");
+		ReflectionTestUtils.setField(worker, "RESULTS_ENDPOINT", "results");
+		ReflectionTestUtils.setField(worker, "DELETE_ENDPOINT", "delete");
+		ReflectionTestUtils.setField(worker, "STATUS_ERROR_LIMIT", 10);
+		ReflectionTestUtils.setField(worker, "SPACE", "test");
 	}
 
 	/**
@@ -131,7 +150,7 @@ public class AsyncServiceWorkerTest {
 	@Test
 	public void testExecutionErrorFormat() {
 		// Mock the Response
-		Mockito.doReturn(new ResponseEntity<String>("Everything is fine!", HttpStatus.OK)).when(executeServiceHandler)
+		Mockito.doReturn(new ResponseEntity<String>("Everything is fine.", HttpStatus.OK)).when(executeServiceHandler)
 				.handle(any(ExecuteServiceJob.class));
 		// Test
 		worker.executeService(mockJob);
@@ -145,22 +164,45 @@ public class AsyncServiceWorkerTest {
 	 */
 	@Test
 	public void testPollRunningStatus() {
+		// Mock
+		Mockito.doReturn(mockService).when(accessor).getServiceById(Mockito.eq(mockInstance.getServiceId()));
+		String url = String.format("%s/%s/%s", mockService.getUrl(), "status", mockInstance.getInstanceId());
+		StatusUpdate mockStatus = new StatusUpdate(StatusUpdate.STATUS_RUNNING);
+		Mockito.doReturn(new ResponseEntity<StatusUpdate>(mockStatus, HttpStatus.OK)).when(restTemplate).getForObject(Mockito.eq(url),
+				Mockito.any());
 
+		// Test
+		worker.pollStatus(mockInstance);
+
+		// Verify
+		Mockito.verify(accessor, Mockito.times(1)).updateAsyncServiceInstance(Mockito.any(AsyncServiceInstance.class));
+		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
 	}
 
 	/**
 	 * Tests a polling of Status with a ERROR response
 	 */
-	@Test
-	public void testPollErrorStatus() {
-
-	}
+	/*
+	 * @Test public void testPollErrorStatus() { // Mock - return an Error Status
+	 * Mockito.doReturn(mockService).when(accessor).getServiceById(Mockito.eq(mockInstance.getServiceId())); String url
+	 * = String.format("%s/%s/%s", mockService.getUrl(), "status", mockInstance.getInstanceId()); StatusUpdate
+	 * mockStatus = new StatusUpdate(StatusUpdate.STATUS_ERROR); mockStatus.setResult(new ErrorResult("Uh Oh",
+	 * "Things went wrong.")); Mockito.doReturn(new ResponseEntity<StatusUpdate>(mockStatus,
+	 * HttpStatus.OK)).when(restTemplate).getForObject(Mockito.eq(url), Mockito.eq(StatusUpdate.class));
+	 * 
+	 * // Test worker.pollStatus(mockInstance);
+	 * 
+	 * // Verify Mockito.verify(accessor,
+	 * Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockInstance.getJobId())); Mockito.verify(producer,
+	 * Mockito.times(1)).send(Mockito.any()); }
+	 */
 
 	/**
 	 * Tests a polling of Status with a SUCCESS response
 	 */
-	@Test
-	public void testPollSuccessStatus() {
-
-	}
+	/*
+	 * @Test public void testPollSuccessStatus() {
+	 * 
+	 * }
+	 */
 }

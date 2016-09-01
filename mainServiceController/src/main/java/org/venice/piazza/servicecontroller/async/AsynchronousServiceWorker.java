@@ -147,7 +147,7 @@ public class AsynchronousServiceWorker {
 		try {
 			// Get the Status of the job.
 			StatusUpdate status = restTemplate.getForObject(url, StatusUpdate.class);
-
+			
 			// Act appropriately based on the status received
 			if ((status.getStatus().equals(StatusUpdate.STATUS_PENDING)) || (status.getStatus().equals(StatusUpdate.STATUS_RUNNING))
 					|| (status.getStatus().equals(StatusUpdate.STATUS_SUBMITTED))) {
@@ -181,6 +181,13 @@ public class AsynchronousServiceWorker {
 				}
 				logger.log(errorMessage, PiazzaLogger.ERROR);
 				processErrorStatus(instance.getJobId(), status.getStatus(), errorMessage);
+			} else {
+				// If it's an unknown status, then we can't process it.
+				updateFailureCount(instance);
+				logger.log(String.format(
+						"Unknown Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
+						status.getStatus(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
+						instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
 			}
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
 			updateFailureCount(instance);

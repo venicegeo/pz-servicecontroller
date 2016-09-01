@@ -105,8 +105,11 @@ public class AsynchronousServiceWorker {
 		ResponseEntity<String> response = executeServiceHandler.handle(job);
 		if (response.getStatusCode().is2xxSuccessful() == false) {
 			// Execution has failed. Log this as a failure, and send an error status.
-			// TODO:
-
+			String errorMessage = String.format(
+					"Asynchronous Service Failed to Execute for Job ID %s to Service ID %s. Status Code %s was returned with Message %s",
+					job.getJobId(), job.data.getServiceId(), response.getStatusCode(), response.getBody());
+			logger.log(errorMessage, PiazzaLogger.ERROR);
+			processErrorStatus(job.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
 		}
 		try {
 			// Convert the response entity into a JobResponse object in order to get the Instance ID
@@ -120,8 +123,11 @@ public class AsynchronousServiceWorker {
 					instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.INFO);
 		} catch (IOException exception) {
 			// The response from the User Service did not conform to the proper model. Log this and flag as a failure.
-			// TODO:
-
+			String errorMessage = String.format(
+					"Could not parse the 2xx HTTP Status response from User Service Execution for Job ID %s. It did not conform to the typical Response format. Details: %s",
+					job.getJobId(), exception.getMessage());
+			logger.log(errorMessage, PiazzaLogger.ERROR);
+			processErrorStatus(job.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
 		}
 	}
 
@@ -175,7 +181,7 @@ public class AsynchronousServiceWorker {
 					errorMessage = String.format("%s Details: %s, %s", errorMessage, errorResult.getMessage(), errorResult.getDetails());
 				}
 				logger.log(errorMessage, PiazzaLogger.ERROR);
-				processErrorStatus(instance, status.getStatus(), errorMessage);
+				processErrorStatus(instance.getJobId(), status.getStatus(), errorMessage);
 			}
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
 			updateFailureCount(instance);
@@ -211,7 +217,7 @@ public class AsynchronousServiceWorker {
 			// Remove this from the Collection of tracked instance Jobs.
 			accessor.deleteAsyncServiceInstance(instance.getJobId());
 			// Send a Failure message back to the Job Manager via Kafka.
-			processErrorStatus(instance, StatusUpdate.STATUS_ERROR, errorMessage);
+			processErrorStatus(instance.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
 		} else {
 			// Update the Database that this instance has failed.
 			accessor.updateAsyncServiceInstance(instance);
@@ -268,9 +274,9 @@ public class AsynchronousServiceWorker {
 	 * @param serviceStatus
 	 *            The StatusUpdate received from the external User Service
 	 */
-	private void processErrorStatus(AsyncServiceInstance instance, String status, String message) {
+	private void processErrorStatus(String jobId, String status, String message) {
 		// Remove the Instance from the Instance Table
-		accessor.deleteAsyncServiceInstance(instance.getJobId());
+		accessor.deleteAsyncServiceInstance(jobId);
 
 		// Create a new Status Update to send to the Job Manager.
 		StatusUpdate statusUpdate = new StatusUpdate();
@@ -283,7 +289,7 @@ public class AsynchronousServiceWorker {
 		// Send the Job Status through Kafka.
 		try {
 			ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-					String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), instance.getJobId(),
+					String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
 					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(prodRecord);
 		} catch (JsonProcessingException exception) {

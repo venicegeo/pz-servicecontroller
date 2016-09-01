@@ -103,7 +103,13 @@ public class PollStatusWorker {
 			} else if ((status.getStatus().equals(StatusUpdate.STATUS_ERROR)) || (status.getStatus().equals(StatusUpdate.STATUS_FAIL))
 					|| (status.getStatus().equals(StatusUpdate.STATUS_CANCELLED))) {
 				// Errors encountered. Report this and bubble it back up through the Job ID.
-				processErrorStatus(instance, status);
+				String errorMessage = String.format("Instance %s reported back Status %s. ", instance.getInstanceId(), status.getStatus());
+				if (status.getResult() instanceof ErrorResult) {
+					// If we can parse any further details on the error, then do so here.
+					ErrorResult errorResult = (ErrorResult) status.getResult();
+					errorMessage = String.format("%s Details: %s, %s", errorMessage, errorResult.getMessage(), errorResult.getDetails());
+				}
+				processErrorStatus(instance, status.getStatus(), errorMessage);
 			}
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
 			updateFailureCount(instance);
@@ -130,15 +136,16 @@ public class PollStatusWorker {
 		// Increment the failure count
 		instance.setNumberErrorResponses(instance.getNumberErrorResponses() + 1);
 		// Check if the Failure count is above the threshold. If so, then fail the job.
-		if (instance.getNumberErrorResponses() < STATUS_ERROR_LIMIT) {
+		if (instance.getNumberErrorResponses() > STATUS_ERROR_LIMIT) {
 			// Failure threshold has been reached. Fail the job.
-			logger.log(String.format(
+			String errorMessage = String.format(
 					"Job ID %s for Service ID %s Instance ID %s has failed too many times during periodic Status Checks. This Job is being marked as a failure.",
-					instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.ERROR);
+					instance.getJobId(), instance.getServiceId(), instance.getInstanceId());
+			logger.log(errorMessage, PiazzaLogger.ERROR);
 			// Remove this from the Collection of tracked instance Jobs.
 			accessor.deleteAsyncServiceInstance(instance.getJobId());
 			// Send a Failure message back to the Job Manager via Kafka.
-			// TODO: 
+			processErrorStatus(instance, StatusUpdate.STATUS_ERROR, errorMessage);
 		} else {
 			// Update the Database that this instance has failed.
 			accessor.updateAsyncServiceInstance(instance);
@@ -154,24 +161,16 @@ public class PollStatusWorker {
 	 * @param serviceStatus
 	 *            The StatusUpdate received from the external User Service
 	 */
-	private void processErrorStatus(AsyncServiceInstance instance, StatusUpdate serviceStatus) {
+	private void processErrorStatus(AsyncServiceInstance instance, String status, String message) {
 		// Remove the Instance from the Instance Table
 		accessor.deleteAsyncServiceInstance(instance.getJobId());
 
-		// Form the message.
-		String error = String.format("Instance %s reported back Status %s. ", instance.getInstanceId(), serviceStatus.getStatus());
-		if (serviceStatus.getResult() instanceof ErrorResult) {
-			// If we can parse any further details on the error, then do so here.
-			ErrorResult errorResult = (ErrorResult) serviceStatus.getResult();
-			error = String.format("%s Details: %s, %s", error, errorResult.getMessage(), errorResult.getDetails());
-		}
-
 		// Create a new Status Update to send to the Job Manager.
 		StatusUpdate statusUpdate = new StatusUpdate();
-		statusUpdate.setStatus(serviceStatus.getStatus());
+		statusUpdate.setStatus(status);
 		// Create the Message for the Error Result of the Status
 		ErrorResult errorResult = new ErrorResult();
-		errorResult.setMessage(error);
+		errorResult.setMessage(message);
 		statusUpdate.setResult(errorResult);
 
 		// Send the Job Status through Kafka.
@@ -188,19 +187,4 @@ public class PollStatusWorker {
 		}
 	}
 
-	/**
-	 * Determines if the Status is done processing or not.
-	 * 
-	 * @param status
-	 *            The Status.
-	 * @return True if done, false if not.
-	 */
-	private boolean isDoneProcessing(String status) {
-		if ((status.equals(StatusUpdate.STATUS_ERROR)) || (status.equals(StatusUpdate.STATUS_FAIL))
-				|| (status.equals(StatusUpdate.STATUS_SUCCESS))) {
-			return true;
-		} else {
-			return false;
-		}
-	}
 }

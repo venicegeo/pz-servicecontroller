@@ -180,7 +180,9 @@ public class ServiceMessageWorker {
 
 						// Process the Response and handle any Ingest that may result
 						String dataId = uuidFactory.getUUID();
-						DataResult result = processExecutionResult(job, producer, executeJobStatus, externalServiceResponse, dataId);
+						// Get the output Type
+						String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
+						DataResult result = processExecutionResult(outputType, producer, executeJobStatus, externalServiceResponse, dataId);
 
 						if (Thread.interrupted()) {
 							throw new InterruptedException();
@@ -326,7 +328,7 @@ public class ServiceMessageWorker {
 	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
 	 * return the Result of the data.
 	 */
-	private DataResult processExecutionResult(Job job, Producer<String, String> producer, String status,
+	public DataResult processExecutionResult(String outputType, Producer<String, String> producer, String status,
 			ResponseEntity<String> handleResult, String dataId) throws JsonProcessingException, IOException, InterruptedException {
 		coreLogger.log("Send Execute Status Kafka", PiazzaLogger.DEBUG);
 		// Initialize ingest job items
@@ -340,9 +342,6 @@ public class ServiceMessageWorker {
 			// String serviceControlString = handleResult.getBody().get(0).toString();
 			String serviceControlString = handleResult.getBody().toString();
 
-			PiazzaJobType jobType = job.getJobType();
-			ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
-			String type = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
 			coreLogger.log("The service controller string is " + serviceControlString, PiazzaLogger.DEBUG);
 
 			try {
@@ -372,11 +371,11 @@ public class ServiceMessageWorker {
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 
 				// Checking payload type and settings the correct type
-				if (type.equals((new TextDataType()).getClass().getSimpleName())) {
+				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) {
 					TextDataType newDataType = new TextDataType();
 					newDataType.content = serviceControlString;
 					data.dataType = newDataType;
-				} else if (type.equals((new GeoJsonDataType()).getClass().getSimpleName())) {
+				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) {
 					GeoJsonDataType newDataType = new GeoJsonDataType();
 					newDataType.setGeoJsonContent(serviceControlString);
 					data.dataType = newDataType;

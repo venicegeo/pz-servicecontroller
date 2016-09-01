@@ -22,22 +22,26 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.ServiceMessageWorker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
+import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 /**
  * This Worker will make the direct REST request to that User Service, and update the Instance table based on the status
@@ -50,6 +54,8 @@ import util.PiazzaLogger;
 public class PollStatusWorker {
 	@Value("${async.status.endpoint}")
 	private String STATUS_ENDPOINT;
+	@Value("${async.results.endpoint}")
+	private String RESULTS_ENDPOINT;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String KAFKA_HOST_PORT;
 	@Value("${SPACE}")
@@ -61,6 +67,10 @@ public class PollStatusWorker {
 	private MongoAccessor accessor;
 	@Autowired
 	private PiazzaLogger logger;
+	@Autowired
+	private ServiceMessageWorker serviceMessageWorker;
+	@Autowired
+	private UUIDFactory uuidFactory;
 
 	private RestTemplate restTemplate = new RestTemplate();
 	private Producer<String, String> producer;
@@ -85,7 +95,7 @@ public class PollStatusWorker {
 		// Get the Service, so we can fetch the URL
 		Service service = accessor.getServiceById(instance.getServiceId());
 		// Build the GET URL
-		String url = String.format("%s/%s", service.getUrl(), STATUS_ENDPOINT);
+		String url = String.format("%s/%s/%s", service.getUrl(), STATUS_ENDPOINT, instance.getInstanceId());
 		// Poll
 		try {
 			// Get the Status of the job.
@@ -98,8 +108,21 @@ public class PollStatusWorker {
 				instance.setStatus(status);
 				instance.setLastCheckedOn(new DateTime());
 				accessor.updateAsyncServiceInstance(instance);
+				// Route the current Job Status through Kafka.
+				try {
+					ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
+							String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), instance.getJobId(),
+							objectMapper.writeValueAsString(status));
+					producer.send(prodRecord);
+				} catch (JsonProcessingException exception) {
+					// The message could not be serialized. Record this.
+					exception.printStackTrace();
+					logger.log("Could not send Running Status Message to Job Manager. Error serializing Status: " + exception.getMessage(),
+							PiazzaLogger.ERROR);
+				}
 			} else if (status.getStatus().equals(StatusUpdate.STATUS_SUCCESS)) {
-				// TODO: Handle success
+				// Queue up a subsequent request to get the Result of the Instance
+				processSuccessStatus(service, instance);
 			} else if ((status.getStatus().equals(StatusUpdate.STATUS_ERROR)) || (status.getStatus().equals(StatusUpdate.STATUS_FAIL))
 					|| (status.getStatus().equals(StatusUpdate.STATUS_CANCELLED))) {
 				// Errors encountered. Report this and bubble it back up through the Job ID.
@@ -109,6 +132,7 @@ public class PollStatusWorker {
 					ErrorResult errorResult = (ErrorResult) status.getResult();
 					errorMessage = String.format("%s Details: %s, %s", errorMessage, errorResult.getMessage(), errorResult.getDetails());
 				}
+				logger.log(errorMessage, PiazzaLogger.ERROR);
 				processErrorStatus(instance, status.getStatus(), errorMessage);
 			}
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
@@ -150,7 +174,48 @@ public class PollStatusWorker {
 			// Update the Database that this instance has failed.
 			accessor.updateAsyncServiceInstance(instance);
 		}
+	}
 
+	/**
+	 * Handles a successful Instance. This will make a call to the results endpoint to grab the results of the service.
+	 * 
+	 * @param service
+	 *            The Service metadata information (used to grab URL, etc)
+	 * @param instance
+	 *            The User Service execution instance
+	 */
+	private void processSuccessStatus(Service service, AsyncServiceInstance instance) {
+		// Log
+		logger.log(String.format("Handling Successful status of Instance %s for Service %s under Job ID %s", instance.getInstanceId(),
+				instance.getServiceId(), instance.getJobId()), PiazzaLogger.INFO);
+		// Make a request to the results endpoint to get the results of the Service
+		String url = String.format("%s/%s/%s", service.getUrl(), RESULTS_ENDPOINT, instance.getInstanceId());
+		try {
+			ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+			String dataId = uuidFactory.getUUID();
+			// Get the Result of the Service
+			DataResult result = serviceMessageWorker.processExecutionResult(instance.getOutputType(), producer, StatusUpdate.STATUS_SUCCESS,
+					response, dataId);
+			// Send the Completed Status to the Job Manager, including the Result
+			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+			statusUpdate.setResult(result);
+			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), statusUpdate, SPACE);
+			producer.send(prodRecord);
+			// Remove this Instance from the Instance table
+			accessor.deleteAsyncServiceInstance(instance.getJobId());
+		} catch (HttpClientErrorException | HttpServerErrorException exception) {
+			updateFailureCount(instance);
+			logger.log(String.format(
+					"Error fetching Service results: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
+					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
+					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+		} catch (Exception exception) {
+			updateFailureCount(instance);
+			logger.log(String.format(
+					"Unexpected Error fetching Service results: %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
+					exception.getMessage(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
+					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+		}
 	}
 
 	/**

@@ -38,6 +38,7 @@ public class AsyncServiceInstance {
 	private String serviceId;
 	private String instanceId;
 	private StatusUpdate status;
+	private String outputType;
 	private Integer numberErrorResponses;
 	@JsonIgnore
 	private DateTime lastCheckedOn;
@@ -151,5 +152,13 @@ public class AsyncServiceInstance {
 
 	public void setNumberErrorResponses(Integer numberErrorResponses) {
 		this.numberErrorResponses = numberErrorResponses;
+	}
+
+	public String getOutputType() {
+		return outputType;
+	}
+
+	public void setOutputType(String outputType) {
+		this.outputType = outputType;
 	}
 }

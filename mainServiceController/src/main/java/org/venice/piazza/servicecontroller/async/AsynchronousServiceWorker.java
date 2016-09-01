@@ -107,24 +107,26 @@ public class AsynchronousServiceWorker {
 					job.getJobId(), job.data.getServiceId(), response.getStatusCode(), response.getBody());
 			logger.log(errorMessage, PiazzaLogger.ERROR);
 			processErrorStatus(job.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
-		}
-		try {
-			// Convert the response entity into a JobResponse object in order to get the Instance ID
-			JobResponse jobResponse = objectMapper.readValue(response.getBody(), JobResponse.class);
-			// Create an persist the Async Service Instance Object for this Instance
-			AsyncServiceInstance instance = new AsyncServiceInstance(job.getJobId(), job.data.getServiceId(), jobResponse.data.getJobId(),
-					null, job.data.dataOutput.get(0).getClass().getSimpleName());
-			accessor.addAsyncServiceInstance(instance);
-			// Log the successful start of asynchronous service execution
-			logger.log(String.format("Successful start of Asynchronous Execution for Job ID %S with Service ID %s and Instance ID %s",
-					instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.INFO);
-		} catch (IOException exception) {
-			// The response from the User Service did not conform to the proper model. Log this and flag as a failure.
-			String errorMessage = String.format(
-					"Could not parse the 2xx HTTP Status response from User Service Execution for Job ID %s. It did not conform to the typical Response format. Details: %s",
-					job.getJobId(), exception.getMessage());
-			logger.log(errorMessage, PiazzaLogger.ERROR);
-			processErrorStatus(job.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
+		} else {
+			try {
+				// Convert the response entity into a JobResponse object in order to get the Instance ID
+				JobResponse jobResponse = objectMapper.readValue(response.getBody(), JobResponse.class);
+				// Create an persist the Async Service Instance Object for this Instance
+				AsyncServiceInstance instance = new AsyncServiceInstance(job.getJobId(), job.data.getServiceId(),
+						jobResponse.data.getJobId(), null, job.data.dataOutput.get(0).getClass().getSimpleName());
+				accessor.addAsyncServiceInstance(instance);
+				// Log the successful start of asynchronous service execution
+				logger.log(String.format("Successful start of Asynchronous Execution for Job ID %S with Service ID %s and Instance ID %s",
+						instance.getJobId(), instance.getServiceId(), instance.getInstanceId()), PiazzaLogger.INFO);
+			} catch (IOException exception) {
+				// The response from the User Service did not conform to the proper model. Log this and flag as a
+				// failure.
+				String errorMessage = String.format(
+						"Could not parse the 2xx HTTP Status response from User Service Execution for Job ID %s. It did not conform to the typical Response format. Details: %s",
+						job.getJobId(), exception.getMessage());
+				logger.log(errorMessage, PiazzaLogger.ERROR);
+				processErrorStatus(job.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
+			}
 		}
 	}
 

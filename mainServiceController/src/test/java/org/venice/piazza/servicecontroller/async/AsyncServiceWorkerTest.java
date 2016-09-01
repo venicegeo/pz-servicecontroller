@@ -1,0 +1,166 @@
+/**
+ * Copyright 2016, RadiantBlue Technologies, Inc.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+package org.venice.piazza.servicecontroller.async;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+
+import org.apache.kafka.clients.producer.Producer;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import model.data.DataType;
+import model.data.type.TextDataType;
+import model.job.type.ExecuteServiceJob;
+import model.response.JobResponse;
+import model.service.metadata.ExecuteServiceData;
+import model.status.StatusUpdate;
+import util.PiazzaLogger;
+import util.UUIDFactory;
+
+/**
+ * Unit tests for the asynchronous service worker, which handles the requests for asynchronous services related to
+ * polling status, execution, and result handling.
+ * 
+ * @author Patrick.Doody
+ *
+ */
+public class AsyncServiceWorkerTest {
+	@Mock
+	private MongoAccessor accessor;
+	@Mock
+	private PiazzaLogger logger;
+	@Mock
+	private ExecuteServiceHandler executeServiceHandler;
+	@Mock
+	private UUIDFactory uuidFactory;
+	@Mock
+	private Producer<String, String> producer;
+
+	@InjectMocks
+	private AsynchronousServiceWorker worker;
+
+	private ObjectMapper objectMapper = new ObjectMapper();
+	private ExecuteServiceJob mockJob = new ExecuteServiceJob("jobId");
+	private AsyncServiceInstance mockInstance = new AsyncServiceInstance();
+
+	/**
+	 * Test initialization
+	 */
+	@Before
+	public void setup() {
+		MockitoAnnotations.initMocks(this);
+
+		// UUID Factory always generates a specific GUID
+		when(uuidFactory.getUUID()).thenReturn("123456");
+
+		// Mocking Execute Data
+		mockJob.data = new ExecuteServiceData();
+		mockJob.data.setServiceId("serviceId");
+		mockJob.data.dataOutput = new ArrayList<DataType>();
+		mockJob.data.dataOutput.add(new TextDataType());
+
+		// Mock an Instance we can use
+		mockInstance.setInstanceId("instanceId");
+		mockInstance.setJobId("jobId");
+		mockInstance.setNumberErrorResponses(0);
+		mockInstance.setOutputType("geojson");
+		mockInstance.setServiceId("serviceId");
+		mockInstance.setStatus(new StatusUpdate(StatusUpdate.STATUS_RUNNING));
+	}
+
+	/**
+	 * Test service execution with successful response
+	 */
+	@Test
+	public void testExecute() throws JsonProcessingException {
+		// Mock the Response
+		JobResponse mockResponse = new JobResponse("instanceId");
+		Mockito.doReturn(new ResponseEntity<String>(objectMapper.writeValueAsString(mockResponse), HttpStatus.OK))
+				.when(executeServiceHandler).handle(any(ExecuteServiceJob.class));
+		// Test
+		worker.executeService(mockJob);
+		// Verify that the database attempted to insert the newly created Instance
+		Mockito.verify(accessor, Mockito.times(1)).addAsyncServiceInstance(any(AsyncServiceInstance.class));
+	}
+
+	/**
+	 * Test error handling for service returning a 500 error
+	 */
+	@Test
+	public void testExecutionErrorResponse() {
+		// Mock an error coming from the execution service
+		Mockito.doReturn(new ResponseEntity<String>("Error.", HttpStatus.INTERNAL_SERVER_ERROR)).when(executeServiceHandler)
+				.handle(any(ExecuteServiceJob.class));
+		// Test
+		worker.executeService(mockJob);
+		// Verify that the error was processed by the worker
+		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockJob.getJobId()));
+		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
+	}
+
+	/**
+	 * Tests a Service returning an invalid payload
+	 */
+	@Test
+	public void testExecutionErrorFormat() {
+		// Mock the Response
+		Mockito.doReturn(new ResponseEntity<String>("Everything is fine!", HttpStatus.OK)).when(executeServiceHandler)
+				.handle(any(ExecuteServiceJob.class));
+		// Test
+		worker.executeService(mockJob);
+		// Verify that the error was processed by the worker
+		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockJob.getJobId()));
+		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
+	}
+
+	/**
+	 * Tests a polling of Status with a RUNNING response
+	 */
+	@Test
+	public void testPollRunningStatus() {
+
+	}
+
+	/**
+	 * Tests a polling of Status with a ERROR response
+	 */
+	@Test
+	public void testPollErrorStatus() {
+
+	}
+
+	/**
+	 * Tests a polling of Status with a SUCCESS response
+	 */
+	@Test
+	public void testPollSuccessStatus() {
+
+	}
+}

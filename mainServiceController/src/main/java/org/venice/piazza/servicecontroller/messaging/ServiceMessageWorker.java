@@ -34,6 +34,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
@@ -59,7 +60,6 @@ import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
 import model.data.type.GeoJsonDataType;
-import model.data.type.RasterDataType;
 import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.Job;
@@ -116,8 +116,7 @@ public class ServiceMessageWorker {
 	 * Handles service job requests on a thread
 	 */
 	@Async
-	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job,
-			WorkerCallback callback) {
+	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job, WorkerCallback callback) {
 		try {
 			String executeJobStatus = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
@@ -144,83 +143,71 @@ public class ServiceMessageWorker {
 				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
 				ExecuteServiceData esData = jobItem.data;
 				if (esData.dataOutput != null) {
-					DataType dataType = esData.dataOutput.get(0);
+
+					if (Thread.interrupted()) {
+
+					}
+					
+					// Determine if this is a Synchronous or an Asynchronous Job. 
+					Service service = accessor.getServiceById(esData.getServiceId());
+					if (service.getIsAsynchronous().equals(true)) {
+						// Perform Asynchronous Logic
+						asynchronousServiceWorker.executeService(jobItem);
+						// Return null. This future will not be tracked by the Service Thread Manager.
+						// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
+						// we don't have to scatter return statements throughout this method.
+						return null;
+					}
+
+					coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
+					// Execute the external Service and get the Response Entity
+					try {
+						externalServiceResponse = esHandler.handle(jobType);
+					} catch (MongoInterruptedException exception) {
+						// Mongo implements a thread interrupted check, but it doesn't throw an InterruptedException. It throws
+						// its own custom exception type. We will catch that exception type here, and then rethrow with a standard
+						// InterruptedException to ensure a common handled exception type.
+						throw new InterruptedException();
+					}
 
 					if (Thread.interrupted()) {
 						throw new InterruptedException();
 					}
 
-					if ((dataType != null) && (dataType instanceof RasterDataType)) {
-						// Call special method to call and send
-						handleRasterType(jobItem, job, producer);
-
-						// No more to do. Return.
-						return new AsyncResult<String>("ServiceMessageWorker_Thread");
-					} else {
-						// Determine if this is a Synchronous or an Asynchronous Job. 
-						Service service = accessor.getServiceById(esData.getServiceId());
-						if (service.getIsAsynchronous().equals(true)) {
-							// Perform Asynchronous Logic
-							asynchronousServiceWorker.executeService(jobItem);
-							// Return null. This future will not be tracked by the Service Thread Manager.
-							// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
-							// we don't have to scatter return statements throughout this method.
-							return null;
-						}
-						
-						coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
-						// Execute the external Service and get the Response Entity
-						try {
-							externalServiceResponse = esHandler.handle(jobType);
-						} catch (MongoInterruptedException exception) {
-							// Mongo implements a thread interrupted check, but it doesn't throw an InterruptedException. It throws
-							// its own custom exception type. We will catch that exception type here, and then rethrow with a standard
-							// InterruptedException to ensure a common handled exception type.
-							throw new InterruptedException();
-						}
-
-						if (Thread.interrupted()) {
-							throw new InterruptedException();
-						}
-
-						// If an internal error occurred during Service Handling, then throw an exception.
-						if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
-							throw new Exception(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
-									externalServiceResponse.getStatusCode().toString()));
-						}
-
-						// If the Response was null, create an empty Response placeholder
-						externalServiceResponse = externalServiceResponse != null ? externalServiceResponse
-								: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
-
-						// Process the Response and handle any Ingest that may result
-						String dataId = uuidFactory.getUUID();
-						// Get the output Type
-						String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
-						DataResult result = esHandler.processExecutionResult(outputType, producer, executeJobStatus, externalServiceResponse, dataId);
-
-						if (Thread.interrupted()) {
-							throw new InterruptedException();
-						}
-
-						// If there is a Result, Send the Status Update with Result to the Job Manager component
-						if (result != null) {
-							StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-							statusUpdate.setResult(result);
-							ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(),
-									statusUpdate, SPACE);
-							producer.send(prodRecord);
-						}
-
-						// Fire Event to Workflow
-						fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");
-
-						// Return.
-						return new AsyncResult<String>("ServiceMessageWorker_Thread");
+					// If an internal error occurred during Service Handling, then throw an exception.
+					if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
+						throw new Exception(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
+								externalServiceResponse.getStatusCode().toString()));
 					}
+
+					// If the Response was null, create an empty Response placeholder
+					externalServiceResponse = externalServiceResponse != null ? externalServiceResponse
+							: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
+
+					// Process the Response and handle any Ingest that may result
+					String dataId = uuidFactory.getUUID();
+					String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
+					DataResult result = esHandler.processExecutionResult(outputType, producer, executeJobStatus, externalServiceResponse, dataId);
+
+					if (Thread.interrupted()) {
+						throw new InterruptedException();
+					}
+
+					// If there is a Result, Send the Status Update with Result to the Job Manager component
+					if (result != null) {
+						StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+						statusUpdate.setResult(result);
+						ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
+						producer.send(prodRecord);
+					}
+
+					// Fire Event to Workflow
+					fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");
+
+					// Return.
+					return new AsyncResult<String>("ServiceMessageWorker_Thread");
 				} else {
-					externalServiceResponse = new ResponseEntity<>(
-							"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
+					externalServiceResponse = new ResponseEntity<>("DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
 				}
 			} catch (IOException | ResourceAccessException ex) {
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
@@ -314,8 +301,7 @@ public class ServiceMessageWorker {
 		try {
 			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.
 			String url = String.format("%s/%s?name=%s", WORKFLOW_URL, "eventType", "piazza:executionComplete");
-			EventType eventType = objectMapper.readValue(restTemplate.getForObject(url, String.class), EventTypeListResponse.class).data
-					.get(0);
+			EventType eventType = objectMapper.readValue(restTemplate.getForObject(url, String.class), EventTypeListResponse.class).data.get(0);
 
 			// Construct Event object
 			Map<String, Object> data = new HashMap<String, Object>();
@@ -338,7 +324,7 @@ public class ServiceMessageWorker {
 					exception.getMessage()), PiazzaLogger.ERROR);
 		}
 	}
-
+	
 	/**
 	 * This method is for demonstrating ingest of raster data This will be refactored once the API changes have been
 	 * communicated to other team members
@@ -420,6 +406,12 @@ public class ServiceMessageWorker {
 
 			coreLogger.log("About to call special service " + url, PiazzaLogger.DEBUG);
 
+			if (null != sMetadata.getTimeout()) {
+				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+				factory.setReadTimeout(sMetadata.getTimeout().intValue());
+				factory.setConnectTimeout(sMetadata.getTimeout().intValue());
+				restTemplate = new RestTemplate(factory);
+			}
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
 			if (Thread.interrupted()) {
@@ -465,9 +457,7 @@ public class ServiceMessageWorker {
 
 			producer.send(prodRecord);
 			coreLogger.log("prodRecord sent " + prodRecord.toString(), PiazzaLogger.DEBUG);
-
 		}
-
 	}
 
 	private MediaType createMediaType(String mimeType) {
@@ -491,5 +481,4 @@ public class ServiceMessageWorker {
 
 		return mediaType;
 	}
-
 }

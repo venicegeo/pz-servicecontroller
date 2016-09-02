@@ -80,7 +80,6 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private RestTemplate template = new RestTemplate();
 	private ObjectMapper objectMapper = new ObjectMapper();
 
-
     /**
      * Handler for handling execute service requests. This method will execute a service given 
      * the resourceId and return a response to the job manager.
@@ -193,29 +192,29 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			}
 			
 			URI url = URI.create(builder.toUriString());
+
+			// Setting timeout for HTTP requests
+			if (null != sMetadata.getTimeout() && sMetadata.getTimeout() > 0) {
+				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+				factory.setReadTimeout(sMetadata.getTimeout().intValue());
+				factory.setConnectTimeout(sMetadata.getTimeout().intValue());
+				template = new RestTemplate(factory);
+			}
+			
 			if (sMetadata.getMethod().equals("GET")) {
 				coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
-				
 				// execute job
-				if (null != sMetadata.getTimeout()) {
-					HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-					factory.setReadTimeout(sMetadata.getTimeout().intValue());
-					factory.setConnectTimeout(sMetadata.getTimeout().intValue());
-					template = new RestTemplate(factory);
-				}
 				responseEntity = template.getForEntity(url, String.class);
 			} else {
 				HttpHeaders headers = new HttpHeaders();
-	
 				// Set the mimeType of the request
 				MediaType mediaType = createMediaType(requestMimeType);
 				headers.setContentType(mediaType);
 				HttpEntity<String> requestEntity = makeHttpEntity(headers, postString);
-				
+
 				coreLogger.log("PostForEntity URL=" + url, PiazzaLogger.INFO);
 				responseEntity = template.postForEntity(url, requestEntity, String.class);
 			}
-			
 		} else
 		{
 			return new ResponseEntity<>("Service Id " + data.getServiceId() + " not found", HttpStatus.NOT_FOUND);
@@ -252,22 +251,22 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	/**
 	 * create HttpEntity
 	 */
-	public HttpEntity <String> makeHttpEntity(HttpHeaders headers, String postString) {
-		HttpEntity <String>requestEntity;
-		
+	public HttpEntity<String> makeHttpEntity(HttpHeaders headers, String postString) {
+		HttpEntity<String> requestEntity;
+
 		if (postString.length() > 0)
 			requestEntity = new HttpEntity<>(postString, headers);
 		else
 			requestEntity = new HttpEntity<>(headers);
-		
+
 		return requestEntity;
 
-		
 	}
+
 	ObjectMapper makeObjectMapper() {
 		return new ObjectMapper();
 	}
-	
+
 	/**
 	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
 	 * return the Result of the data.

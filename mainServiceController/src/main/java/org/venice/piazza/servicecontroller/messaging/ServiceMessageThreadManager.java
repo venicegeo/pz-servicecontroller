@@ -170,11 +170,8 @@ public class ServiceMessageThreadManager {
 
 							// start a new thread
 							Future<?> workerFuture = serviceMessageWorker.run(consumerRecord, producer, job, callback);
-							
-							// Keep track of all Running Jobs
-							if (workerFuture != null) {
-								runningServiceRequests.put(consumerRecord.key(), workerFuture);
-							}
+
+							runningServiceRequests.put(consumerRecord.key(), workerFuture);
 						}
 
 					} catch (Exception ex) {

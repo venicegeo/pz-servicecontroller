@@ -157,6 +157,7 @@ public class ServiceMessageWorker {
 						// Return null. This future will not be tracked by the Service Thread Manager.
 						// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
 						// we don't have to scatter return statements throughout this method.
+						callback.onComplete(consumerRecord.key());
 						return null;
 					}
 
@@ -206,6 +207,7 @@ public class ServiceMessageWorker {
 					fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");
 
 					// Return.
+					callback.onComplete(consumerRecord.key());
 					return new AsyncResult<String>("ServiceMessageWorker_Thread");
 				} else {
 					externalServiceResponse = new ResponseEntity<>("DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
@@ -259,6 +261,7 @@ public class ServiceMessageWorker {
 		}
 
 		// Return Future
+		callback.onComplete(consumerRecord.key());
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
 

@@ -30,6 +30,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -39,6 +40,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data.DataType;
 import model.data.type.TextDataType;
+import model.job.result.type.DataResult;
+import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.response.JobResponse;
 import model.service.metadata.ExecuteServiceData;
@@ -168,8 +171,7 @@ public class AsyncServiceWorkerTest {
 		Mockito.doReturn(mockService).when(accessor).getServiceById(Mockito.eq(mockInstance.getServiceId()));
 		String url = String.format("%s/%s/%s", mockService.getUrl(), "status", mockInstance.getInstanceId());
 		StatusUpdate mockStatus = new StatusUpdate(StatusUpdate.STATUS_RUNNING);
-		Mockito.doReturn(new ResponseEntity<StatusUpdate>(mockStatus, HttpStatus.OK)).when(restTemplate).getForObject(Mockito.eq(url),
-				Mockito.any());
+		Mockito.doReturn(mockStatus).when(restTemplate).getForObject(Mockito.eq(url), Mockito.any());
 
 		// Test
 		worker.pollStatus(mockInstance);
@@ -182,27 +184,45 @@ public class AsyncServiceWorkerTest {
 	/**
 	 * Tests a polling of Status with a ERROR response
 	 */
-	/*
-	 * @Test public void testPollErrorStatus() { // Mock - return an Error Status
-	 * Mockito.doReturn(mockService).when(accessor).getServiceById(Mockito.eq(mockInstance.getServiceId())); String url
-	 * = String.format("%s/%s/%s", mockService.getUrl(), "status", mockInstance.getInstanceId()); StatusUpdate
-	 * mockStatus = new StatusUpdate(StatusUpdate.STATUS_ERROR); mockStatus.setResult(new ErrorResult("Uh Oh",
-	 * "Things went wrong.")); Mockito.doReturn(new ResponseEntity<StatusUpdate>(mockStatus,
-	 * HttpStatus.OK)).when(restTemplate).getForObject(Mockito.eq(url), Mockito.eq(StatusUpdate.class));
-	 * 
-	 * // Test worker.pollStatus(mockInstance);
-	 * 
-	 * // Verify Mockito.verify(accessor,
-	 * Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockInstance.getJobId())); Mockito.verify(producer,
-	 * Mockito.times(1)).send(Mockito.any()); }
-	 */
+	@Test
+	public void testPollErrorStatus() {
+		// Mock - return an Error Status
+		Mockito.doReturn(mockService).when(accessor).getServiceById(Mockito.eq(mockInstance.getServiceId()));
+		String url = String.format("%s/%s/%s", mockService.getUrl(), "status", mockInstance.getInstanceId());
+		StatusUpdate mockStatus = new StatusUpdate(StatusUpdate.STATUS_ERROR);
+		mockStatus.setResult(new ErrorResult("Uh Oh", "Things went wrong."));
+		Mockito.doReturn(mockStatus).when(restTemplate).getForObject(Mockito.eq(url), Mockito.eq(StatusUpdate.class));
+
+		// Test
+		worker.pollStatus(mockInstance);
+
+		// Verify
+		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockInstance.getJobId()));
+		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
+	}
 
 	/**
 	 * Tests a polling of Status with a SUCCESS response
 	 */
-	/*
-	 * @Test public void testPollSuccessStatus() {
-	 * 
-	 * }
-	 */
+	@Test
+	public void testPollSuccessStatus() throws RestClientException, JsonProcessingException {
+		// Mock - return an Error Status
+		Mockito.doReturn(mockService).when(accessor).getServiceById(Mockito.eq(mockInstance.getServiceId()));
+		String url = String.format("%s/%s/%s", mockService.getUrl(), "status", mockInstance.getInstanceId());
+		StatusUpdate mockStatus = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+		// Mock the status fetch
+		Mockito.doReturn(mockStatus).when(restTemplate).getForObject(Mockito.eq(url), Mockito.eq(StatusUpdate.class));
+		// Mock the result fetch
+		String getResultUrl = String.format("%s/%s/%s", mockService.getUrl(), "results", mockInstance.getServiceId());
+		Mockito.doReturn(new ResponseEntity<String>(objectMapper.writeValueAsString(new DataResult()), HttpStatus.OK)).when(restTemplate)
+				.getForEntity(Mockito.eq(getResultUrl), Mockito.eq(String.class));
+
+		// Test
+		worker.pollStatus(mockInstance);
+
+		// Verify
+		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockInstance.getJobId()));
+		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
+	}
+
 }

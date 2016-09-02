@@ -61,6 +61,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private PiazzaLogger coreLogger;
 
+	private RestTemplate template = new RestTemplate();
+	
     /**
      * Handler for handling execute service requests. This method will execute a service given 
      * the resourceId and return a response to the job manager.
@@ -173,7 +175,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			}
 			
 			URI url = URI.create(builder.toUriString());
-			RestTemplate template = getRestTemplateWithTimeout(sMetadata);
+
+			// Setting timeout for HTTP requests
+			if (null != sMetadata.getTimeout() && sMetadata.getTimeout() > 0) {
+				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+				factory.setReadTimeout(sMetadata.getTimeout().intValue());
+				factory.setConnectTimeout(sMetadata.getTimeout().intValue());
+				template = new RestTemplate(factory);
+			}
 			
 			if (sMetadata.getMethod().equals("GET")) {
 				coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
@@ -225,35 +234,20 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	/**
 	 * create HttpEntity
 	 */
-	public HttpEntity <String> makeHttpEntity(HttpHeaders headers, String postString) {
-		HttpEntity <String>requestEntity;
-		
+	public HttpEntity<String> makeHttpEntity(HttpHeaders headers, String postString) {
+		HttpEntity<String> requestEntity;
+
 		if (postString.length() > 0)
 			requestEntity = new HttpEntity<>(postString, headers);
 		else
 			requestEntity = new HttpEntity<>(headers);
-		
+
 		return requestEntity;
 
-		
 	}
+
 	ObjectMapper makeObjectMapper() {
 		return new ObjectMapper();
 	}
-	
-	/**
-	 * 
-	 * Returns rest template with a timeout 
-	 */
-	private RestTemplate getRestTemplateWithTimeout(Service sMetadata)
-	{
-		RestTemplate newTemplate = new RestTemplate();
-		if (null != sMetadata.getTimeout()) {
-			HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-			factory.setReadTimeout(sMetadata.getTimeout().intValue());
-			factory.setConnectTimeout(sMetadata.getTimeout().intValue());
-			newTemplate = new RestTemplate(factory);
-		}
-		return newTemplate;
-	}
+
 }

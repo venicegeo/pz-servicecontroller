@@ -33,7 +33,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
  *
  */
 @Component
-public class AsyncServiceInstanceManager {
+public class AsyncServiceInstanceScheduler {
 	@Value("${async.stale.instance.threshold.seconds}")
 	private int STALE_INSTANCE_THRESHOLD_SECONDS;
 	@Value("${async.poll.frequency.seconds}")

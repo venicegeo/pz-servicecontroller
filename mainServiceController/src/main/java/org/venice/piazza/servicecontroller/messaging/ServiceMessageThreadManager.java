@@ -19,7 +19,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.async.AsyncServiceInstanceManager;
+import org.venice.piazza.servicecontroller.async.AsyncServiceInstanceScheduler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,7 +66,7 @@ public class ServiceMessageThreadManager {
 	ServiceMessageWorker serviceMessageWorker;
 	
 	@Autowired
-	private AsyncServiceInstanceManager asyncServiceInstanceManager;
+	private AsyncServiceInstanceScheduler asyncServiceInstanceManager;
 
 	/**
 	 * Constructor for ServiceMessageThreadManager

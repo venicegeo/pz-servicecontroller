@@ -145,7 +145,7 @@ public class ServiceMessageWorker {
 				if (esData.dataOutput != null) {
 
 					if (Thread.interrupted()) {
-
+						throw new InterruptedException();
 					}
 					
 					// Determine if this is a Synchronous or an Asynchronous Job. 

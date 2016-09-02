@@ -18,6 +18,9 @@ package org.venice.piazza.servicecontroller.async;
 import org.joda.time.DateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import model.status.StatusUpdate;
@@ -33,6 +36,8 @@ import model.status.StatusUpdate;
  * @author Patrick.Doody
  *
  */
+@JsonInclude(Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AsyncServiceInstance {
 	private String jobId;
 	private String serviceId;

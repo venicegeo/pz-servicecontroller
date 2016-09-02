@@ -141,6 +141,7 @@ public class ServiceMessageWorker {
 
 				// Get the ResourceMetadata
 				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
+				jobItem.setJobId(consumerRecord.key());
 				ExecuteServiceData esData = jobItem.data;
 				if (esData.dataOutput != null) {
 

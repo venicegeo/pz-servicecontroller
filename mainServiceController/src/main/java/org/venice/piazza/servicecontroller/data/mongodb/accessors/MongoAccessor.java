@@ -324,8 +324,6 @@ public class MongoAccessor {
 	 * @return The Job with the specified Id
 	 */
 	public Service getServiceById(String serviceId) throws ResourceAccessException {
-
-		logger.log("getServiceById called = ", serviceId);
 		BasicDBObject query = new BasicDBObject("serviceId", serviceId);
 		Service service;
 

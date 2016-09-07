@@ -7,4 +7,3 @@ Service developers can develop and register services using the Piazza JSON API. 
 
 
 For details on running and using the ServiceController, see https://github.com/venicegeo/venice/wiki/Pz-ServiceController
-

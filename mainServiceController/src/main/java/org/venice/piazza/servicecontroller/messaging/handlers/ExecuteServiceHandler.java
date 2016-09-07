@@ -78,7 +78,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private String SPACE;
 
 	private RestTemplate template = new RestTemplate();
-	private ObjectMapper objectMapper = new ObjectMapper();
+	@Autowired
+	private ObjectMapper objectMapper;
 
     /**
      * Handler for handling execute service requests. This method will execute a service given 

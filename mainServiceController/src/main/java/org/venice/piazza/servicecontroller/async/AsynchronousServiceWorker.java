@@ -100,7 +100,7 @@ public class AsynchronousServiceWorker {
 		logger.log(String.format("Processing Asynchronous User Service with Job ID %s", job.getJobId()), PiazzaLogger.INFO);
 		// Handle the external HTTP execution to the Service
 		ResponseEntity<String> response = executeServiceHandler.handle(job);
-		if (response.getStatusCode().is2xxSuccessful() == false) {
+		if (!response.getStatusCode().is2xxSuccessful()) {
 			// Execution has failed. Log this as a failure, and send an error status.
 			String errorMessage = String.format(
 					"Asynchronous Service Failed to Execute for Job ID %s to Service ID %s. Status Code %s was returned with Message %s",
@@ -147,7 +147,11 @@ public class AsynchronousServiceWorker {
 		try {
 			// Get the Status of the job.
 			StatusUpdate status = restTemplate.getForObject(url, StatusUpdate.class);
-			
+
+			if (status == null) {
+				throw new Exception("Null Status received from Service.");
+			}
+
 			// Act appropriately based on the status received
 			if ((status.getStatus().equals(StatusUpdate.STATUS_PENDING)) || (status.getStatus().equals(StatusUpdate.STATUS_RUNNING))
 					|| (status.getStatus().equals(StatusUpdate.STATUS_SUBMITTED))) {
@@ -288,9 +292,7 @@ public class AsynchronousServiceWorker {
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(status);
 		// Create the Message for the Error Result of the Status
-		ErrorResult errorResult = new ErrorResult();
-		errorResult.setMessage(message);
-		statusUpdate.setResult(errorResult);
+		statusUpdate.setResult(new ErrorResult(message, null));
 
 		// Send the Job Status through Kafka.
 		try {
@@ -329,9 +331,9 @@ public class AsynchronousServiceWorker {
 		// Remove this from the Instance Table
 		accessor.deleteAsyncServiceInstance(instance.getJobId());
 		// Send the Kafka Message for successful Cancellation status
-		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 		try {
-			producer.send(JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), statusUpdate, SPACE));
+			producer.send(
+					JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), new StatusUpdate(StatusUpdate.STATUS_CANCELLED), SPACE));
 		} catch (JsonProcessingException jsonException) {
 			jsonException.printStackTrace();
 			logger.log(String.format(

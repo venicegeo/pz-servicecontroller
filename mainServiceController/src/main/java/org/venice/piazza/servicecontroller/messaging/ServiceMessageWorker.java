@@ -44,6 +44,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
@@ -105,6 +106,9 @@ public class ServiceMessageWorker {
 
 	@Autowired
 	private ExecuteServiceHandler esHandler;
+	
+	@Autowired
+	private AsynchronousServiceWorker asynchronousServiceWorker;
 
 	private RestTemplate restTemplate = new RestTemplate();
 
@@ -137,11 +141,24 @@ public class ServiceMessageWorker {
 
 				// Get the ResourceMetadata
 				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
+				jobItem.setJobId(consumerRecord.key());
 				ExecuteServiceData esData = jobItem.data;
 				if (esData.dataOutput != null) {
 
 					if (Thread.interrupted()) {
 						throw new InterruptedException();
+					}
+					
+					// Determine if this is a Synchronous or an Asynchronous Job. 
+					Service service = accessor.getServiceById(esData.getServiceId());
+					if (service.getIsAsynchronous().equals(true)) {
+						// Perform Asynchronous Logic
+						asynchronousServiceWorker.executeService(jobItem);
+						// Return null. This future will not be tracked by the Service Thread Manager.
+						// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
+						// we don't have to scatter return statements throughout this method.
+						callback.onComplete(consumerRecord.key());
+						return null;
 					}
 
 					coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
@@ -171,7 +188,8 @@ public class ServiceMessageWorker {
 
 					// Process the Response and handle any Ingest that may result
 					String dataId = uuidFactory.getUUID();
-					DataResult result = processExecutionResult(job, producer, executeJobStatus, externalServiceResponse, dataId);
+					String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
+					DataResult result = esHandler.processExecutionResult(outputType, producer, executeJobStatus, externalServiceResponse, dataId);
 
 					if (Thread.interrupted()) {
 						throw new InterruptedException();
@@ -189,6 +207,7 @@ public class ServiceMessageWorker {
 					fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");
 
 					// Return.
+					callback.onComplete(consumerRecord.key());
 					return new AsyncResult<String>("ServiceMessageWorker_Thread");
 				} else {
 					externalServiceResponse = new ResponseEntity<>("DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
@@ -242,6 +261,7 @@ public class ServiceMessageWorker {
 		}
 
 		// Return Future
+		callback.onComplete(consumerRecord.key());
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
 
@@ -308,92 +328,7 @@ public class ServiceMessageWorker {
 					exception.getMessage()), PiazzaLogger.ERROR);
 		}
 	}
-
-	/**
-	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
-	 * return the Result of the data.
-	 */
-	private DataResult processExecutionResult(Job job, Producer<String, String> producer, String status,
-			ResponseEntity<String> handleResult, String dataId) throws JsonProcessingException, IOException, InterruptedException {
-		coreLogger.log("Send Execute Status Kafka", PiazzaLogger.DEBUG);
-		// Initialize ingest job items
-		DataResource data = new DataResource();
-		PiazzaJobRequest jobRequest = new PiazzaJobRequest();
-		IngestJob ingestJob = new IngestJob();
-
-		if (handleResult != null) {
-			coreLogger.log("The result provided from service is " + handleResult.getBody(), PiazzaLogger.DEBUG);
-
-			// String serviceControlString = handleResult.getBody().get(0).toString();
-			String serviceControlString = handleResult.getBody().toString();
-
-			PiazzaJobType jobType = job.getJobType();
-			ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
-			String type = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
-			coreLogger.log("The service controller string is " + serviceControlString, PiazzaLogger.DEBUG);
-
-			try {
-				// Now produce a new record
-				jobRequest.createdBy = "pz-sc-ingest";
-				data.dataId = dataId;
-				coreLogger.log("dataId is " + data.dataId, PiazzaLogger.DEBUG);
-				data = objectMapper.readValue(serviceControlString, DataResource.class);
-
-				// Now check to see if the conversion is actually a proper DataResource
-				// if it is not time to create a TextDataType and return
-				if ((data == null) || (data.getDataType() == null)) {
-					coreLogger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType",
-							PiazzaLogger.DEBUG);
-
-					data = new DataResource();
-					data.dataId = dataId;
-					TextDataType tr = new TextDataType();
-					tr.content = serviceControlString;
-					coreLogger.log("The data being sent is " + tr.content, PiazzaLogger.DEBUG);
-
-					data.dataType = tr;
-				}
-				else
-				{
-					data.dataId = dataId;
-				}
-			} catch (Exception ex) {
-				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
-
-				// Checking payload type and settings the correct type
-				if (type.equals((new TextDataType()).getClass().getSimpleName())) {
-					TextDataType newDataType = new TextDataType();
-					newDataType.content = serviceControlString;
-					data.dataType = newDataType;
-				} else if (type.equals((new GeoJsonDataType()).getClass().getSimpleName())) {
-					GeoJsonDataType newDataType = new GeoJsonDataType();
-					newDataType.setGeoJsonContent(serviceControlString);
-					data.dataType = newDataType;
-				}
-			}
-
-			if (Thread.interrupted()) {
-				throw new InterruptedException();
-			}
-
-			ingestJob.data = data;
-			ingestJob.host = true;
-			jobRequest.jobType = ingestJob;
-
-			String jobId = uuidFactory.getUUID();
-			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(jobRequest, jobId, SPACE);
-			producer.send(newProdRecord);
-
-			coreLogger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
-					data.getDataType().getClass().getSimpleName()), PiazzaLogger.INFO);
-
-			// Return the Result of the Data.
-			DataResult textResult = new DataResult(data.dataId);
-			return textResult;
-		}
-		return null;
-	}
-
+	
 	/**
 	 * This method is for demonstrating ingest of raster data This will be refactored once the API changes have been
 	 * communicated to other team members

@@ -15,13 +15,17 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -37,14 +41,22 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import messaging.job.JobMessageFactory;
+import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
+import model.data.type.GeoJsonDataType;
+import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.PiazzaJobType;
+import model.job.result.type.DataResult;
 import model.job.type.ExecuteServiceJob;
+import model.job.type.IngestJob;
+import model.request.PiazzaJobRequest;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 /**
  * Handler for handling executeService requests.  This handler is used 
@@ -60,9 +72,15 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private MongoAccessor accessor;
 	@Autowired
 	private PiazzaLogger coreLogger;
+	@Autowired
+	private UUIDFactory uuidFactory;
+	@Value("${SPACE}")
+	private String SPACE;
 
 	private RestTemplate template = new RestTemplate();
-	
+	@Autowired
+	private ObjectMapper objectMapper;
+
     /**
      * Handler for handling execute service requests. This method will execute a service given 
      * the resourceId and return a response to the job manager.
@@ -250,4 +268,83 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		return new ObjectMapper();
 	}
 
+	/**
+	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
+	 * return the Result of the data.
+	 */
+	public DataResult processExecutionResult(String outputType, Producer<String, String> producer, String status,
+			ResponseEntity<String> handleResult, String dataId) throws JsonProcessingException, IOException, InterruptedException {
+		coreLogger.log("Send Execute Status Kafka", PiazzaLogger.DEBUG);
+		// Initialize ingest job items
+		DataResource data = new DataResource();
+		PiazzaJobRequest jobRequest = new PiazzaJobRequest();
+		IngestJob ingestJob = new IngestJob();
+
+		if (handleResult != null) {
+			coreLogger.log("The result provided from service is " + handleResult.getBody(), PiazzaLogger.DEBUG);
+
+			// String serviceControlString = handleResult.getBody().get(0).toString();
+			String serviceControlString = handleResult.getBody().toString();
+
+			coreLogger.log("The service controller string is " + serviceControlString, PiazzaLogger.DEBUG);
+
+			try {
+				// Now produce a new record
+				jobRequest.createdBy = "pz-sc-ingest";
+				data.dataId = dataId;
+				coreLogger.log("dataId is " + data.dataId, PiazzaLogger.DEBUG);
+
+				data = objectMapper.readValue(serviceControlString, DataResource.class);
+
+				// Now check to see if the conversion is actually a proper DataResource
+				// if it is not time to create a TextDataType and return
+				if ((data == null) || (data.getDataType() == null)) {
+					coreLogger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType",
+							PiazzaLogger.DEBUG);
+
+					data = new DataResource();
+					data.dataId = dataId;
+					TextDataType tr = new TextDataType();
+					tr.content = serviceControlString;
+					coreLogger.log("The data being sent is " + tr.content, PiazzaLogger.DEBUG);
+
+					data.dataType = tr;
+				}
+
+			} catch (Exception ex) {
+				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+
+				// Checking payload type and settings the correct type
+				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) {
+					TextDataType newDataType = new TextDataType();
+					newDataType.content = serviceControlString;
+					data.dataType = newDataType;
+				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) {
+					GeoJsonDataType newDataType = new GeoJsonDataType();
+					newDataType.setGeoJsonContent(serviceControlString);
+					data.dataType = newDataType;
+				}
+			}
+
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
+			ingestJob.data = data;
+			ingestJob.host = true;
+			jobRequest.jobType = ingestJob;
+
+			String jobId = uuidFactory.getUUID();
+			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(jobRequest, jobId, SPACE);
+			producer.send(newProdRecord);
+
+			coreLogger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
+					data.getDataType().getClass().getSimpleName()), PiazzaLogger.INFO);
+
+			// Return the Result of the Data.
+			DataResult textResult = new DataResult(data.dataId);
+			return textResult;
+		}
+		return null;
+	}
 }

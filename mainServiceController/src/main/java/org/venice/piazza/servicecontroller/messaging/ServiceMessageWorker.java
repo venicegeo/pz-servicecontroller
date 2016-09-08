@@ -151,7 +151,7 @@ public class ServiceMessageWorker {
 					
 					// Determine if this is a Synchronous or an Asynchronous Job. 
 					Service service = accessor.getServiceById(esData.getServiceId());
-					if (service.getIsAsynchronous().equals(true)) {
+					if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().equals(true))) {
 						// Perform Asynchronous Logic
 						asynchronousServiceWorker.executeService(jobItem);
 						// Return null. This future will not be tracked by the Service Thread Manager.

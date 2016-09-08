@@ -72,8 +72,10 @@ public class AsyncServiceInstanceScheduler {
 	public void cancelInstance(String jobId) {
 		// Get the Instance to cancel
 		AsyncServiceInstance instance = accessor.getInstanceByJobId(jobId);
-		// Handle the cancellation
-		worker.sendCancellationStatus(instance);
+		if (instance != null) {
+			// Handle the cancellation
+			worker.sendCancellationStatus(instance);
+		}
 	}
 
 	/**

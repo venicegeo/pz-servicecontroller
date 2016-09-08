@@ -318,6 +318,9 @@ public class AsynchronousServiceWorker {
 	public void sendCancellationStatus(AsyncServiceInstance instance) {
 		// Send the DELETE request to the external User Service
 		Service service = accessor.getServiceById(instance.getServiceId());
+		if (service == null) {
+			return;
+		}
 		String url = String.format("%s/%s/%s", service.getUrl(), DELETE_ENDPOINT, instance.getInstanceId());
 		try {
 			restTemplate.delete(url);

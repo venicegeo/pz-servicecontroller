@@ -197,8 +197,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			// Setting timeout for HTTP requests
 			if (null != sMetadata.getTimeout() && sMetadata.getTimeout() > 0) {
 				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-				factory.setReadTimeout(sMetadata.getTimeout().intValue());
-				factory.setConnectTimeout(sMetadata.getTimeout().intValue());
+				factory.setReadTimeout(sMetadata.getTimeout().intValue() * 1000);
+				factory.setConnectTimeout(sMetadata.getTimeout().intValue() * 1000);
 				template = new RestTemplate(factory);
 			}
 			

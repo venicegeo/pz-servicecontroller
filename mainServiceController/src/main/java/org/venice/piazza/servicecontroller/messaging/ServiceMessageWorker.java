@@ -413,8 +413,8 @@ public class ServiceMessageWorker {
 
 			if (null != sMetadata.getTimeout()) {
 				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-				factory.setReadTimeout(sMetadata.getTimeout().intValue());
-				factory.setConnectTimeout(sMetadata.getTimeout().intValue());
+				factory.setReadTimeout(sMetadata.getTimeout().intValue() * 1000);
+				factory.setConnectTimeout(sMetadata.getTimeout().intValue() * 1000);
 				restTemplate = new RestTemplate(factory);
 			}
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);

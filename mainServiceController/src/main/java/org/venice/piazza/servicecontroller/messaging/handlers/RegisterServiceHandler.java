@@ -52,7 +52,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	private UUIDFactory uuidFactory;
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServiceHandler.class);
-	private static final long HTTP_REQUEST_TIMEOUT = 600000;
+	private static final long HTTP_REQUEST_TIMEOUT = 600;
 
 	/**
 	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in MongoDB

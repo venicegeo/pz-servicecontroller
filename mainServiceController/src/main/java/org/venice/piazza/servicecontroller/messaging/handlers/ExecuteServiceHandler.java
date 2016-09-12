@@ -310,6 +310,10 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 					data.dataType = tr;
 				}
+				else if((null != data ) && (null != data.getDataType()))
+				{
+					data.dataId = dataId;
+				}
 
 			} catch (Exception ex) {
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);

@@ -158,7 +158,7 @@ public class ServiceMessageWorker {
 					ResourceMetadata rMetadata = service.getResourceMetadata();
 					if ((rMetadata != null) &&
 						(rMetadata.getAvailability() != null) && 
-						(rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE))) {
+						(rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE.toString()))) {
 						throw new Exception("The service " + esData.getServiceId() + " is" + ResourceMetadata.STATUS_TYPE.OFFLINE);
 
 					}

@@ -64,8 +64,10 @@ import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.Job;
 import model.job.PiazzaJobType;
+import model.job.metadata.ResourceMetadata;
 import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
+import model.job.result.type.TextResult;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.IngestJob;
 import model.request.PiazzaJobRequest;
@@ -121,6 +123,7 @@ public class ServiceMessageWorker {
 			String executeJobStatus = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
 			ResponseEntity<String> externalServiceResponse = null;
+			ErrorResult errorDetails = new ErrorResult(); 
 			int statusCode = 400;
 
 			// Ensure a valid Job has been received through Kafka
@@ -149,8 +152,17 @@ public class ServiceMessageWorker {
 						throw new InterruptedException();
 					}
 					
-					// Determine if this is a Synchronous or an Asynchronous Job. 
 					Service service = accessor.getServiceById(esData.getServiceId());
+					// First check to see if the service is OFFLINE, if so
+					// do not execute a thing
+					ResourceMetadata rMetadata = service.getResourceMetadata();
+					if ((rMetadata != null) &&
+						(rMetadata.getAvailability() != null) && 
+						(rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE))) {
+						throw new Exception("The service " + esData.getServiceId() + " is" + ResourceMetadata.STATUS_TYPE.OFFLINE);
+
+					}
+					// Determine if this is a Synchronous or an Asynchronous Job. 
 					if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().equals(true))) {
 						// Perform Asynchronous Logic
 						asynchronousServiceWorker.executeService(jobItem);
@@ -246,6 +258,7 @@ public class ServiceMessageWorker {
 			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), PiazzaLogger.INFO);
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 			try {
+				
 				producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate, SPACE));
 			} catch (JsonProcessingException jsonException) {
 				jsonException.printStackTrace();

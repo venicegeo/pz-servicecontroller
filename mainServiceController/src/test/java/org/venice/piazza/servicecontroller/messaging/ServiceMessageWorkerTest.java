@@ -152,6 +152,8 @@ public class ServiceMessageWorkerTest {
 	
 	@Mock
 	private ObjectMapper omMock;
+	@Mock
+	private MongoAccessor accessorMock;
 	
 	private Job validJob;
 	private ExecuteServiceJob esJob;
@@ -247,7 +249,7 @@ public class ServiceMessageWorkerTest {
 	
 	@Test
 	/**
-	 * Test an invalid kafka message being received
+	 * Test an valid kafka message being received
 	 */
 	public void testWorkerValidPayload() {
 		try {
@@ -298,6 +300,39 @@ public class ServiceMessageWorkerTest {
 			kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
 				"VALID");
 			workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			assertTrue(workerFuture.get() != null);
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+	
+	@Test
+	/**
+	 * Test an valid kafka message being received
+	 */
+	public void testOfflineService() {
+		try {
+			
+	        ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
+			
+	        
+	        ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+			ExecuteServiceData esData = jobItem.data;
+			Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+			
+			// Setup a new OFFLINE service
+			rm = new ResourceMetadata();
+			rm.name = "toUpper Params";
+			rm.description = "Service to convert string to uppercase";
+			rm.setAvailability(ResourceMetadata.STATUS_TYPE.OFFLINE.toString());
+			service.setResourceMetadata(rm);
+			Mockito.when(accessorMock.getServiceById("a842aae2-bd74-4c4b-9a65-c45e8cd9060f")).thenReturn(service);
+
+			// Test valid Payload
+			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456",
+					"VALID");
+			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
 			assertTrue(workerFuture.get() != null);
 
 		} catch (Exception ex) {

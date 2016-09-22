@@ -50,6 +50,9 @@ public class Application extends SpringBootServletInitializer {
 	private int httpMaxTotal;
 	@Value("${http.max.route}")
 	private int httpMaxRoute;
+	@Value("${http.request.timeout}")
+	private int httpRequestTimeout;
+	
 
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
@@ -60,8 +63,13 @@ public class Application extends SpringBootServletInitializer {
 	@Bean
 	public RestTemplate restTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
-		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal).setMaxConnPerRoute(httpMaxRoute).build();
-		restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient));
+		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal)
+				.setMaxConnPerRoute(httpMaxRoute).build();
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+		factory.setReadTimeout(httpRequestTimeout * 1000);
+		factory.setConnectTimeout(httpRequestTimeout * 1000);
+		restTemplate.setRequestFactory(factory);
+
 		return restTemplate;
 	}
 

@@ -74,12 +74,13 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private PiazzaLogger coreLogger;
 	@Autowired
 	private UUIDFactory uuidFactory;
-	@Value("${SPACE}")
-	private String SPACE;
-
-	private RestTemplate template = new RestTemplate();
+	@Autowired
+	private RestTemplate template;
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Value("${SPACE}")
+	private String SPACE;
 
     /**
      * Handler for handling execute service requests. This method will execute a service given 
@@ -194,14 +195,6 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			
 			URI url = URI.create(builder.toUriString());
 
-			// Setting timeout for HTTP requests
-			if (null != sMetadata.getTimeout() && sMetadata.getTimeout() > 0) {
-				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-				factory.setReadTimeout(sMetadata.getTimeout().intValue() * 1000);
-				factory.setConnectTimeout(sMetadata.getTimeout().intValue() * 1000);
-				template = new RestTemplate(factory);
-			}
-			
 			if (sMetadata.getMethod().equals("GET")) {
 				coreLogger.log("GetForEntity URL=" + url, PiazzaLogger.INFO);
 				// execute job

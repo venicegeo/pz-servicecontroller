@@ -112,7 +112,8 @@ public class ServiceMessageWorker {
 	@Autowired
 	private AsynchronousServiceWorker asynchronousServiceWorker;
 
-	private RestTemplate restTemplate = new RestTemplate();
+	@Autowired
+	private RestTemplate restTemplate;
 
 	/**
 	 * Handles service job requests on a thread

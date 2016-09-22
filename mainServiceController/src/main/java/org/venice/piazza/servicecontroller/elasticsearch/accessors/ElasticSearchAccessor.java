@@ -20,15 +20,12 @@ import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.messaging.ServiceMessageWorker;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 
 import model.job.type.ServiceMetadataIngestJob;
 import model.response.ErrorResponse;
@@ -46,8 +43,8 @@ public class ElasticSearchAccessor {
 	private String SERVICEMETADATA_INGEST_URL;
 	private String SERVICEMETADATA_UPDATE_URL;
 	private String SERVICEMETADATA_DELETE_URL;
-	
-	private RestTemplate restTemplate = new RestTemplate();
+	@Autowired
+	private RestTemplate restTemplate;
 	@Autowired
 	private PiazzaLogger logger;
 	

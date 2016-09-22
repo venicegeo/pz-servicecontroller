@@ -46,7 +46,6 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
-import model.data.deployment.Deployment;
 import model.job.metadata.ResourceMetadata;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
@@ -65,6 +64,8 @@ import util.PiazzaLogger;
 // TODO FUTURE See a way to store service controller internals
 @Component
 public class MongoAccessor {
+	@Value("${mongo.thread.multiplier}")
+	private int mongoThreadMultiplier;
 	private String DATABASE_HOST;
 	private String DATABASE_NAME;
 	private String SERVICE_COLLECTION_NAME;
@@ -96,7 +97,7 @@ public class MongoAccessor {
 		LOGGER.debug("====================================================");
 
 		try {
-			mongoClient = new MongoClient(new MongoClientURI(DATABASE_HOST));
+			mongoClient = new MongoClient(new MongoClientURI(DATABASE_HOST + "?waitQueueMultiple=" + mongoThreadMultiplier));
 		} catch (Exception ex) {
 			LOGGER.error(ex.getMessage());
 			String message = String.format("Error Contacting Mongo Host %s: %s", DATABASE_HOST, ex.getMessage());

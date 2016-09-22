@@ -16,18 +16,17 @@
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
 
-import java.net.URI;
 import java.util.ArrayList;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
+
 import model.job.PiazzaJobType;
 import model.job.type.UpdateServiceJob;
 import model.response.PiazzaResponse;
@@ -55,7 +54,6 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private PiazzaLogger coreLogger;
 	
-	private RestTemplate template = new RestTemplate();
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
     /**

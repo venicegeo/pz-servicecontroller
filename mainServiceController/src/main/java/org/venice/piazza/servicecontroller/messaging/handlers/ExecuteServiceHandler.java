@@ -76,8 +76,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private UUIDFactory uuidFactory;
 	@Value("${SPACE}")
 	private String SPACE;
-
-	private RestTemplate template = new RestTemplate();
+	@Autowired
+	private RestTemplate template;
 	@Autowired
 	private ObjectMapper objectMapper;
 

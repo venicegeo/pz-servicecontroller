@@ -17,6 +17,9 @@ package org.venice.piazza.servicecontroller;
 
 import java.util.Arrays;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -25,8 +28,10 @@ import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Main class for the pz-servicecontroller. Launches the application
@@ -41,11 +46,23 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 @EnableMongoRepositories("org.venice.piazza.serviceregistry.data.mongodb.repository")
 /* Enable Boot application and MongoRepositories */
 public class Application extends SpringBootServletInitializer {
+	@Value("${http.max.total}")
+	private int httpMaxTotal;
+	@Value("${http.max.route}")
+	private int httpMaxRoute;
 
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
 
 		return builder.sources(Application.class);
+	}
+
+	@Bean
+	public RestTemplate restTemplate() {
+		RestTemplate restTemplate = new RestTemplate();
+		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal).setMaxConnPerRoute(httpMaxRoute).build();
+		restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient));
+		return restTemplate;
 	}
 
 	public static void main(String[] args) {

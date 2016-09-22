@@ -76,8 +76,8 @@ public class AsynchronousServiceWorker {
 	private ExecuteServiceHandler executeServiceHandler;
 	@Autowired
 	private UUIDFactory uuidFactory;
-
-	private RestTemplate restTemplate = new RestTemplate();
+	@Autowired
+	private RestTemplate restTemplate;
 	private Producer<String, String> producer;
 	private ObjectMapper objectMapper = new ObjectMapper();
 

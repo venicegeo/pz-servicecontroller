@@ -9,7 +9,7 @@ source $root/ci/vars.sh
 
 
 # Path to output JAR
-src=$root/mainServiceController/target/piazzaServiceController-1.0.0.BUILD-SNAPSHOT.jar
+src=$root/mainServiceController/target/piazzaServiceController-1.0.0.jar
 # Build Spring-boot JAR
 [ -f $src ] || mvn clean package -U
 

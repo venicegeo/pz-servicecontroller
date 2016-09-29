@@ -84,8 +84,9 @@ public class GettingStartedController {
     public String convertStringtoUpper(@ModelAttribute("aString") String aString ) {
 		String result = "a String was not provided.";
 				
-		if (aString != null)
+		if (aString != null) {
 			result = aString.toUpperCase();
+		}
 	
         logger.log("The result is " + result, PiazzaLogger.INFO);
  

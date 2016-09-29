@@ -479,7 +479,7 @@ public class ServiceMessageWorker {
 		}
 	}
 
-	private MediaType createMediaType(String mimeType) {
+	public MediaType createMediaType(String mimeType) {
 		MediaType mediaType;
 		String type, subtype;
 		StringBuffer sb = new StringBuffer(mimeType);

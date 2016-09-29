@@ -214,7 +214,7 @@ public class AsynchronousServiceWorker {
 	 * @param instance
 	 *            The Instance.
 	 */
-	private void updateFailureCount(AsyncServiceInstance instance) {
+	public void updateFailureCount(AsyncServiceInstance instance) {
 		// Increment the failure count
 		instance.setNumberErrorResponses(instance.getNumberErrorResponses() + 1);
 		// Check if the Failure count is above the threshold. If so, then fail the job.

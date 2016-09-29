@@ -225,4 +225,40 @@ public class AsyncServiceWorkerTest {
 		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
 	}
 
+	/**
+	 * Tests updating the failure count of an Instance
+	 */
+	@Test
+	public void testFailureCount() {
+		// Mock an instance that is not above the threshold
+		AsyncServiceInstance instance = new AsyncServiceInstance();
+		instance.setInstanceId("instanceId");
+		instance.setJobId("jobId");
+		instance.setNumberErrorResponses(0);
+		instance.setOutputType("geojson");
+		instance.setServiceId("serviceId");
+		instance.setStatus(new StatusUpdate(StatusUpdate.STATUS_RUNNING));
+		worker.updateFailureCount(instance);
+
+		// Mock an instance that is above the threshold
+		instance.setNumberErrorResponses(15);
+		worker.updateFailureCount(instance);
+	}
+
+	/**
+	 * Tests cancelling an instance
+	 */
+	@Test
+	public void testCancellationStatus() {
+		// Mock
+		Mockito.doReturn(mockService).when(accessor).getServiceById(Mockito.eq(mockService.getServiceId()));
+
+		// Test
+		worker.sendCancellationStatus(mockInstance);
+
+		// Test when an error is encountered from the service
+		Mockito.doThrow(new RestClientException("Error")).when(restTemplate).delete(Mockito.any());
+		worker.sendCancellationStatus(mockInstance);
+	}
+
 }

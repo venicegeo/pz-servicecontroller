@@ -75,7 +75,7 @@ public class Application extends SpringBootServletInitializer {
 
 	public static void main(String[] args) {
 
-		ApplicationContext ctx = SpringApplication.run(Application.class, args);
+		ApplicationContext ctx = SpringApplication.run(Application.class, args); //NOSONAR
 
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment

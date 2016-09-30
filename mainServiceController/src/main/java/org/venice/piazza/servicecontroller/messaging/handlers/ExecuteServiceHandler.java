@@ -17,6 +17,7 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -24,6 +25,8 @@ import java.util.Map.Entry;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -82,6 +85,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	@Value("${SPACE}")
 	private String SPACE;
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(ExecuteServiceHandler.class);
+	
     /**
      * Handler for handling execute service requests. This method will execute a service given 
      * the resourceId and return a response to the job manager.
@@ -133,7 +138,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		    String result = om.writeValueAsString(sMetadata);
 		    coreLogger.log(result, PiazzaLogger.INFO);
 		} catch (ResourceAccessException | JsonProcessingException ex) {
-			ex.printStackTrace();
+			LOGGER.error(Arrays.toString(ex.getStackTrace()));
 		}
 		if (sMetadata != null) {
 			String rawURL = sMetadata.getUrl();
@@ -303,20 +308,18 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 					data.dataType = tr;
 				}
-				else if((null != data ) && (null != data.getDataType()))
-				{
+				else if ((null != data) && (null != data.getDataType())) { //NOSONAR
 					data.dataId = dataId;
 				}
-
 			} catch (Exception ex) {
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 
 				// Checking payload type and settings the correct type
-				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) {
+				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) { //NOSONAR
 					TextDataType newDataType = new TextDataType();
 					newDataType.content = serviceControlString;
 					data.dataType = newDataType;
-				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) {
+				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) { //NOSONAR
 					GeoJsonDataType newDataType = new GeoJsonDataType();
 					newDataType.setGeoJsonContent(serviceControlString);
 					data.dataType = newDataType;

@@ -17,6 +17,7 @@ package org.venice.piazza.servicecontroller.messaging;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -26,6 +27,8 @@ import java.util.concurrent.Future;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -114,6 +117,8 @@ public class ServiceMessageWorker {
 
 	@Autowired
 	private RestTemplate restTemplate;
+	
+	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
 
 	/**
 	 * Handles service job requests on a thread
@@ -195,10 +200,6 @@ public class ServiceMessageWorker {
 								externalServiceResponse.getStatusCode().toString()));
 					}
 
-					// If the Response was null, create an empty Response placeholder
-					externalServiceResponse = externalServiceResponse != null ? externalServiceResponse
-							: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
-
 					// Process the Response and handle any Ingest that may result
 					String dataId = uuidFactory.getUUID();
 					String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
@@ -248,27 +249,25 @@ public class ServiceMessageWorker {
 				// then send an update to the job manager that there was some failure
 				boolean eResult = (externalServiceResponse.getStatusCode() != HttpStatus.OK) ? true : false;
 				if (eResult) {
-					externalServiceResponse = externalServiceResponse != null ? externalServiceResponse
-							: new ResponseEntity<String>("", HttpStatus.NO_CONTENT);
 					sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse,
 							new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
 				}
 			}
 
-		} catch (InterruptedException ex) {
+		} catch (InterruptedException ex) { //NOSONAR normal handling of InterruptedException 
 			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), PiazzaLogger.INFO);
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 			try {
 				
 				producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate, SPACE));
 			} catch (JsonProcessingException jsonException) {
-				jsonException.printStackTrace();
+				LOGGER.error(Arrays.toString(jsonException.getStackTrace()));
 				coreLogger.log(String.format(
 						"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
 						consumerRecord.key(), jsonException.getMessage()), PiazzaLogger.ERROR);
 			}
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOGGER.error(Arrays.toString(ex.getStackTrace()));
 			// Catch any General Exceptions that occur during runtime.
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),
@@ -306,7 +305,7 @@ public class ServiceMessageWorker {
 			producer.send(prodRecord);
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
-			exception.printStackTrace();
+			LOGGER.error(Arrays.toString(exception.getStackTrace()));
 			coreLogger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
 					PiazzaLogger.ERROR);
 		}
@@ -362,7 +361,6 @@ public class ServiceMessageWorker {
 		Service sMetadata = accessor.getServiceById(serviceId);
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
-		new LinkedMultiValueMap<String, String>();
 
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
 		Map<String, DataType> postObjects = new HashMap<String, DataType>();
@@ -399,7 +397,7 @@ public class ServiceMessageWorker {
 				postString = objectMapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				LOGGER.error(Arrays.toString(e.getStackTrace()));
 			}
 		}
 		URI url = URI.create(builder.toUriString());

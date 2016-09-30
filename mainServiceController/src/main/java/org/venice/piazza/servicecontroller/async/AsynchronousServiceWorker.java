@@ -16,12 +16,15 @@
 package org.venice.piazza.servicecontroller.async;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import javax.annotation.PostConstruct;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -81,6 +84,8 @@ public class AsynchronousServiceWorker {
 	private Producer<String, String> producer;
 	private ObjectMapper objectMapper = new ObjectMapper();
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(AsynchronousServiceWorker.class);
+	
 	@PostConstruct
 	public void initialize() {
 		String KAFKA_HOST = KAFKA_HOST_PORT.split(":")[0];
@@ -167,7 +172,7 @@ public class AsynchronousServiceWorker {
 					producer.send(prodRecord);
 				} catch (JsonProcessingException exception) {
 					// The message could not be serialized. Record this.
-					exception.printStackTrace();
+					LOGGER.error(Arrays.toString(exception.getStackTrace()));
 					logger.log("Could not send Running Status Message to Job Manager. Error serializing Status: " + exception.getMessage(),
 							PiazzaLogger.ERROR);
 				}
@@ -302,7 +307,7 @@ public class AsynchronousServiceWorker {
 			producer.send(prodRecord);
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
-			exception.printStackTrace();
+			LOGGER.error(Arrays.toString(exception.getStackTrace()));
 			logger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
 					PiazzaLogger.ERROR);
 		}
@@ -328,8 +333,8 @@ public class AsynchronousServiceWorker {
 			// The cancellation sent back an error. Log it.
 			logger.log(String.format(
 					"Error Cancelling Service Instance on external User Service: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. No subsequent calls will be made.",
-					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
-					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(),
+					instance.getJobId()), PiazzaLogger.WARNING);
 		}
 		// Remove this from the Instance Table
 		accessor.deleteAsyncServiceInstance(instance.getJobId());
@@ -338,7 +343,7 @@ public class AsynchronousServiceWorker {
 			producer.send(
 					JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), new StatusUpdate(StatusUpdate.STATUS_CANCELLED), SPACE));
 		} catch (JsonProcessingException jsonException) {
-			jsonException.printStackTrace();
+			LOGGER.error(Arrays.toString(jsonException.getStackTrace()));
 			logger.log(String.format(
 					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
 					instance.getJobId(), jsonException.getMessage()), PiazzaLogger.ERROR);

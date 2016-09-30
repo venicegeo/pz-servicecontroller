@@ -16,6 +16,7 @@
 package org.venice.piazza.servicecontroller.data.mongodb.accessors;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -143,8 +144,7 @@ public class MongoAccessor {
 			LOGGER.error(ex.getMessage());
 			String message = String.format("Error Updating Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
-			ex.printStackTrace();
-
+			LOGGER.error(Arrays.toString(ex.getStackTrace()));
 		}
 
 		return result;

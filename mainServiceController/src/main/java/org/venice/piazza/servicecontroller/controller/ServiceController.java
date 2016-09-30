@@ -20,6 +20,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -103,6 +105,8 @@ public class ServiceController {
 	
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
+	
+	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
 	
      /**
       * Empty controller for now
@@ -250,7 +254,7 @@ public class ServiceController {
 			// Ensure the Service is still valid, with the new merged changes
 			Errors errors = new BeanPropertyBindingResult(existingService, existingService.getClass().getName());
 			validator.validate(existingService, errors);
-			if ((errors != null) && (errors.hasErrors())) {
+			if (errors.hasErrors()) {
 				// Build up the list of Errors
 				StringBuilder builder = new StringBuilder();
 				for (ObjectError error : errors.getAllErrors()) {
@@ -269,8 +273,8 @@ public class ServiceController {
 			}
 
 		} catch (Exception exception) {
-			exception.printStackTrace();
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
+			LOGGER.error(error);
 			logger.log(error, PiazzaLogger.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}

@@ -16,6 +16,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -68,6 +70,8 @@ public class ServiceMessageThreadManager {
 	@Autowired
 	private AsyncServiceInstanceScheduler asyncServiceInstanceManager;
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
+	
 	/**
 	 * Constructor for ServiceMessageThreadManager
 	 */
@@ -175,12 +179,12 @@ public class ServiceMessageThreadManager {
 						}
 
 					} catch (Exception ex) {
-						coreLogger.log(String.format("The item received did not marshal to a job", ex), PiazzaLogger.FATAL);
+						coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), PiazzaLogger.FATAL);
 					}
 				} // for loop
 			} // while loop
 		} catch (Exception ex) {
-			coreLogger.log(String.format("The item received did not marshal to a job", ex), PiazzaLogger.FATAL);
+			coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), PiazzaLogger.FATAL);
 
 		}
 
@@ -213,7 +217,7 @@ public class ServiceMessageThreadManager {
 						PiazzaJobRequest request = mapper.readValue(consumerRecord.value(), PiazzaJobRequest.class);
 						jobId = ((AbortJob) request.jobType).getJobId();
 					} catch (Exception exception) {
-						exception.printStackTrace();
+						LOGGER.error(Arrays.toString(exception.getStackTrace()));
 						coreLogger.log(String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
 								exception.getMessage()), PiazzaLogger.ERROR);
 						continue;
@@ -238,6 +242,7 @@ public class ServiceMessageThreadManager {
 
 				}
 			}
+			uniqueConsumer.close();
 		} catch (WakeupException wex) {
 			coreLogger.log(String.format("Polling Thread forcefully closed: %s", wex.getMessage()), PiazzaLogger.FATAL);
 			uniqueConsumer.close();

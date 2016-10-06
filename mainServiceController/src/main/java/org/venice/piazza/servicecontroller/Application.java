@@ -31,6 +31,7 @@ import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -119,6 +120,7 @@ public class Application extends SpringBootServletInitializer {
 	}
 	
 	@Configuration
+	@Profile({ "secure" })
 	protected static class ServiceConfig extends WebMvcConfigurerAdapter {
 		@Override
 		public void addInterceptors(InterceptorRegistry registry) {

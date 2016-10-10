@@ -30,13 +30,12 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import util.PiazzaLogger;
 
-@RunWith(SpringJUnit4ClassRunner.class) 
+//@RunWith(SpringJUnit4ClassRunner.class) 
 
 //@ComponentScan({ "org.venice.piazza.servicecontroller.util" })
 @ComponentScan({ "MY_NAMESPACE, util" })

@@ -23,6 +23,8 @@ import model.job.type.DeleteServiceJob;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +51,8 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private PiazzaLogger coreLogger;
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(DeleteServiceHandler.class);
+	
 	/**
 	 * Handler for the DeleteServiceJob that was submitted. Stores the metadata
 	 * in MongoDB (non-Javadoc)
@@ -102,6 +106,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		try {
 			result = accessor.delete(resourceId, softDelete);
 		} catch (Exception e) {
+			LOGGER.error("Unable to delete from mongoDB", e);
 			coreLogger.log(e.toString(), PiazzaLogger.ERROR);
 		}
 

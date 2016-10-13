@@ -232,9 +232,10 @@ public class ServiceMessageThreadManager {
 						PiazzaJobRequest request = mapper.readValue(consumerRecord.value(), PiazzaJobRequest.class);
 						jobId = ((AbortJob) request.jobType).getJobId();
 					} catch (Exception exception) {
-						LOGGER.error(Arrays.toString(exception.getStackTrace()));
-						coreLogger.log(String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
-								exception.getMessage()), PiazzaLogger.ERROR);
+						String error = String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
+								exception.getMessage());
+						LOGGER.error(error, exception);
+						coreLogger.log(error, PiazzaLogger.ERROR);
 						continue;
 					}
 					
@@ -259,9 +260,11 @@ public class ServiceMessageThreadManager {
 			}
 			uniqueConsumer.close();
 		} catch (WakeupException wex) {
+			LOGGER.error("Polling Thread forcefully closed", wex);
 			coreLogger.log(String.format("Polling Thread forcefully closed: %s", wex.getMessage()), PiazzaLogger.FATAL);
 			uniqueConsumer.close();
 		} catch (Exception ex) {
+			LOGGER.error("Polling Thread forcefully closed", ex);
 			coreLogger.log(String.format("Polling Thread forcefully closed: %s", ex.getMessage()), PiazzaLogger.FATAL);
 			uniqueConsumer.close();
 		}

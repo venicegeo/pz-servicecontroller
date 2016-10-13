@@ -124,8 +124,8 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				}*/
 	        }
         } catch (IllegalArgumentException ex) {
+        	LOGGER.error("IllegalArgumentException occurred", ex);
         	coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
-        	
         }
 
 		return result;

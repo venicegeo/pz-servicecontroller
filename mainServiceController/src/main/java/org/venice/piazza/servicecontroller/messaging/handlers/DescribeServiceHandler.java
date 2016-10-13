@@ -74,6 +74,7 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 			String result = mapper.writeValueAsString(sMetadata);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (JsonProcessingException ex) {
+			LOGGER.error("Could not retrieve resourceId", ex);
 			coreLogger.log("Could not retrieve resourceId " + serviceId, PiazzaLogger.ERROR);
 			responseEntity = new ResponseEntity<>("Could not retrieve resourceId " + serviceId, HttpStatus.NOT_FOUND);
 		}

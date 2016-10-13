@@ -17,7 +17,8 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import java.util.List;
 
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +52,8 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private PiazzaLogger coreLogger;
 
-
+	private final static Logger LOGGER = LoggerFactory.getLogger(SearchServiceHandler.class);
+	
 	/**
 	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in MongoDB (non-Javadoc)
 	 * 
@@ -102,9 +104,9 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 					responseEntity = new ResponseEntity<>(result, HttpStatus.OK);
 				} catch (JsonProcessingException jpe) {
 					// This should never happen, but still have to catch it
+					LOGGER.error("There was a problem generating the Json response", jpe);
 					coreLogger.log("There was a problem generating the Json response", PiazzaLogger.ERROR);
 					responseEntity = new ResponseEntity<>("Could not search for services" , HttpStatus.NOT_FOUND);
-
 				}
 			}
 		}

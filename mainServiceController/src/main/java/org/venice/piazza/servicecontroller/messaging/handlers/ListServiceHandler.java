@@ -68,6 +68,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 			String result = mapper.writeValueAsString(rmList);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (Exception ex) {
+			LOGGER.error("Exception occurred", ex);
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 			responseEntity = new ResponseEntity<String>("Could not retrieve a list of user services" , HttpStatus.NOT_FOUND);
 		}

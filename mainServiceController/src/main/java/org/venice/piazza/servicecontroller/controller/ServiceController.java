@@ -132,7 +132,8 @@ public class ServiceController {
 			RegisterServiceJob serviceJob = (RegisterServiceJob) jobRequest.jobType;
 			String serviceId = rsHandler.handle(serviceJob.data);
 			return new ResponseEntity<PiazzaResponse>(new ServiceIdResponse(serviceId), HttpStatus.OK);
-		} catch (Exception exception) {			
+		} catch (Exception exception) {
+			LOGGER.error("Error Registering Service", exception);
 			logger.log(exception.toString(), PiazzaLogger.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
 					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -156,9 +157,11 @@ public class ServiceController {
 			try {
 				return new ResponseEntity<PiazzaResponse>(new ServiceResponse(accessor.getServiceById(serviceId)), HttpStatus.OK);
 			} catch(ResourceAccessException rae) {
+				LOGGER.error("Service not found", rae);
 				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
 			}
 		} catch (Exception exception) {
+			LOGGER.error("Could not look up Service", exception);
 			logger.log(exception.toString(), PiazzaLogger.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
 					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -188,6 +191,7 @@ public class ServiceController {
 			return new ResponseEntity<PiazzaResponse>(accessor.getServices(page, perPage, order, sortBy, keyword, userName), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
+			LOGGER.error(error, exception);
 			logger.log(error, PiazzaLogger.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -210,6 +214,7 @@ public class ServiceController {
 			try {
 				accessor.getServiceById(serviceId);
 			} catch(ResourceAccessException rae) {
+				LOGGER.error("Service not found", rae);
 				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
 			}
 			// remove from elastic search as well....			
@@ -217,6 +222,7 @@ public class ServiceController {
 			return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was deleted successfully.", "ServiceController"), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
+			LOGGER.error(error, exception);
 			logger.log(error, PiazzaLogger.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -274,7 +280,7 @@ public class ServiceController {
 
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
-			LOGGER.error(error);
+			LOGGER.error(error, exception);
 			logger.log(error, PiazzaLogger.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -323,6 +329,7 @@ public class ServiceController {
 		try {
 			result = esHandler.handle(data);
 		} catch (Exception ex) {
+			LOGGER.error("Service Controller Error Caused Exception", ex);
 			logger.log("Service Controller Error Caused Exception: " + ex.toString(), PiazzaLogger.ERROR);
 		}
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);

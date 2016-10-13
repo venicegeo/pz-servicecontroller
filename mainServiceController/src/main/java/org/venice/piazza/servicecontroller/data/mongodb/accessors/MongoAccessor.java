@@ -100,11 +100,9 @@ public class MongoAccessor {
 		try {
 			mongoClient = new MongoClient(new MongoClientURI(DATABASE_HOST + "?waitQueueMultiple=" + mongoThreadMultiplier));
 		} catch (Exception ex) {
-			LOGGER.error(ex.getMessage());
 			String message = String.format("Error Contacting Mongo Host %s: %s", DATABASE_HOST, ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
-			LOGGER.debug(ex.toString());
-
+			LOGGER.error(message, ex);
 		}
 	}
 
@@ -140,11 +138,9 @@ public class MongoAccessor {
 			return sMetadata.getServiceId().toString();
 
 		} catch (MongoException ex) {
-			LOGGER.debug(ex.toString());
-			LOGGER.error(ex.getMessage());
 			String message = String.format("Error Updating Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
-			LOGGER.error(Arrays.toString(ex.getStackTrace()));
+			LOGGER.error(message, ex);
 		}
 
 		return result;
@@ -186,11 +182,9 @@ public class MongoAccessor {
 
 			return result;
 		} catch (MongoException ex) {
-
-			LOGGER.debug(ex.toString());
-			LOGGER.error(ex.getMessage());
 			String message = String.format("Error Deleting Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
+			LOGGER.error(message, ex);
 		}
 
 		return result;
@@ -203,19 +197,15 @@ public class MongoAccessor {
 		String result = "";
 		try {
 			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
-
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
-
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
+			
 			// Return the id that was used
 			return sMetadata.getServiceId();
-
 		} catch (MongoException ex) {
-			LOGGER.debug(ex.toString());
-			LOGGER.error(ex.getMessage());
 			String message = String.format("Error Saving Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
-
+			LOGGER.error(message, ex);
 		}
 
 		return result;
@@ -241,11 +231,9 @@ public class MongoAccessor {
 			return result;
 
 		} catch (MongoException ex) {
-			LOGGER.debug(ex.toString());
-			LOGGER.error(ex.getMessage());
 			String message = String.format("Error Listing Mongo Service entries : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
-
+			LOGGER.error(message, ex);
 		}
 
 		return result;
@@ -333,6 +321,7 @@ public class MongoAccessor {
 				throw new ResourceAccessException("Service not found.");
 			}
 		} catch (MongoTimeoutException mte) {
+			LOGGER.error("MongoDB instance not available", mte);
 			throw new ResourceAccessException("MongoDB instance not available.");
 		}
 
@@ -372,6 +361,7 @@ public class MongoAccessor {
 				}
 
 			} catch (MongoTimeoutException mte) {
+				LOGGER.error("MongoDB instance not available", mte);
 				throw new ResourceAccessException("MongoDB instance not available.");
 			}
 		}

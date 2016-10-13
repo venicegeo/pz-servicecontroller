@@ -187,6 +187,7 @@ public class ServiceMessageWorker {
 						// Mongo implements a thread interrupted check, but it doesn't throw an InterruptedException. It throws
 						// its own custom exception type. We will catch that exception type here, and then rethrow with a standard
 						// InterruptedException to ensure a common handled exception type.
+						LOGGER.error("MongoDB exception occurred", exception);
 						throw new InterruptedException();
 					}
 
@@ -227,10 +228,12 @@ public class ServiceMessageWorker {
 					externalServiceResponse = new ResponseEntity<>("DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
 				}
 			} catch (IOException | ResourceAccessException ex) {
+				LOGGER.error("Exception occurred", ex);
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = ex.getMessage();
 			} catch (HttpClientErrorException | HttpServerErrorException hex) {
+				LOGGER.error("HttpException occurred", hex);
 				coreLogger.log(hex.getMessage(), PiazzaLogger.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = hex.getResponseBodyAsString();
@@ -261,7 +264,7 @@ public class ServiceMessageWorker {
 				
 				producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate, SPACE));
 			} catch (JsonProcessingException jsonException) {
-				LOGGER.error(Arrays.toString(jsonException.getStackTrace()));
+				LOGGER.error("Json processing error occurred", jsonException);
 				coreLogger.log(String.format(
 						"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
 						consumerRecord.key(), jsonException.getMessage()), PiazzaLogger.ERROR);
@@ -305,7 +308,7 @@ public class ServiceMessageWorker {
 			producer.send(prodRecord);
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
-			LOGGER.error(Arrays.toString(exception.getStackTrace()));
+			LOGGER.error("Json processing error occurred", exception);
 			coreLogger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
 					PiazzaLogger.ERROR);
 		}
@@ -335,11 +338,15 @@ public class ServiceMessageWorker {
 			// Call pz-workflow endpoint to fire Event object
 			restTemplate.postForObject(String.format("%s/%s", WORKFLOW_URL, "event"), objectMapper.writeValueAsString(event), String.class);
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
-			coreLogger.log(String.format("Could not successfully send Event to Workflow Service. Returned with code %s and message %s",
-					exception.getStatusCode().toString(), exception.getResponseBodyAsString()), PiazzaLogger.ERROR);
+			String error = String.format("Could not successfully send Event to Workflow Service. Returned with code %s and message %s",
+					exception.getStatusCode().toString(), exception.getResponseBodyAsString());
+			coreLogger.log(error, PiazzaLogger.ERROR);
+			LOGGER.error(error, exception);
 		} catch (IOException exception) {
-			coreLogger.log(String.format("Could not send Event to Workflow Service. Serialization of Event failed with Error: %s",
-					exception.getMessage()), PiazzaLogger.ERROR);
+			String error = String.format("Could not send Event to Workflow Service. Serialization of Event failed with Error: %s",
+					exception.getMessage());
+			LOGGER.error(error, exception);
+			coreLogger.log(error, PiazzaLogger.ERROR);
 		}
 	}
 	
@@ -397,7 +404,7 @@ public class ServiceMessageWorker {
 				postString = objectMapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
 				// TODO Auto-generated catch block
-				LOGGER.error(Arrays.toString(e.getStackTrace()));
+				LOGGER.error("Json processing error occurred", e);
 			}
 		}
 		URI url = URI.create(builder.toUriString());

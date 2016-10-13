@@ -129,6 +129,7 @@ public class AsynchronousServiceWorker {
 				String errorMessage = String.format(
 						"Could not parse the 2xx HTTP Status response from User Service Execution for Job ID %s. It did not conform to the typical Response format. Details: %s",
 						job.getJobId(), exception.getMessage());
+				LOGGER.error(errorMessage, exception);
 				logger.log(errorMessage, PiazzaLogger.ERROR);
 				processErrorStatus(job.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
 			}
@@ -172,7 +173,7 @@ public class AsynchronousServiceWorker {
 					producer.send(prodRecord);
 				} catch (JsonProcessingException exception) {
 					// The message could not be serialized. Record this.
-					LOGGER.error(Arrays.toString(exception.getStackTrace()));
+					LOGGER.error("Json processing error occured", exception);
 					logger.log("Could not send Running Status Message to Job Manager. Error serializing Status: " + exception.getMessage(),
 							PiazzaLogger.ERROR);
 				}
@@ -200,16 +201,20 @@ public class AsynchronousServiceWorker {
 			}
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
 			updateFailureCount(instance);
-			logger.log(String.format(
+			String error = String.format(
 					"HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
-					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
-					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(),
+					instance.getJobId(), instance.getNumberErrorResponses());
+			LOGGER.error(error, exception);
+			logger.log(error, PiazzaLogger.WARNING);
 		} catch (Exception exception) {
 			updateFailureCount(instance);
-			logger.log(String.format(
+			String error = String.format(
 					"Unexpected Error %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
 					exception.getMessage(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
-					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+					instance.getNumberErrorResponses());
+			LOGGER.error(error, exception);
+			logger.log(error, PiazzaLogger.WARNING);
 		}
 	}
 
@@ -268,16 +273,21 @@ public class AsynchronousServiceWorker {
 			accessor.deleteAsyncServiceInstance(instance.getJobId());
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
 			updateFailureCount(instance);
-			logger.log(String.format(
+
+			String error = String.format(
 					"Error fetching Service results: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
 					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
-					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+					instance.getNumberErrorResponses());
+			LOGGER.error(error, exception);
+			logger.log(error, PiazzaLogger.WARNING);
 		} catch (Exception exception) {
 			updateFailureCount(instance);
-			logger.log(String.format(
+			String error = String.format(
 					"Unexpected Error fetching Service results: %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
 					exception.getMessage(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
-					instance.getNumberErrorResponses()), PiazzaLogger.WARNING);
+					instance.getNumberErrorResponses());
+			LOGGER.error(error, exception);
+			logger.log(error, PiazzaLogger.WARNING);
 		}
 	}
 
@@ -307,7 +317,7 @@ public class AsynchronousServiceWorker {
 			producer.send(prodRecord);
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
-			LOGGER.error(Arrays.toString(exception.getStackTrace()));
+			LOGGER.error("Could not send Error Status to Job Manager. Error serializing Status", exception);
 			logger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
 					PiazzaLogger.ERROR);
 		}
@@ -343,10 +353,11 @@ public class AsynchronousServiceWorker {
 			producer.send(
 					JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), new StatusUpdate(StatusUpdate.STATUS_CANCELLED), SPACE));
 		} catch (JsonProcessingException jsonException) {
-			LOGGER.error(Arrays.toString(jsonException.getStackTrace()));
-			logger.log(String.format(
+			String error = String.format(
 					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
-					instance.getJobId(), jsonException.getMessage()), PiazzaLogger.ERROR);
+					instance.getJobId(), jsonException.getMessage());
+			LOGGER.error(error, jsonException);
+			logger.log(error, PiazzaLogger.ERROR);
 		}
 	}
 }

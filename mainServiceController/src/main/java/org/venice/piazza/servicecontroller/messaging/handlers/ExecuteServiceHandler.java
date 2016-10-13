@@ -138,7 +138,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		    String result = om.writeValueAsString(sMetadata);
 		    coreLogger.log(result, PiazzaLogger.INFO);
 		} catch (ResourceAccessException | JsonProcessingException ex) {
-			LOGGER.error(Arrays.toString(ex.getStackTrace()));
+			LOGGER.error("Exception occurred", ex);
 		}
 		if (sMetadata != null) {
 			String rawURL = sMetadata.getUrl();
@@ -193,6 +193,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				try {
 					postString = mapper.writeValueAsString(postObjects);
 				} catch (JsonProcessingException e) {
+					LOGGER.error("Json processing error occurred", e);
 					coreLogger.log(e.getMessage(), PiazzaLogger.ERROR);
 					return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
 				}
@@ -312,6 +313,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					data.dataId = dataId;
 				}
 			} catch (Exception ex) {
+				LOGGER.error("Exception occurred", ex);
 				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 
 				// Checking payload type and settings the correct type

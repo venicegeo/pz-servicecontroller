@@ -15,6 +15,7 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.controller;
 
+import java.security.SecureRandom;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -207,7 +208,7 @@ public class GettingStartedController {
 	private int getRandomNumber() {
 		int randomInt = 0;
 
-		Random rand = new Random();
+		Random rand = new SecureRandom();
 		randomInt = rand.nextInt(MESSSAGE_COUNT);
 
 		return randomInt;

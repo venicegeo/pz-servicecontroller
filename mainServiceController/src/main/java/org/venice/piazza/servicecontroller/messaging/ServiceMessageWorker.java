@@ -57,6 +57,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoInterruptedException;
 
+import exception.DataInspectException;
+import exception.PiazzaJobException;
 import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
 import model.data.DataResource;
@@ -134,12 +136,12 @@ public class ServiceMessageWorker {
 
 			// Ensure a valid Job has been received through Kafka
 			if (job == null) {
-				throw new Exception("A Null Job has been received by the Service Controller Worker.");
+				throw new DataInspectException("A Null Job has been received by the Service Controller Worker.");
 			}
 
 			// Ensure the Job Type is of Execute Service Job
 			if ((job.getJobType() == null) || (job.getJobType() instanceof ExecuteServiceJob == false)) {
-				throw new Exception("An Invalid Job Type has been received by the Service Controller Worker.");
+				throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.");
 			}
 
 			// Process the Execution of the External Service
@@ -165,7 +167,7 @@ public class ServiceMessageWorker {
 					if ((rMetadata != null) &&
 						(rMetadata.getAvailability() != null) && 
 						(rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE.toString()))) {
-						throw new Exception("The service " + esData.getServiceId() + " is " + ResourceMetadata.STATUS_TYPE.OFFLINE.toString());
+						throw new DataInspectException("The service " + esData.getServiceId() + " is " + ResourceMetadata.STATUS_TYPE.OFFLINE.toString());
 
 					}
 					// Determine if this is a Synchronous or an Asynchronous Job. 
@@ -187,7 +189,7 @@ public class ServiceMessageWorker {
 						// Mongo implements a thread interrupted check, but it doesn't throw an InterruptedException. It throws
 						// its own custom exception type. We will catch that exception type here, and then rethrow with a standard
 						// InterruptedException to ensure a common handled exception type.
-						LOGGER.error("MongoDB exception occurred", exception);
+						LOGGER.info(exception.getMessage());
 						throw new InterruptedException();
 					}
 
@@ -197,7 +199,7 @@ public class ServiceMessageWorker {
 
 					// If an internal error occurred during Service Handling, then throw an exception.
 					if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
-						throw new Exception(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
+						throw new PiazzaJobException(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
 								externalServiceResponse.getStatusCode().toString()));
 					}
 

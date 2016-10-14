@@ -39,6 +39,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHand
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import exception.DataInspectException;
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import model.job.result.type.DataResult;
@@ -155,7 +156,7 @@ public class AsynchronousServiceWorker {
 			StatusUpdate status = restTemplate.getForObject(url, StatusUpdate.class);
 
 			if (status == null) {
-				throw new Exception("Null Status received from Service.");
+				throw new DataInspectException("Null Status received from Service.");
 			}
 
 			// Act appropriately based on the status received
@@ -340,11 +341,11 @@ public class AsynchronousServiceWorker {
 		try {
 			restTemplate.delete(url);
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
-			// The cancellation sent back an error. Log it.
-			logger.log(String.format(
-					"Error Cancelling Service Instance on external User Service: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. No subsequent calls will be made.",
+			String error = String.format("Error Cancelling Service Instance on external User Service: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. No subsequent calls will be made.",
 					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(),
-					instance.getJobId()), PiazzaLogger.WARNING);
+					instance.getJobId());
+			LOGGER.error(error, exception);
+			logger.log(error, PiazzaLogger.WARNING);
 		}
 		// Remove this from the Instance Table
 		accessor.deleteAsyncServiceInstance(instance.getJobId());

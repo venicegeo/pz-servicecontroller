@@ -49,6 +49,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 
+import exception.DataInspectException;
 import model.data.DataType;
 import model.job.type.RegisterServiceJob;
 import model.request.PiazzaJobRequest;
@@ -266,7 +267,7 @@ public class ServiceController {
 				for (ObjectError error : errors.getAllErrors()) {
 					builder.append(error.getDefaultMessage() + ".");
 				}
-				throw new Exception(String.format("Error validating updated Service Metadata. Validation Errors: %s", builder.toString()));
+				throw new DataInspectException(String.format("Error validating updated Service Metadata. Validation Errors: %s", builder.toString()));
 			}
 
 			// Update Existing Service in mongo

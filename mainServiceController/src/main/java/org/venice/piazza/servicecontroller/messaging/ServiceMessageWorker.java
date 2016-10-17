@@ -272,7 +272,7 @@ public class ServiceMessageWorker {
 						consumerRecord.key(), jsonException.getMessage()), PiazzaLogger.ERROR);
 			}
 		} catch (Exception ex) {
-			LOGGER.error(Arrays.toString(ex.getStackTrace()));
+			LOGGER.error("Unexpected Error in processing External Service", ex);
 			// Catch any General Exceptions that occur during runtime.
 			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
 			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),

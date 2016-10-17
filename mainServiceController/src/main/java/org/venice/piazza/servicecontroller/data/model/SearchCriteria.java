@@ -31,5 +31,4 @@ public class SearchCriteria {
 		this.pattern = pattern;
 	}
 	public String pattern;
-
 }

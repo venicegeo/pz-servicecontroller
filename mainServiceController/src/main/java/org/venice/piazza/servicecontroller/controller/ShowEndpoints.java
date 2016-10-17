@@ -23,10 +23,7 @@ import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.stereotype.Component;
 
 @Component
-
-
 public class ShowEndpoints extends  AbstractEndpoint<List<Endpoint>>{
-	
 	private List<Endpoint> endpoints;
 	
 	@Autowired
@@ -42,5 +39,4 @@ public class ShowEndpoints extends  AbstractEndpoint<List<Endpoint>>{
 	public List<Endpoint> invoke() {
 		return this.endpoints;
 	}
-
 }

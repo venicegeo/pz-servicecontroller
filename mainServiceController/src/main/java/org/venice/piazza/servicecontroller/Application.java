@@ -55,7 +55,6 @@ public class Application extends SpringBootServletInitializer {
 	private int httpMaxRoute;
 	@Value("${http.request.timeout}")
 	private int httpRequestTimeout;
-	
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(Application.class);
 	
@@ -81,7 +80,6 @@ public class Application extends SpringBootServletInitializer {
 	public static void main(String[] args) {
 
 		ApplicationContext ctx = SpringApplication.run(Application.class, args); //NOSONAR
-
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment
 		if (args.length == 1) {
@@ -91,7 +89,6 @@ public class Application extends SpringBootServletInitializer {
 				inspectSprintEnv(ctx);
 			}
 		}
-
 	}
 
 	/**
@@ -107,7 +104,6 @@ public class Application extends SpringBootServletInitializer {
 		for (String beanName : beanNames) {
 			LOGGER.info(beanName);
 		}
-
 	}
 
 	@Bean

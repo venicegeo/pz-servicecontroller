@@ -41,6 +41,4 @@ public class Message {
 	public void settheString(String theString) {
 		this.theString = theString;
 	}
-	
-
 }

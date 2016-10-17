@@ -44,7 +44,6 @@ import util.PiazzaLogger;
 public class GettingStartedController {
 
 	private final static int MESSSAGE_COUNT = 15;
-
 	private final static String ORACLE_WELCOME = "Here, take a cookie. I promise, by the time you're done eating it, you'll feel right as rain.";
 	private final static String JAWS_WELCOME = "You're gonna need a bigger boat.";
 	private final static String ANCHORMAN_WELCOME = "I'm Ron Burgandyyyy?";
@@ -81,12 +80,10 @@ public class GettingStartedController {
 	@ResponseBody
 	public String convertStringtoUpper(@ModelAttribute("aString") String aString) {
 		String result = "a String was not provided.";
-
 		if (aString != null) {
 			result = aString.toUpperCase();
 		}
 		logger.log("The result is " + result, PiazzaLogger.INFO);
-
 		return "{\"result\":\"" + result + "\"}";
 	}
 
@@ -117,7 +114,6 @@ public class GettingStartedController {
 				result = convertStringtoLower(theString);
 			}
 		}
-
 		return result;
 	}
 
@@ -133,11 +129,9 @@ public class GettingStartedController {
 	@ResponseBody
 	public String convertStringtoLower(@ModelAttribute("aString") String aString) {
 		String result = "aString was not provided";
-
 		if (aString != null)
 			result = aString.toLowerCase();
 		logger.log("The result is " + result, PiazzaLogger.INFO);
-
 		return "{\"result\":\"" + result + "\"}";
 	}
 	
@@ -177,12 +171,10 @@ public class GettingStartedController {
 	public String movieWelcomeParms(@RequestParam(value = "name", defaultValue = "World") String name) {
 		String message = welcomeMessages[getRandomNumber()];
 		logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
-
 		if (name != null) {
 			logger.log("User is " + name, PiazzaLogger.INFO);
 			message = message + "\n\nHELLO " + name + "!!!!\n";
 		}
-
 		message = message + "Welcome to the piazza pz-servicecontroller!\n";
 		message = message + "Details on using pz-servicecontrollers are \n";
 		logger.log("Welcome generated" + message, PiazzaLogger.INFO);

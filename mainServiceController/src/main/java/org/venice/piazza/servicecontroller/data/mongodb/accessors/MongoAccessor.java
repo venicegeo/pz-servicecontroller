@@ -16,7 +16,6 @@
 package org.venice.piazza.servicecontroller.data.mongodb.accessors;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -136,13 +135,11 @@ public class MongoAccessor {
 			logger.log("The result is", writeResult.toString());
 			// Return the id that was used
 			return sMetadata.getServiceId().toString();
-
 		} catch (MongoException ex) {
 			String message = String.format("Error Updating Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);
 			LOGGER.error(message, ex);
 		}
-
 		return result;
 	}
 
@@ -199,7 +196,6 @@ public class MongoAccessor {
 			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
-			
 			// Return the id that was used
 			return sMetadata.getServiceId();
 		} catch (MongoException ex) {
@@ -207,7 +203,6 @@ public class MongoAccessor {
 			logger.log(message, PiazzaLogger.ERROR);
 			LOGGER.error(message, ex);
 		}
-
 		return result;
 	}
 
@@ -219,17 +214,15 @@ public class MongoAccessor {
 		try {
 
 			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
-
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
-
 			DBCursor<Service> metadataCursor = coll
 					.find(DBQuery.notEquals("resourceMetadata.availability", ResourceMetadata.STATUS_TYPE.OFFLINE.toString()));
+
 			while (metadataCursor.hasNext()) {
 				result.add(metadataCursor.next());
 			}
 			// Return the id that was used
 			return result;
-
 		} catch (MongoException ex) {
 			String message = String.format("Error Listing Mongo Service entries : %s", ex.getMessage());
 			logger.log(message, PiazzaLogger.ERROR);

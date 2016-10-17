@@ -70,7 +70,6 @@ import util.PiazzaLogger;
  * @author mlynum & Sonny.Saniev
  * @since 1.0
  */
-
 @RestController
 @RequestMapping({ "/servicecontroller", "" })
 public class ServiceController {
@@ -300,7 +299,6 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers = "Accept=application/json", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
-
 		String result = usHandler.handle(serviceMetadata);
 		logger.log("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}", PiazzaLogger.DEBUG);
 		String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
@@ -352,7 +350,6 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/describeService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> describeService(@ModelAttribute("resourceId") String resourceId) {
-
 		ResponseEntity<String> result = dsHandler.handle(resourceId);
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);
 		// Set the response based on the service retrieved
@@ -405,7 +402,6 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/search", method = RequestMethod.POST, headers = "Accept=application/json")
 	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
-
 		logger.log("search " + " " + criteria.field + "->" + criteria.pattern, PiazzaLogger.INFO);
 		ResponseEntity<String> result = ssHandler.handle(criteria);
 		logger.log("Result is " + result, PiazzaLogger.DEBUG);
@@ -422,7 +418,6 @@ public class ServiceController {
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ResponseEntity<String> healthCheck() {
 		logger.log("Health Check called", PiazzaLogger.DEBUG);
-
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(MediaType.valueOf("text/html"));
 		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
@@ -430,7 +425,6 @@ public class ServiceController {
 				+ "<BR>For details on running and using the ServiceController, "
 				+ "<BR>see <A HREF=\"http://pz-docs.geointservices.io/devguide/index.html\"> The Piazza Developer's Guide<A> for details."
 				+ "<BODY></HTML>";
-
 		ResponseEntity<String> response = new ResponseEntity<String>(htmlMessage, responseHeaders, HttpStatus.OK);
 
 		return response;

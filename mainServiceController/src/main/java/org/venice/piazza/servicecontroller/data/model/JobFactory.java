@@ -15,10 +15,8 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.data.model;
 
-
 import model.job.Job;
 import model.request.PiazzaJobRequest;
-
 import org.joda.time.DateTime;
 
 /**

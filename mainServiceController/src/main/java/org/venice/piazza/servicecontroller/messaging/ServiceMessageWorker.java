@@ -185,11 +185,11 @@ public class ServiceMessageWorker {
 					// Execute the external Service and get the Response Entity
 					try {
 						externalServiceResponse = esHandler.handle(jobType);
-					} catch (MongoInterruptedException exception) {
+					} catch (Exception exception) {
 						// Mongo implements a thread interrupted check, but it doesn't throw an InterruptedException. It throws
 						// its own custom exception type. We will catch that exception type here, and then rethrow with a standard
 						// InterruptedException to ensure a common handled exception type.
-						LOGGER.info(exception.getMessage());
+						LOGGER.info("MongoDB exception occurred", exception);
 						throw new InterruptedException();
 					}
 

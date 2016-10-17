@@ -19,6 +19,8 @@ import java.util.Arrays;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -32,6 +34,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
+import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
 
 /**
  * Main class for the pz-servicecontroller. Launches the application
@@ -54,6 +57,8 @@ public class Application extends SpringBootServletInitializer {
 	private int httpRequestTimeout;
 	
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(Application.class);
+	
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
 
@@ -82,8 +87,7 @@ public class Application extends SpringBootServletInitializer {
 		if (args.length == 1) {
 			// Get the value of the first argument
 			// If it is true then do a health check and print it out
-			Boolean inspectBool = Boolean.valueOf(args[0]);
-			if (inspectBool.booleanValue() == true) {
+			if (Boolean.valueOf(args[0]) == true) {
 				inspectSprintEnv(ctx);
 			}
 		}
@@ -95,13 +99,13 @@ public class Application extends SpringBootServletInitializer {
 	 */
 	public static void inspectSprintEnv(ApplicationContext ctx) {
 
-		System.out.println("Spring Boot Beans");
-		System.out.println("-----------------");
+		LOGGER.info("Spring Boot Beans");
+		LOGGER.info("-----------------");
 
 		String[] beanNames = ctx.getBeanDefinitionNames();
 		Arrays.sort(beanNames);
 		for (String beanName : beanNames) {
-			System.out.println(beanName);
+			LOGGER.info(beanName);
 		}
 
 	}

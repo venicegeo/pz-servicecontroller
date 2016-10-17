@@ -44,32 +44,29 @@ import util.PiazzaLogger;
 public class GettingStartedController {
 
 	private final static int MESSSAGE_COUNT = 15;
-	
-	private final static String ORACLE_WELCOME="Here, take a cookie. I promise, by the time you're done eating it, you'll feel right as rain.";
-	private final static String JAWS_WELCOME="You're gonna need a bigger boat.";
-	private final static String ANCHORMAN_WELCOME="I'm Ron Burgandyyyy?";
-	private final static String BATTLESTAR_WELCOME="So say we all.";
-	private final static String PREDATOR_WELCOME="If it bleeds, we can kill it.";
-	private final static String FEWGOODMEN_WELCOME="You want me on that wall. You NEED me on that wall";
-	private final static String GOODFATHER_WLECOME="Leave the gun. Take the cannoli.";
-	private final static String HUNTREDOCTOBER_WELCOME="Re-verify our range to target... one ping only. ";
+
+	private final static String ORACLE_WELCOME = "Here, take a cookie. I promise, by the time you're done eating it, you'll feel right as rain.";
+	private final static String JAWS_WELCOME = "You're gonna need a bigger boat.";
+	private final static String ANCHORMAN_WELCOME = "I'm Ron Burgandyyyy?";
+	private final static String BATTLESTAR_WELCOME = "So say we all.";
+	private final static String PREDATOR_WELCOME = "If it bleeds, we can kill it.";
+	private final static String FEWGOODMEN_WELCOME = "You want me on that wall. You NEED me on that wall";
+	private final static String GOODFATHER_WLECOME = "Leave the gun. Take the cannoli.";
+	private final static String HUNTREDOCTOBER_WELCOME = "Re-verify our range to target... one ping only. ";
 	private final static String HEAT_WELCOME = "Clean up, go home.";
-	private final static String DUNE_WELCOME="And how can this be? For he is the Kwisatz Haderach!";
-	private final static String USUAL_SUSPECTS_WELCOME="The greatest trick the Devil " +
-														"ever pulled was convincing the world he didn't exist. " +
-														"And like that, poof. He's gone.";
-	private final static String PASSENGER57_WELCOME="Ever played roulette?......Well, let me give you a word of advice..... Always bet on black!";
-	private final static String DEVILWEARSPRADA_WELCOME= "Why is no one ready...?";
-	private final static String FUNNYFARM_WELCOME="Cue the deer.";
-	private final static String PRESTIGE_WELCOME="You always were the better magician, we both know that. "+
-												"But whatever your secret was, you will have to agree, mine is better......";
+	private final static String DUNE_WELCOME = "And how can this be? For he is the Kwisatz Haderach!";
+	private final static String USUAL_SUSPECTS_WELCOME = "The greatest trick the Devil "
+			+ "ever pulled was convincing the world he didn't exist. " + "And like that, poof. He's gone.";
+	private final static String PASSENGER57_WELCOME = "Ever played roulette?......Well, let me give you a word of advice..... Always bet on black!";
+	private final static String DEVILWEARSPRADA_WELCOME = "Why is no one ready...?";
+	private final static String FUNNYFARM_WELCOME = "Cue the deer.";
+	private final static String PRESTIGE_WELCOME = "You always were the better magician, we both know that. "
+			+ "But whatever your secret was, you will have to agree, mine is better......";
 												 		
-	
-	String[] welcomeMessages = {ORACLE_WELCOME, JAWS_WELCOME, ANCHORMAN_WELCOME, BATTLESTAR_WELCOME, 
-								PREDATOR_WELCOME, FEWGOODMEN_WELCOME, GOODFATHER_WLECOME, HUNTREDOCTOBER_WELCOME,
-								HEAT_WELCOME, DUNE_WELCOME, USUAL_SUSPECTS_WELCOME, PASSENGER57_WELCOME,
-								DEVILWEARSPRADA_WELCOME, FUNNYFARM_WELCOME, PRESTIGE_WELCOME};   
-	
+	String[] welcomeMessages = { ORACLE_WELCOME, JAWS_WELCOME, ANCHORMAN_WELCOME, BATTLESTAR_WELCOME, PREDATOR_WELCOME,
+			FEWGOODMEN_WELCOME, GOODFATHER_WLECOME, HUNTREDOCTOBER_WELCOME, HEAT_WELCOME, DUNE_WELCOME,
+			USUAL_SUSPECTS_WELCOME, PASSENGER57_WELCOME, DEVILWEARSPRADA_WELCOME, FUNNYFARM_WELCOME, PRESTIGE_WELCOME };
+
 	@Autowired
 	private PiazzaLogger logger;
 	/**
@@ -80,22 +77,19 @@ public class GettingStartedController {
 	 * @param aString
 	 * @return JSON {result:<the converted string>}
 	 */	 
-	@RequestMapping(value = "/string/toUpper", method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/string/toUpper", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-    public String convertStringtoUpper(@ModelAttribute("aString") String aString ) {
+	public String convertStringtoUpper(@ModelAttribute("aString") String aString) {
 		String result = "a String was not provided.";
-				
+
 		if (aString != null) {
 			result = aString.toUpperCase();
 		}
-	
-        logger.log("The result is " + result, PiazzaLogger.INFO);
- 
-        return "{\"result\":\"" + result + "\"}";
-    }
-	
+		logger.log("The result is " + result, PiazzaLogger.INFO);
 
-	
+		return "{\"result\":\"" + result + "\"}";
+	}
+
 	/**
 	 * Rest call to convert a string in a message to upper or lower case
 	 * Access http://localhost:8080/jumpstart/string/convert
@@ -107,28 +101,26 @@ public class GettingStartedController {
 	 * @param msg
 	 * @return JSON {result:<the converted string>}
 	 */
-	@RequestMapping(value = "/string/convert", method = RequestMethod.POST, headers="Accept=application/json", produces=MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/string/convert", method = RequestMethod.POST, headers = "Accept=application/json", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String convert(@RequestBody Message msg) {
-		
 		String result = "Could not Convert, please check message";
 		String conversionType = msg.getConversionType();
 		String theString = msg.gettheString();
+
 		if ((conversionType != null) && (theString != null)) {
-			if (conversionType.equals(Message.UPPER))  {
-		        logger.log("Make the String uppercase" + theString, PiazzaLogger.INFO);
-		        logger.log("The message" + msg, PiazzaLogger.INFO);
-		        result=convertStringtoUpper(theString);
-			} 
-			else if (conversionType.equals(Message.LOWER))  {
-		        logger.log("Make the String lower case" + theString, PiazzaLogger.INFO);
-				result=convertStringtoLower(theString);
-		       
+			if (conversionType.equals(Message.UPPER)) {
+				logger.log("Make the String uppercase" + theString, PiazzaLogger.INFO);
+				logger.log("The message" + msg, PiazzaLogger.INFO);
+				result = convertStringtoUpper(theString);
+			} else if (conversionType.equals(Message.LOWER)) {
+				logger.log("Make the String lower case" + theString, PiazzaLogger.INFO);
+				result = convertStringtoLower(theString);
 			}
 		}
-		
+
 		return result;
-		
 	}
+
 	/**
 	 * Rest call to convert a string to upper case
 	 * Access 
@@ -137,85 +129,69 @@ public class GettingStartedController {
 	 * @param aString
 	 * @return JSON {result:<the converted string>}
 	 */	 
-	@RequestMapping(value = "/string/toLower", method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/string/toLower", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-    public String convertStringtoLower(@ModelAttribute("aString") String aString) {        
-        String result = "aString was not provided";
-        
-        if(aString != null)
-        	result  = aString.toLowerCase();
-        logger.log("The result is " + result, PiazzaLogger.INFO);
-        
-        return "{\"result\":\"" + result + "\"}";
+	public String convertStringtoLower(@ModelAttribute("aString") String aString) {
+		String result = "aString was not provided";
 
-    }
-	
-	/**
-	 * Provide a movie welcome to pz-service controller
-	 * Access 
-	 * 
-	 * @param none
-	 * @return JSON {result:<A greeting>}
-	 */	 
-	@RequestMapping(value = "/moviequotewelcome/{name}", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
-    public String movieWelcome(@PathVariable("name") String name ) {
+		if (aString != null)
+			result = aString.toLowerCase();
+		logger.log("The result is " + result, PiazzaLogger.INFO);
 
-		String message = "";
-		 int msgNum = getRandomNumber();
-		 message= welcomeMessages[msgNum];
-        logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
-        if (name != null) {
-        	logger.log("User is " + name, PiazzaLogger.INFO);
-        	 message = message + "\n\nHELLO " + name + "!!!!\n";
-        }
-       
-        message = message + "Welcome to the piazza pz-servicecontroller!\n";
-        message = message + "Details on using pz-servicecontrollers are \n";
-        message = message + "here https://github.com/venicegeo/venice/wiki/Pz-ServiceController";
-       
-        logger.log("Welcome generated" + message, PiazzaLogger.INFO);
-        return "{\"message\":\"" + message+ "\"}";
-    }
-	
-	/**
-	 * Provide a movie welcome to pz-service controller
-	 * Access 
-	 * 
-	 * @param none
-	 * @return JSON {result:<A greeting>}
-	 */	 
-	@RequestMapping(value = "/moviequotewelcome", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
-    public String movieWelcomeParms(@RequestParam(value="name", defaultValue="World") String name ) {
-
-		String message = "";
-		 int msgNum = getRandomNumber();
-		 message= welcomeMessages[msgNum];
-        logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
-        if (name != null) {
-        	logger.log("User is " + name, PiazzaLogger.INFO);
-        	 message = message + "\n\nHELLO " + name + "!!!!\n";
-        }
-       
-        message = message + "Welcome to the piazza pz-servicecontroller!\n";
-        message = message + "Details on using pz-servicecontrollers are \n";
-       
-        logger.log("Welcome generated" + message, PiazzaLogger.INFO);
-        return "{\"message\":\"" + message+ "\"}";
-    }
-	
-	
-	
-	private int getRandomNumber() {
-		int randomInt = 0;
-
-		Random rand = new SecureRandom();
-		randomInt = rand.nextInt(MESSSAGE_COUNT);
-
-		return randomInt;
+		return "{\"result\":\"" + result + "\"}";
 	}
 	
-	
-	
+	/**
+	 * Provide a movie welcome to pz-service controller
+	 * Access 
+	 * 
+	 * @param none
+	 * @return JSON {result:<A greeting>}
+	 */	 
+	@RequestMapping(value = "/moviequotewelcome/{name}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public String movieWelcome(@PathVariable("name") String name) {
+		String message = welcomeMessages[getRandomNumber()];
+		logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
 
+		if (name != null) {
+			logger.log("User is " + name, PiazzaLogger.INFO);
+			message = message + "\n\nHELLO " + name + "!!!!\n";
+		}
+
+		message = message + "Welcome to the piazza pz-servicecontroller!\n";
+		message = message + "Details on using pz-servicecontrollers are \n";
+		message = message + "here https://github.com/venicegeo/venice/wiki/Pz-ServiceController";
+
+		logger.log("Welcome generated" + message, PiazzaLogger.INFO);
+		return "{\"message\":\"" + message + "\"}";
+	}
 	
+	/**
+	 * Provide a movie welcome to pz-service controller
+	 * Access 
+	 * 
+	 * @param none
+	 * @return JSON {result:<A greeting>}
+	 */	 
+	@RequestMapping(value = "/moviequotewelcome", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public String movieWelcomeParms(@RequestParam(value = "name", defaultValue = "World") String name) {
+		String message = welcomeMessages[getRandomNumber()];
+		logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
+
+		if (name != null) {
+			logger.log("User is " + name, PiazzaLogger.INFO);
+			message = message + "\n\nHELLO " + name + "!!!!\n";
+		}
+
+		message = message + "Welcome to the piazza pz-servicecontroller!\n";
+		message = message + "Details on using pz-servicecontrollers are \n";
+		logger.log("Welcome generated" + message, PiazzaLogger.INFO);
+
+		return "{\"message\":\"" + message + "\"}";
+	}
+	
+	private int getRandomNumber() {
+		Random rand = new SecureRandom();
+		return rand.nextInt(MESSSAGE_COUNT);
+	}
 }

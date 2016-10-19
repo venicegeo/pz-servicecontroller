@@ -4,7 +4,6 @@
   <artifactId>Sum</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   
-  
 	<packaging>jar</packaging>
 
 	<parent>
@@ -35,11 +34,13 @@
 			<artifactId>kafka-clients</artifactId>
 			<version>0.9.0.1</version>
 		</dependency>
+		
 		<dependency>
       			<groupId>io.piazzageo</groupId>
 	       	      	<artifactId>pz-jobcommon</artifactId>
                 	<version>LATEST</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>

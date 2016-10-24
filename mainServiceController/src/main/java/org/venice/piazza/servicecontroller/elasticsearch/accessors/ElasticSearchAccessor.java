@@ -119,7 +119,9 @@ public class ElasticSearchAccessor {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			
-			HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
+			//CSS 10/24 TBD, this obsolete artifact of "job" parameter caused Elasticsearch trouble bug #9336
+			//HttpEntity<ServiceMetadataIngestJob> entity = new HttpEntity<ServiceMetadataIngestJob>(job, headers);
+			HttpEntity<Service> entity = new HttpEntity<Service>(service, headers);
 
 			return restTemplate.postForObject(url, entity, PiazzaResponse.class);
 		} catch (Exception exception) {

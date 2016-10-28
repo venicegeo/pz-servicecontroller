@@ -1,5 +1,5 @@
 node ('sl61'){
-  git url: 'https://github.com/venicegeo/pz-service-controller', branch: 'master'
+  git url: 'https://github.com/venicegeo/pz-servicecontroller', branch: 'master'
   withCredentials([[$class: 'StringBinding', credentialsId: '978C467A-2B26-47AE-AD2F-4AFD5A4AF695', variable: 'THREADFIXKEY']]) { 
     stage 'Fortify Scan'
     def mvnHome = tool 'M3'

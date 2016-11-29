@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
+import model.logger.AuditElement;
 import model.logger.Severity;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -113,8 +114,11 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 
 		if ((result != null) && (result.length() > 0)) {
 			coreLogger.log("The service with id " + resourceId + " was deleted " + result, Severity.INFORMATIONAL);
+			coreLogger.log(String.format("The service was deleted id %s", resourceId), Severity.INFORMATIONAL,
+					new AuditElement("serviceController", "deletedRegisteredService", resourceId));
 		} else {
 			coreLogger.log("The service with id " + resourceId + " was NOT deleted", Severity.INFORMATIONAL);
+			coreLogger.log(String.format("The service was NOT deleted id %s", resourceId), Severity.ERROR, new AuditElement("serviceController", "failedToDelete", resourceId));
 		}
 
 		return result;

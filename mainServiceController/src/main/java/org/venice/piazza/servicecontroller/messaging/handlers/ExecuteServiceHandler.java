@@ -55,6 +55,7 @@ import model.job.PiazzaJobType;
 import model.job.result.type.DataResult;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.IngestJob;
+import model.logger.AuditElement;
 import model.logger.Severity;
 import model.request.PiazzaJobRequest;
 import model.service.metadata.ExecuteServiceData;
@@ -133,7 +134,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		String requestMimeType = "application/json";
 		try {
 			// Accessor throws exception if can't find service
-			 sMetadata= accessor.getServiceById(serviceId);
+			sMetadata= accessor.getServiceById(serviceId);
 	
 			ObjectMapper om = new ObjectMapper();
 		    String result = om.writeValueAsString(sMetadata);
@@ -216,10 +217,12 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				coreLogger.log("PostForEntity URL=" + url, Severity.INFORMATIONAL);
 				responseEntity = template.postForEntity(url, requestEntity, String.class);
 			}
+
+			coreLogger.log(String.format("Triggered execution of service %s", sMetadata.getServiceId()), Severity.INFORMATIONAL, new AuditElement("serviceController", "executingExternalService", sMetadata.getServiceId()));
 		} else
 		{
+			coreLogger.log(String.format("The service was NOT found id %s", data.getServiceId()), Severity.ERROR, new AuditElement("serviceController", "notFound", data.getServiceId()));
 			return new ResponseEntity<>("Service Id " + data.getServiceId() + " not found", HttpStatus.NOT_FOUND);
-
 		}
 		return responseEntity;
 	}

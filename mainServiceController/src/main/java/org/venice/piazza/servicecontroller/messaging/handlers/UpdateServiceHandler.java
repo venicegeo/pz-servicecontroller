@@ -29,6 +29,7 @@ import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearch
 
 import model.job.PiazzaJobType;
 import model.job.type.UpdateServiceJob;
+import model.logger.AuditElement;
 import model.logger.Severity;
 import model.response.PiazzaResponse;
 import model.service.metadata.Service;
@@ -106,11 +107,15 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				
 				if (result.length() > 0) {
 				   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, Severity.INFORMATIONAL);
+				   
+					coreLogger.log(String.format("Service was updated %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
+							new AuditElement("serviceController", "updatedRegisteredService", sMetadata.getServiceId()));
 				   // Only when the user service data is updated successfully then
 				   // update elastic search
 				    PiazzaResponse response = elasticAccessor.update(sMetadata);
 				} else {
 					   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", Severity.INFORMATIONAL);
+					   coreLogger.log("The service was NOT updated", Severity.ERROR, new AuditElement("serviceController", "failedToUpdateService", sMetadata.getServiceId()));
 				}
 				// If an Id was returned then send a kafka message back updating the job iD 
 				// with the resourceId

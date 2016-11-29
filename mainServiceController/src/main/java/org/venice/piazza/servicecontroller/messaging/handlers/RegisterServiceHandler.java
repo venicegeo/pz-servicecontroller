@@ -25,6 +25,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import model.job.PiazzaJobType;
 import model.job.type.RegisterServiceJob;
+import model.logger.AuditElement;
 import model.logger.Severity;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
@@ -74,9 +75,14 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			String result = handle(serviceMetadata);
 			if (result.length() > 0) {
 				String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
+				
+				coreLogger.log(String.format("Service registered %s", serviceMetadata.getServiceId()), Severity.INFORMATIONAL,
+						new AuditElement("serviceController", "registeredExternalService", serviceMetadata.getServiceId()));
+				
 				return new ResponseEntity<String>(responseString, HttpStatus.OK);
 			} else {
 				coreLogger.log("No result response from the handler, something went wrong", Severity.ERROR);
+				coreLogger.log(String.format("The service was NOT registered id %s", serviceMetadata.getServiceId()), Severity.ERROR, new AuditElement("serviceController", "registerServiceError", serviceMetadata.getServiceId()));
 				return new ResponseEntity<String>("RegisterServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {

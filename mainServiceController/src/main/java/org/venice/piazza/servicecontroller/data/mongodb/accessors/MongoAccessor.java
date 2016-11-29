@@ -47,6 +47,7 @@ import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
 import model.job.metadata.ResourceMetadata;
+import model.logger.AuditElement;
 import model.logger.Severity;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
@@ -134,6 +135,9 @@ public class MongoAccessor {
 
 			WriteResult<Service, String> writeResult = coll.update(query, sMetadata);
 			logger.log(String.format("%s %s", "The result is", writeResult.toString()), Severity.INFORMATIONAL);
+			
+			logger.log(String.format("Updating resource in MongoDB %s", sMetadata.getServiceId()), Severity.ERROR, new AuditElement("serviceController", "mongoDbTransaction", sMetadata.getServiceId()));
+			
 			// Return the id that was used
 			return sMetadata.getServiceId().toString();
 		} catch (MongoException ex) {
@@ -178,6 +182,8 @@ public class MongoAccessor {
 				result = " service " + serviceId + " deleted ";
 			}
 
+			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.ERROR, new AuditElement("serviceController", "mongoDbTransaction", serviceId));
+			
 			return result;
 		} catch (MongoException ex) {
 			String message = String.format("Error Deleting Mongo Service entry : %s", ex.getMessage());
@@ -197,6 +203,9 @@ public class MongoAccessor {
 			DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_COLLECTION_NAME);
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
+
+			logger.log(String.format("Saving resource in MongoDB %s", sMetadata.getServiceId()), Severity.ERROR, new AuditElement("serviceController", "mongoDbTransaction", sMetadata.getServiceId()));
+
 			// Return the id that was used
 			return sMetadata.getServiceId();
 		} catch (MongoException ex) {

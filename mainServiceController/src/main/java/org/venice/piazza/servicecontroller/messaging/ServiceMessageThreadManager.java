@@ -47,6 +47,7 @@ import messaging.job.WorkerCallback;
 import model.job.Job;
 import model.job.type.AbortJob;
 import model.job.type.ExecuteServiceJob;
+import model.logger.Severity;
 import model.request.PiazzaJobRequest;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
@@ -113,12 +114,12 @@ public class ServiceMessageThreadManager {
 		KAFKA_HOST = kafkaHostFull.split(":")[0];
 		KAFKA_PORT = kafkaHostFull.split(":")[1];
 
-		coreLogger.log("============================================================", PiazzaLogger.INFO);
-		coreLogger.log("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME, PiazzaLogger.INFO);
-		coreLogger.log("KAFKA_GROUP=" + KAFKA_GROUP, PiazzaLogger.INFO);
-		coreLogger.log("KAFKA_HOST=" + KAFKA_HOST, PiazzaLogger.INFO);
-		coreLogger.log("KAFKA_PORT=" + KAFKA_PORT, PiazzaLogger.INFO);
-		coreLogger.log("============================================================", PiazzaLogger.INFO);
+		coreLogger.log("============================================================", Severity.INFORMATIONAL);
+		coreLogger.log("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME, Severity.INFORMATIONAL);
+		coreLogger.log("KAFKA_GROUP=" + KAFKA_GROUP, Severity.INFORMATIONAL);
+		coreLogger.log("KAFKA_HOST=" + KAFKA_HOST, Severity.INFORMATIONAL);
+		coreLogger.log("KAFKA_PORT=" + KAFKA_PORT, Severity.INFORMATIONAL);
+		coreLogger.log("============================================================", Severity.INFORMATIONAL);
 
 		/* Initialize producer and consumer for the Kafka Queue */
 		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
@@ -176,7 +177,7 @@ public class ServiceMessageThreadManager {
 
 						if (job != null) {
 							// Log the request.
-							coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(), consumerRecord.key()), PiazzaLogger.INFO);
+							coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(), consumerRecord.key()), Severity.INFORMATIONAL);
 							
 							// Update the status to say the job is in progress
 							StatusUpdate su = new StatusUpdate();
@@ -194,12 +195,12 @@ public class ServiceMessageThreadManager {
 						}
 
 					} catch (Exception ex) {
-						coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), PiazzaLogger.FATAL);
+						coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), Severity.CRITICAL);
 					}
 				} // for loop
 			} // while loop
 		} catch (Exception ex) {
-			coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), PiazzaLogger.FATAL);
+			coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), Severity.CRITICAL);
 
 		}
 
@@ -235,7 +236,7 @@ public class ServiceMessageThreadManager {
 						String error = String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
 								exception.getMessage());
 						LOGGER.error(error, exception);
-						coreLogger.log(error, PiazzaLogger.ERROR);
+						coreLogger.log(error, Severity.ERROR);
 						continue;
 					}
 					
@@ -245,9 +246,9 @@ public class ServiceMessageThreadManager {
 						boolean cancelled = runningServiceRequests.get(jobId).cancel(true);
 						if (cancelled) {
 							// Log the cancellation has occurred
-							coreLogger.log(String.format("Successfully requested termination of Job thread for Job ID %s", jobId), PiazzaLogger.INFO);
+							coreLogger.log(String.format("Successfully requested termination of Job thread for Job ID %s", jobId), Severity.INFORMATIONAL);
 						} else {
-							coreLogger.log(String.format("Attempted to Cancel running job thread for ID %s, but the thread could not be forcefully cancelled.", jobId), PiazzaLogger.ERROR);
+							coreLogger.log(String.format("Attempted to Cancel running job thread for ID %s, but the thread could not be forcefully cancelled.", jobId), Severity.ERROR);
 						}
 						// Remove it from the list of Running Jobs
 						runningServiceRequests.remove(jobId);
@@ -261,11 +262,11 @@ public class ServiceMessageThreadManager {
 			uniqueConsumer.close();
 		} catch (WakeupException wex) {
 			LOGGER.error("Polling Thread forcefully closed", wex);
-			coreLogger.log(String.format("Polling Thread forcefully closed: %s", wex.getMessage()), PiazzaLogger.FATAL);
+			coreLogger.log(String.format("Polling Thread forcefully closed: %s", wex.getMessage()), Severity.CRITICAL);
 			uniqueConsumer.close();
 		} catch (Exception ex) {
 			LOGGER.error("Polling Thread forcefully closed", ex);
-			coreLogger.log(String.format("Polling Thread forcefully closed: %s", ex.getMessage()), PiazzaLogger.FATAL);
+			coreLogger.log(String.format("Polling Thread forcefully closed: %s", ex.getMessage()), Severity.CRITICAL);
 			uniqueConsumer.close();
 		}
 	}

@@ -52,6 +52,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandl
 import exception.DataInspectException;
 import model.data.DataType;
 import model.job.type.RegisterServiceJob;
+import model.logger.Severity;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
@@ -134,7 +135,7 @@ public class ServiceController {
 			return new ResponseEntity<PiazzaResponse>(new ServiceIdResponse(serviceId), HttpStatus.OK);
 		} catch (Exception exception) {
 			LOGGER.error("Error Registering Service", exception);
-			logger.log(exception.toString(), PiazzaLogger.ERROR);
+			logger.log(exception.toString(), Severity.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
 					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -162,7 +163,7 @@ public class ServiceController {
 			}
 		} catch (Exception exception) {
 			LOGGER.error("Could not look up Service", exception);
-			logger.log(exception.toString(), PiazzaLogger.ERROR);
+			logger.log(exception.toString(), Severity.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
 					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -192,7 +193,7 @@ public class ServiceController {
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			LOGGER.error(error, exception);
-			logger.log(error, PiazzaLogger.ERROR);
+			logger.log(error, Severity.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -223,7 +224,7 @@ public class ServiceController {
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
 			LOGGER.error(error, exception);
-			logger.log(error, PiazzaLogger.ERROR);
+			logger.log(error, Severity.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -252,7 +253,7 @@ public class ServiceController {
 			Service existingService = accessor.getServiceById(serviceId);
 			
 			// Log
-			logger.log(String.format("Updating Service with ID %s", serviceId), PiazzaLogger.INFO);
+			logger.log(String.format("Updating Service with ID %s", serviceId), Severity.INFORMATIONAL);
 			
 			// Merge the new defined properties into the existing service
 			existingService.merge(serviceData, false);
@@ -281,7 +282,7 @@ public class ServiceController {
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
 			LOGGER.error(error, exception);
-			logger.log(error, PiazzaLogger.ERROR);
+			logger.log(error, Severity.ERROR);
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -300,7 +301,7 @@ public class ServiceController {
 	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers = "Accept=application/json", produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
 		String result = usHandler.handle(serviceMetadata);
-		logger.log("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}", PiazzaLogger.DEBUG);
+		logger.log("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}", Severity.DEBUG);
 		String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 
 		return responseString;
@@ -321,17 +322,17 @@ public class ServiceController {
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
 		for (Map.Entry<String, DataType> entry : data.dataInputs.entrySet()) {
 			String key = entry.getKey();
-			logger.log("dataInput key:" + key, PiazzaLogger.DEBUG);
-			logger.log("dataInput Type:" + entry.getValue().getClass().getSimpleName(), PiazzaLogger.DEBUG);
+			logger.log("dataInput key:" + key, Severity.DEBUG);
+			logger.log("dataInput Type:" + entry.getValue().getClass().getSimpleName(), Severity.DEBUG);
 		}
 		ResponseEntity<String> result = null;
 		try {
 			result = esHandler.handle(data);
 		} catch (Exception ex) {
 			LOGGER.error("Service Controller Error Caused Exception", ex);
-			logger.log("Service Controller Error Caused Exception: " + ex.toString(), PiazzaLogger.ERROR);
+			logger.log("Service Controller Error Caused Exception: " + ex.toString(), Severity.ERROR);
 		}
-		logger.log("Result is " + result, PiazzaLogger.DEBUG);
+		logger.log("Result is " + result, Severity.DEBUG);
 
 		// Set the response based on the service retrieved
 		return result;
@@ -351,7 +352,7 @@ public class ServiceController {
 	@RequestMapping(value = "/describeService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> describeService(@ModelAttribute("resourceId") String resourceId) {
 		ResponseEntity<String> result = dsHandler.handle(resourceId);
-		logger.log("Result is " + result, PiazzaLogger.DEBUG);
+		logger.log("Result is " + result, Severity.DEBUG);
 		// Set the response based on the service retrieved
 		return result;
 	}
@@ -367,9 +368,9 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/deleteService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> deleteService(@ModelAttribute("resourceId") String resourceId) {
-		logger.log("deleteService resourceId=" + resourceId, PiazzaLogger.INFO);
+		logger.log("deleteService resourceId=" + resourceId, Severity.INFORMATIONAL);
 		String result = dlHandler.handle(resourceId, false);
-		logger.log("Result is " + result, PiazzaLogger.DEBUG);
+		logger.log("Result is " + result, Severity.DEBUG);
 		return new ResponseEntity<String>(result, HttpStatus.OK);
 	}
 
@@ -383,9 +384,9 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/listService", method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<String> listService() {
-		logger.log("listService", PiazzaLogger.INFO);
+		logger.log("listService", Severity.INFORMATIONAL);
 		ResponseEntity<String> result = lsHandler.handle();
-		logger.log("Result is " + result, PiazzaLogger.DEBUG);
+		logger.log("Result is " + result, Severity.DEBUG);
 		return result;
 	}
 
@@ -402,9 +403,9 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/search", method = RequestMethod.POST, headers = "Accept=application/json")
 	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
-		logger.log("search " + " " + criteria.field + "->" + criteria.pattern, PiazzaLogger.INFO);
+		logger.log("search " + " " + criteria.field + "->" + criteria.pattern, Severity.INFORMATIONAL);
 		ResponseEntity<String> result = ssHandler.handle(criteria);
-		logger.log("Result is " + result, PiazzaLogger.DEBUG);
+		logger.log("Result is " + result, Severity.DEBUG);
 		return result;
 	}
 
@@ -417,7 +418,7 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ResponseEntity<String> healthCheck() {
-		logger.log("Health Check called", PiazzaLogger.DEBUG);
+		logger.log("Health Check called", Severity.DEBUG);
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(MediaType.valueOf("text/html"));
 		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";

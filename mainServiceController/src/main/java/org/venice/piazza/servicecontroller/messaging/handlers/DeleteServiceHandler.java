@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
+import model.logger.Severity;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
@@ -65,12 +66,12 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		ResponseEntity<String> responseEntity;
 
 		if (jobRequest != null) {
-			coreLogger.log("Deleting a service", PiazzaLogger.DEBUG);
+			coreLogger.log("Deleting a service", Severity.DEBUG);
 			DeleteServiceJob job = (DeleteServiceJob) jobRequest;
 
 			// Get the ResourceMetadata
 			String resourceId = job.serviceID;
-			coreLogger.log("deleteService serviceId=" + resourceId, PiazzaLogger.INFO);
+			coreLogger.log("deleteService serviceId=" + resourceId, Severity.INFORMATIONAL);
 
 			String result = handle(resourceId, false);
 			if ((result != null) && (result.length() > 0)) {
@@ -80,11 +81,11 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 				resultList.add(resourceId);
 				responseEntity = new ResponseEntity<>(resultList.toString(), HttpStatus.OK);
 			} else {
-				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
+				coreLogger.log("No result response from the handler, something went wrong", Severity.ERROR);
 				responseEntity = new ResponseEntity<>("DeleteServiceHandler handle didn't work", HttpStatus.NOT_FOUND);
 			}
 		} else {
-			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", PiazzaLogger.ERROR);
+			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", Severity.ERROR);
 			responseEntity = new ResponseEntity<>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
 		}
 
@@ -98,7 +99,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	 * @return resourceId of the registered service
 	 */
 	public String handle(String resourceId, boolean softDelete) {
-		coreLogger.log(String.format("Deleting Registered Service: %s with softDelete %s", resourceId, softDelete), PiazzaLogger.INFO);
+		coreLogger.log(String.format("Deleting Registered Service: %s with softDelete %s", resourceId, softDelete), Severity.INFORMATIONAL);
 		Service service = accessor.getServiceById(resourceId);
 		elasticAccessor.delete(service);
 
@@ -107,13 +108,13 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 			result = accessor.delete(resourceId, softDelete);
 		} catch (Exception e) {
 			LOGGER.error("Unable to delete from mongoDB", e);
-			coreLogger.log(e.toString(), PiazzaLogger.ERROR);
+			coreLogger.log(e.toString(), Severity.ERROR);
 		}
 
 		if ((result != null) && (result.length() > 0)) {
-			coreLogger.log("The service with id " + resourceId + " was deleted " + result, PiazzaLogger.INFO);
+			coreLogger.log("The service with id " + resourceId + " was deleted " + result, Severity.INFORMATIONAL);
 		} else {
-			coreLogger.log("The service with id " + resourceId + " was NOT deleted", PiazzaLogger.INFO);
+			coreLogger.log("The service with id " + resourceId + " was NOT deleted", Severity.INFORMATIONAL);
 		}
 
 		return result;

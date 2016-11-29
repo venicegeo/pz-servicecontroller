@@ -51,6 +51,7 @@ import model.job.metadata.ResourceMetadata;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.ListServicesJob;
 import model.job.type.SearchServiceJob;
+import model.logger.Severity;
 import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
@@ -192,7 +193,7 @@ public class ExecuteServiceHandlerTest {
 		URI uri = URI.create("http://localhost:8087/jumpstart/string/convert");
 		// Setup mocks
 		Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(convertService);
-        Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+        //Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
         Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
 
 		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
@@ -223,7 +224,7 @@ public class ExecuteServiceHandlerTest {
 		// Setup mocks
 		Mockito.when(restTemplateMock.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.OK));
 		Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(convertService);
-        Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+        //Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
         Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
 
 		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
@@ -248,7 +249,7 @@ public class ExecuteServiceHandlerTest {
 	    URI uri = URI.create("http://localhost:8082/string/toUpper");
         Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
         Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(service);
-        Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+        //Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 		when(restTemplateMock.postForEntity(Mockito.eq(uri),Mockito.any(Object.class),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 
 		MongoAccessor mockMongo = mock(MongoAccessor.class);
@@ -284,7 +285,7 @@ public class ExecuteServiceHandlerTest {
 	    URI uri = URI.create("http://localhost:8087/jumpstart/moviequotewelcome?name=Marge");
 		Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
 	    Mockito.when(accessorMock.getServiceById(serviceId)).thenReturn(movieService);
-	    Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Mockito.anyString());
+	    //Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 		Mockito.when(restTemplateMock.getForEntity(Mockito.eq(uri),Mockito.eq(String.class))).thenReturn(new ResponseEntity<String>("testExecuteService",HttpStatus.FOUND));
 			
 		when(accessorMock.getServiceById(serviceId)).thenReturn(movieService);

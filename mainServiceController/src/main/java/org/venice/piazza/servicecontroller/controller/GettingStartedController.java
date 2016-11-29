@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.model.Message;
 
+import model.logger.Severity;
 import util.PiazzaLogger;
 
 @RestController
@@ -83,7 +84,7 @@ public class GettingStartedController {
 		if (aString != null) {
 			result = aString.toUpperCase();
 		}
-		logger.log("The result is " + result, PiazzaLogger.INFO);
+		logger.log("The result is " + result, Severity.INFORMATIONAL);
 		return "{\"result\":\"" + result + "\"}";
 	}
 
@@ -106,11 +107,11 @@ public class GettingStartedController {
 
 		if ((conversionType != null) && (theString != null)) {
 			if (conversionType.equals(Message.UPPER)) {
-				logger.log("Make the String uppercase" + theString, PiazzaLogger.INFO);
-				logger.log("The message" + msg, PiazzaLogger.INFO);
+				logger.log("Make the String uppercase" + theString, Severity.INFORMATIONAL);
+				logger.log("The message" + msg, Severity.INFORMATIONAL);
 				result = convertStringtoUpper(theString);
 			} else if (conversionType.equals(Message.LOWER)) {
-				logger.log("Make the String lower case" + theString, PiazzaLogger.INFO);
+				logger.log("Make the String lower case" + theString, Severity.INFORMATIONAL);
 				result = convertStringtoLower(theString);
 			}
 		}
@@ -131,7 +132,7 @@ public class GettingStartedController {
 		String result = "aString was not provided";
 		if (aString != null)
 			result = aString.toLowerCase();
-		logger.log("The result is " + result, PiazzaLogger.INFO);
+		logger.log("The result is " + result, Severity.INFORMATIONAL);
 		return "{\"result\":\"" + result + "\"}";
 	}
 	
@@ -145,10 +146,10 @@ public class GettingStartedController {
 	@RequestMapping(value = "/moviequotewelcome/{name}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public String movieWelcome(@PathVariable("name") String name) {
 		String message = welcomeMessages[getRandomNumber()];
-		logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
+		logger.log("Generate a hearty movie welcome", Severity.INFORMATIONAL);
 
 		if (name != null) {
-			logger.log("User is " + name, PiazzaLogger.INFO);
+			logger.log("User is " + name, Severity.INFORMATIONAL);
 			message = message + "\n\nHELLO " + name + "!!!!\n";
 		}
 
@@ -156,7 +157,7 @@ public class GettingStartedController {
 		message = message + "Details on using pz-servicecontrollers are \n";
 		message = message + "here https://github.com/venicegeo/venice/wiki/Pz-ServiceController";
 
-		logger.log("Welcome generated" + message, PiazzaLogger.INFO);
+		logger.log("Welcome generated" + message, Severity.INFORMATIONAL);
 		return "{\"message\":\"" + message + "\"}";
 	}
 	
@@ -170,14 +171,14 @@ public class GettingStartedController {
 	@RequestMapping(value = "/moviequotewelcome", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public String movieWelcomeParms(@RequestParam(value = "name", defaultValue = "World") String name) {
 		String message = welcomeMessages[getRandomNumber()];
-		logger.log("Generate a hearty movie welcome", PiazzaLogger.INFO);
+		logger.log("Generate a hearty movie welcome", Severity.INFORMATIONAL);
 		if (name != null) {
-			logger.log("User is " + name, PiazzaLogger.INFO);
+			logger.log("User is " + name, Severity.INFORMATIONAL);
 			message = message + "\n\nHELLO " + name + "!!!!\n";
 		}
 		message = message + "Welcome to the piazza pz-servicecontroller!\n";
 		message = message + "Details on using pz-servicecontrollers are \n";
-		logger.log("Welcome generated" + message, PiazzaLogger.INFO);
+		logger.log("Welcome generated" + message, Severity.INFORMATIONAL);
 
 		return "{\"message\":\"" + message + "\"}";
 	}

@@ -25,6 +25,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import model.job.PiazzaJobType;
 import model.job.type.RegisterServiceJob;
+import model.logger.Severity;
 import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
 import model.service.metadata.Service;
@@ -62,24 +63,24 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	@SuppressWarnings("deprecation")
 	@Override
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
-		coreLogger.log("Registering a Service", PiazzaLogger.INFO);
+		coreLogger.log("Registering a Service", Severity.INFORMATIONAL);
 		RegisterServiceJob job = (RegisterServiceJob) jobRequest;
 
 		if (job != null) {
 			// Get the Service metadata
 			Service serviceMetadata = job.data;
-			coreLogger.log("serviceMetadata received is " + serviceMetadata, PiazzaLogger.INFO);
+			coreLogger.log("serviceMetadata received is " + serviceMetadata, Severity.INFORMATIONAL);
 
 			String result = handle(serviceMetadata);
 			if (result.length() > 0) {
 				String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
 				return new ResponseEntity<String>(responseString, HttpStatus.OK);
 			} else {
-				coreLogger.log("No result response from the handler, something went wrong", PiazzaLogger.ERROR);
+				coreLogger.log("No result response from the handler, something went wrong", Severity.ERROR);
 				return new ResponseEntity<String>("RegisterServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {
-			coreLogger.log("No RegisterServiceJob", PiazzaLogger.ERROR);
+			coreLogger.log("No RegisterServiceJob", Severity.ERROR);
 			return new ResponseEntity<String>("No RegisterServiceJob", HttpStatus.BAD_REQUEST);
 		}
 	}
@@ -102,16 +103,16 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			}
 
 			resultServiceId = mongoAccessor.save(service);
-			coreLogger.log("The result of the save is " + resultServiceId, PiazzaLogger.DEBUG);
+			coreLogger.log("The result of the save is " + resultServiceId, Severity.DEBUG);
 
 			PiazzaResponse response = elasticAccessor.save(service);
 
 			if (ErrorResponse.class.isInstance(response)) {
 				ErrorResponse errResponse = (ErrorResponse) response;
-				coreLogger.log("The result of the save is " + errResponse.message, PiazzaLogger.DEBUG);
+				coreLogger.log("The result of the save is " + errResponse.message, Severity.DEBUG);
 
 			} else {
-				coreLogger.log("Successfully stored service " + service.getServiceId(), PiazzaLogger.DEBUG);
+				coreLogger.log("Successfully stored service " + service.getServiceId(), Severity.DEBUG);
 
 			}
 		} 

@@ -47,6 +47,7 @@ import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
 import model.job.metadata.ResourceMetadata;
+import model.logger.Severity;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
@@ -100,7 +101,7 @@ public class MongoAccessor {
 			mongoClient = new MongoClient(new MongoClientURI(DATABASE_HOST + "?waitQueueMultiple=" + mongoThreadMultiplier));
 		} catch (Exception ex) {
 			String message = String.format("Error Contacting Mongo Host %s: %s", DATABASE_HOST, ex.getMessage());
-			logger.log(message, PiazzaLogger.ERROR);
+			logger.log(message, Severity.ERROR);
 			LOGGER.error(message, ex);
 		}
 	}
@@ -132,12 +133,12 @@ public class MongoAccessor {
 			Query query = DBQuery.is("serviceId", sMetadata.getServiceId());
 
 			WriteResult<Service, String> writeResult = coll.update(query, sMetadata);
-			logger.log("The result is", writeResult.toString());
+			logger.log(String.format("%s %s", "The result is", writeResult.toString()), Severity.INFORMATIONAL);
 			// Return the id that was used
 			return sMetadata.getServiceId().toString();
 		} catch (MongoException ex) {
 			String message = String.format("Error Updating Mongo Service entry : %s", ex.getMessage());
-			logger.log(message, PiazzaLogger.ERROR);
+			logger.log(message, Severity.ERROR);
 			LOGGER.error(message, ex);
 		}
 		return result;
@@ -180,7 +181,7 @@ public class MongoAccessor {
 			return result;
 		} catch (MongoException ex) {
 			String message = String.format("Error Deleting Mongo Service entry : %s", ex.getMessage());
-			logger.log(message, PiazzaLogger.ERROR);
+			logger.log(message, Severity.ERROR);
 			LOGGER.error(message, ex);
 		}
 
@@ -200,7 +201,7 @@ public class MongoAccessor {
 			return sMetadata.getServiceId();
 		} catch (MongoException ex) {
 			String message = String.format("Error Saving Mongo Service entry : %s", ex.getMessage());
-			logger.log(message, PiazzaLogger.ERROR);
+			logger.log(message, Severity.ERROR);
 			LOGGER.error(message, ex);
 		}
 		return result;
@@ -225,7 +226,7 @@ public class MongoAccessor {
 			return result;
 		} catch (MongoException ex) {
 			String message = String.format("Error Listing Mongo Service entries : %s", ex.getMessage());
-			logger.log(message, PiazzaLogger.ERROR);
+			logger.log(message, Severity.ERROR);
 			LOGGER.error(message, ex);
 		}
 

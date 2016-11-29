@@ -75,6 +75,7 @@ import model.job.result.type.ErrorResult;
 import model.job.result.type.TextResult;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.IngestJob;
+import model.logger.Severity;
 import model.request.PiazzaJobRequest;
 import model.response.EventTypeListResponse;
 import model.service.metadata.ExecuteServiceData;
@@ -148,7 +149,7 @@ public class ServiceMessageWorker {
 			try {
 				PiazzaJobType jobType = job.getJobType();
 
-				coreLogger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), PiazzaLogger.DEBUG);
+				coreLogger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), Severity.DEBUG);
 
 				// Get the ResourceMetadata
 				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
@@ -181,7 +182,7 @@ public class ServiceMessageWorker {
 						return null;
 					}
 
-					coreLogger.log("ExecuteServiceJob Original Way", PiazzaLogger.DEBUG);
+					coreLogger.log("ExecuteServiceJob Original Way", Severity.DEBUG);
 					// Execute the external Service and get the Response Entity
 					try {
 						externalServiceResponse = esHandler.handle(jobType);
@@ -231,12 +232,12 @@ public class ServiceMessageWorker {
 				}
 			} catch (IOException | ResourceAccessException ex) {
 				LOGGER.error("Exception occurred", ex);
-				coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+				coreLogger.log(ex.getMessage(), Severity.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = ex.getMessage();
 			} catch (HttpClientErrorException | HttpServerErrorException hex) {
 				LOGGER.error("HttpException occurred", hex);
-				coreLogger.log(hex.getMessage(), PiazzaLogger.ERROR);
+				coreLogger.log(hex.getMessage(), Severity.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = hex.getResponseBodyAsString();
 				statusCode = hex.getStatusCode().value();
@@ -260,7 +261,7 @@ public class ServiceMessageWorker {
 			}
 
 		} catch (InterruptedException ex) { //NOSONAR normal handling of InterruptedException 
-			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), PiazzaLogger.INFO);
+			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), Severity.INFORMATIONAL);
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 			try {
 				
@@ -269,12 +270,12 @@ public class ServiceMessageWorker {
 				LOGGER.error("Json processing error occurred", jsonException);
 				coreLogger.log(String.format(
 						"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
-						consumerRecord.key(), jsonException.getMessage()), PiazzaLogger.ERROR);
+						consumerRecord.key(), jsonException.getMessage()), Severity.ERROR);
 			}
 		} catch (Exception ex) {
 			LOGGER.error("Unexpected Error in processing External Service", ex);
 			// Catch any General Exceptions that occur during runtime.
-			coreLogger.log(ex.getMessage(), PiazzaLogger.ERROR);
+			coreLogger.log(ex.getMessage(), Severity.ERROR);
 			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),
 					HttpStatus.INTERNAL_SERVER_ERROR.value(), producer, job.getJobId());
 		}
@@ -312,7 +313,7 @@ public class ServiceMessageWorker {
 			// The message could not be serialized. Record this.
 			LOGGER.error("Json processing error occurred", exception);
 			coreLogger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
-					PiazzaLogger.ERROR);
+					Severity.ERROR);
 		}
 	}
 
@@ -320,7 +321,7 @@ public class ServiceMessageWorker {
 	 * Fires the event to the Workflow service that a Service has completed execution.
 	 */
 	private void fireWorkflowEvent(String user, String jobId, String dataId, String message) {
-		coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", PiazzaLogger.DEBUG);
+		coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", Severity.DEBUG);
 		try {
 			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.
 			String url = String.format("%s/%s?name=%s", WORKFLOW_URL, "eventType", "piazza:executionComplete");
@@ -342,13 +343,13 @@ public class ServiceMessageWorker {
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
 			String error = String.format("Could not successfully send Event to Workflow Service. Returned with code %s and message %s",
 					exception.getStatusCode().toString(), exception.getResponseBodyAsString());
-			coreLogger.log(error, PiazzaLogger.ERROR);
+			coreLogger.log(error, Severity.ERROR);
 			LOGGER.error(error, exception);
 		} catch (IOException exception) {
 			String error = String.format("Could not send Event to Workflow Service. Serialization of Event failed with Error: %s",
 					exception.getMessage());
 			LOGGER.error(error, exception);
-			coreLogger.log(error, PiazzaLogger.ERROR);
+			coreLogger.log(error, Severity.ERROR);
 		}
 	}
 	
@@ -421,7 +422,7 @@ public class ServiceMessageWorker {
 
 		if (postString.length() > 0) {
 
-			coreLogger.log("The postString is " + postString, PiazzaLogger.DEBUG);
+			coreLogger.log("The postString is " + postString, Severity.DEBUG);
 
 			HttpHeaders theHeaders = new HttpHeaders();
 			// headers.add("Authorization", "Basic " + credentials);
@@ -430,7 +431,7 @@ public class ServiceMessageWorker {
 			// Create the Request template and execute
 			HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
 
-			coreLogger.log("About to call special service " + url, PiazzaLogger.DEBUG);
+			coreLogger.log("About to call special service " + url, Severity.DEBUG);
 
 			if (null != sMetadata.getTimeout()) {
 				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
@@ -444,16 +445,16 @@ public class ServiceMessageWorker {
 				throw new InterruptedException();
 			}
 
-			coreLogger.log("The Response is " + response.getBody(), PiazzaLogger.DEBUG);
+			coreLogger.log("The Response is " + response.getBody(), Severity.DEBUG);
 
 			String serviceControlString = response.getBody();
-			coreLogger.log("Service Control String " + serviceControlString, PiazzaLogger.DEBUG);
+			coreLogger.log("Service Control String " + serviceControlString, Severity.DEBUG);
 
 			DataResource dataResource = objectMapper.readValue(serviceControlString, DataResource.class);
-			coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), PiazzaLogger.DEBUG);
+			coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), Severity.DEBUG);
 
 			dataResource.dataId = uuidFactory.getUUID();
-			coreLogger.log("dataId " + dataResource.dataId, PiazzaLogger.DEBUG);
+			coreLogger.log("dataId " + dataResource.dataId, Severity.DEBUG);
 
 			PiazzaJobRequest pjr = new PiazzaJobRequest();
 			pjr.createdBy = "pz-sc-ingest-raster-test";
@@ -466,7 +467,7 @@ public class ServiceMessageWorker {
 			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
 			producer.send(newProdRecord);
 
-			coreLogger.log("newProdRecord sent " + newProdRecord.toString(), PiazzaLogger.DEBUG);
+			coreLogger.log("newProdRecord sent " + newProdRecord.toString(), Severity.DEBUG);
 
 			if (Thread.interrupted()) {
 				throw new InterruptedException();
@@ -482,7 +483,7 @@ public class ServiceMessageWorker {
 			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
 
 			producer.send(prodRecord);
-			coreLogger.log("prodRecord sent " + prodRecord.toString(), PiazzaLogger.DEBUG);
+			coreLogger.log("prodRecord sent " + prodRecord.toString(), Severity.DEBUG);
 		}
 	}
 
@@ -497,8 +498,8 @@ public class ServiceMessageWorker {
 
 			subtype = sb.substring(index + 1, mimeType.length());
 			mediaType = new MediaType(type, subtype);
-			coreLogger.log("The type is=" + type, PiazzaLogger.DEBUG);
-			coreLogger.log("The subtype is=" + subtype, PiazzaLogger.DEBUG);
+			coreLogger.log("The type is=" + type, Severity.DEBUG);
+			coreLogger.log("The subtype is=" + subtype, Severity.DEBUG);
 
 		} else {
 			// Assume there is just a type for the mime, no subtype

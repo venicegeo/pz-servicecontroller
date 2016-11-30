@@ -136,7 +136,7 @@ public class MongoAccessor {
 			WriteResult<Service, String> writeResult = coll.update(query, sMetadata);
 			logger.log(String.format("%s %s", "The result is", writeResult.toString()), Severity.INFORMATIONAL);
 			
-			logger.log(String.format("Updating resource in MongoDB %s", sMetadata.getServiceId()), Severity.ERROR, new AuditElement("serviceController", "mongoDbTransaction", sMetadata.getServiceId()));
+			logger.log(String.format("Updating resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL, new AuditElement("serviceController", "Updated Service", sMetadata.getServiceId()));
 			
 			// Return the id that was used
 			return sMetadata.getServiceId().toString();
@@ -182,7 +182,7 @@ public class MongoAccessor {
 				result = " service " + serviceId + " deleted ";
 			}
 
-			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.ERROR, new AuditElement("serviceController", "mongoDbTransaction", serviceId));
+			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.INFORMATIONAL, new AuditElement("serviceController", "Deleted Service", serviceId));
 			
 			return result;
 		} catch (MongoException ex) {
@@ -204,7 +204,7 @@ public class MongoAccessor {
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
 
-			logger.log(String.format("Saving resource in MongoDB %s", sMetadata.getServiceId()), Severity.ERROR, new AuditElement("serviceController", "mongoDbTransaction", sMetadata.getServiceId()));
+			logger.log(String.format("Saving resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL, new AuditElement("serviceController", "Created Service ", sMetadata.getServiceId()));
 
 			// Return the id that was used
 			return sMetadata.getServiceId();

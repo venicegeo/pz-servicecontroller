@@ -52,6 +52,7 @@ import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandl
 import exception.DataInspectException;
 import model.data.DataType;
 import model.job.type.RegisterServiceJob;
+import model.logger.AuditElement;
 import model.logger.Severity;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
@@ -74,44 +75,35 @@ import util.PiazzaLogger;
 @RestController
 @RequestMapping({ "/servicecontroller", "" })
 public class ServiceController {
+
 	@Autowired
 	private LocalValidatorFactoryBean validator;
-	
 	@Autowired
 	private DeleteServiceHandler dlHandler;
-
 	@Autowired
 	private UpdateServiceHandler usHandler;
-	
 	@Autowired
 	private DescribeServiceHandler dsHandler;
-
 	@Autowired
 	private ExecuteServiceHandler esHandler;
-
 	@Autowired
 	private ListServiceHandler lsHandler;
-	
 	@Autowired
 	private MongoAccessor accessor;
-
 	@Autowired
 	private PiazzaLogger logger;
-
 	@Autowired
 	private RegisterServiceHandler rsHandler;
-	
 	@Autowired
 	private SearchServiceHandler ssHandler;
 	
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
-	
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
 	
-     /**
-      * Empty controller for now
-      */
+	/**
+	 * Empty controller for now
+	 */
 	public ServiceController() {
 
 	}
@@ -136,8 +128,12 @@ public class ServiceController {
 		} catch (Exception exception) {
 			LOGGER.error("Error Registering Service", exception);
 			logger.log(exception.toString(), Severity.ERROR);
-			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
-					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
+			logger.log(String.format("Error Registering Service: %s", exception.getMessage()), Severity.ERROR,
+					new AuditElement("serviceController", "registeringService", "jobRequest"));
+			return new ResponseEntity<PiazzaResponse>(
+					new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
+							"Service Controller"),
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -164,6 +160,7 @@ public class ServiceController {
 		} catch (Exception exception) {
 			LOGGER.error("Could not look up Service", exception);
 			logger.log(exception.toString(), Severity.ERROR);
+			logger.log(String.format("Could not look up Service %s", exception.getMessage()), Severity.ERROR, new AuditElement("serviceController", "gettingServiceMetadata", "Service"));
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Could not look up Service %s information: %s", serviceId, exception.getMessage()),
 					"Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -189,12 +186,16 @@ public class ServiceController {
 			if (!(order.equalsIgnoreCase("asc")) && !(order.equalsIgnoreCase("desc"))) {
 				order = "asc";
 			}
-			return new ResponseEntity<PiazzaResponse>(accessor.getServices(page, perPage, order, sortBy, keyword, userName), HttpStatus.OK);
+			return new ResponseEntity<PiazzaResponse>(
+					accessor.getServices(page, perPage, order, sortBy, keyword, userName), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			LOGGER.error(error, exception);
 			logger.log(error, Severity.ERROR);
-			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
+			logger.log(error, Severity.ERROR, new AuditElement("serviceController",
+					"gettingFullListOfRegisteredServices", "ServiceControllerMongoDB"));
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"),
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -209,23 +210,32 @@ public class ServiceController {
 	 *         exception occurs..
 	 */
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<PiazzaResponse> unregisterService(@PathVariable(value = "serviceId") String serviceId, @RequestParam(value = "softDelete", required = false) boolean softDelete) {
+	public ResponseEntity<PiazzaResponse> unregisterService(@PathVariable(value = "serviceId") String serviceId,
+			@RequestParam(value = "softDelete", required = false) boolean softDelete) {
 		try {
 			// Check if Service exists
 			try {
 				accessor.getServiceById(serviceId);
-			} catch(ResourceAccessException rae) {
+			} catch (ResourceAccessException rae) {
 				LOGGER.error("Service not found", rae);
-				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"), HttpStatus.NOT_FOUND);
+				logger.log(String.format("Service not found %s", rae.getMessage()), Severity.ERROR,
+						new AuditElement("serviceController", "deletingServiceMetadata", "Service"));
+				return new ResponseEntity<PiazzaResponse>(
+						new ErrorResponse(String.format("Service not found: %s", serviceId), "Service Controller"),
+						HttpStatus.NOT_FOUND);
 			}
-			// remove from elastic search as well....			
+			// remove from elastic search as well....
 			dlHandler.handle(serviceId, softDelete);
-			return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was deleted successfully.", "ServiceController"), HttpStatus.OK);
+			return new ResponseEntity<PiazzaResponse>(
+					new SuccessResponse("Service was deleted successfully.", "ServiceController"), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
 			LOGGER.error(error, exception);
 			logger.log(error, Severity.ERROR);
-			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"), HttpStatus.INTERNAL_SERVER_ERROR);
+			logger.log(error, Severity.ERROR,
+					new AuditElement("serviceController", "deletingServiceMetadata", "Service"));
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "Service Controller"),
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	
@@ -242,22 +252,25 @@ public class ServiceController {
 	 *         there is one.
 	 */
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<PiazzaResponse> updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId, @RequestBody Service serviceData) {
+	public ResponseEntity<PiazzaResponse> updateServiceMetadata(@PathVariable(value = "serviceId") String serviceId,
+			@RequestBody Service serviceData) {
 		try {
 			// Ensure valid input
 			if ((serviceId == null) || (serviceId.isEmpty())) {
-				return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The serviceId was not specified", "Service Controller"), HttpStatus.BAD_REQUEST);
+				return new ResponseEntity<PiazzaResponse>(
+						new ErrorResponse("The serviceId was not specified", "Service Controller"),
+						HttpStatus.BAD_REQUEST);
 			}
-			
+
 			// Get the existing service.
 			Service existingService = accessor.getServiceById(serviceId);
-			
+
 			// Log
 			logger.log(String.format("Updating Service with ID %s", serviceId), Severity.INFORMATIONAL);
-			
+
 			// Merge the new defined properties into the existing service
 			existingService.merge(serviceData, false);
-			
+
 			// Ensure the Service is still valid, with the new merged changes
 			Errors errors = new BeanPropertyBindingResult(existingService, existingService.getClass().getName());
 			validator.validate(existingService, errors);
@@ -267,23 +280,36 @@ public class ServiceController {
 				for (ObjectError error : errors.getAllErrors()) {
 					builder.append(error.getDefaultMessage() + ".");
 				}
-				throw new DataInspectException(String.format("Error validating updated Service Metadata. Validation Errors: %s", builder.toString()));
+
+				logger.log(
+						String.format("Error validating updated Service Metadata. Validation Errors: %s",
+								builder.toString()),
+						Severity.ERROR, new AuditElement("serviceController", "updateServiceMetadata", "Service"));
+				throw new DataInspectException(String.format(
+						"Error validating updated Service Metadata. Validation Errors: %s", builder.toString()));
 			}
 
 			// Update Existing Service in mongo
 			existingService.setServiceId(serviceId);
 			String result = usHandler.handle(existingService);
 			if (result.length() > 0) {
-				return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", "ServiceController"), HttpStatus.OK);
+				return new ResponseEntity<PiazzaResponse>(
+						new SuccessResponse("Service was updated successfully.", "ServiceController"), HttpStatus.OK);
 			} else {
-				return new ResponseEntity<PiazzaResponse>(new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
+				return new ResponseEntity<PiazzaResponse>(
+						new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully",
+								"ServiceController"),
+						HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 
 		} catch (Exception exception) {
 			String error = String.format("Error Updating service %s: %s", serviceId, exception.getMessage());
 			LOGGER.error(error, exception);
 			logger.log(error, Severity.ERROR);
-			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
+			logger.log(error, Severity.ERROR,
+					new AuditElement("serviceController", "updateServiceMetadata", "Service"));
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"),
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -303,14 +329,13 @@ public class ServiceController {
 		String result = usHandler.handle(serviceMetadata);
 		logger.log("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}", Severity.DEBUG);
 		String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
-
 		return responseString;
 	}
 
 	/**
-	 * Executes a service registered in the Service Controller.
-	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK)
-	 * administration and for testing of the serviceController.
+	 * Executes a service registered in the Service Controller. This service is
+	 * meant for internal Piazza use, Swiss-Army-Knife (SAK) administration and
+	 * for testing of the serviceController.
 	 * 
 	 * @param data
 	 *            ExecuteServiceData used to execute the data. Contains
@@ -331,6 +356,8 @@ public class ServiceController {
 		} catch (Exception ex) {
 			LOGGER.error("Service Controller Error Caused Exception", ex);
 			logger.log("Service Controller Error Caused Exception: " + ex.toString(), Severity.ERROR);
+			logger.log(String.format("Service Controller Error Caused Exception: %s", ex.toString()), Severity.ERROR,
+					new AuditElement("serviceController", "executingService", data.getServiceId()));
 		}
 		logger.log("Result is " + result, Severity.DEBUG);
 

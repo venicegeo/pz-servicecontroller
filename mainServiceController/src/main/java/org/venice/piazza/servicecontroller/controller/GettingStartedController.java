@@ -51,7 +51,7 @@ public class GettingStartedController {
 	private final static String BATTLESTAR_WELCOME = "So say we all.";
 	private final static String PREDATOR_WELCOME = "If it bleeds, we can kill it.";
 	private final static String FEWGOODMEN_WELCOME = "You want me on that wall. You NEED me on that wall";
-	private final static String GOODFATHER_WLECOME = "Leave the gun. Take the cannoli.";
+	private final static String GOODFATHER_WELCOME = "Leave the gun. Take the cannoli.";
 	private final static String HUNTREDOCTOBER_WELCOME = "Re-verify our range to target... one ping only. ";
 	private final static String HEAT_WELCOME = "Clean up, go home.";
 	private final static String DUNE_WELCOME = "And how can this be? For he is the Kwisatz Haderach!";
@@ -64,19 +64,19 @@ public class GettingStartedController {
 			+ "But whatever your secret was, you will have to agree, mine is better......";
 												 		
 	String[] welcomeMessages = { ORACLE_WELCOME, JAWS_WELCOME, ANCHORMAN_WELCOME, BATTLESTAR_WELCOME, PREDATOR_WELCOME,
-			FEWGOODMEN_WELCOME, GOODFATHER_WLECOME, HUNTREDOCTOBER_WELCOME, HEAT_WELCOME, DUNE_WELCOME,
+			FEWGOODMEN_WELCOME, GOODFATHER_WELCOME, HUNTREDOCTOBER_WELCOME, HEAT_WELCOME, DUNE_WELCOME,
 			USUAL_SUSPECTS_WELCOME, PASSENGER57_WELCOME, DEVILWEARSPRADA_WELCOME, FUNNYFARM_WELCOME, PRESTIGE_WELCOME };
 
 	@Autowired
 	private PiazzaLogger logger;
+
 	/**
-	 * Rest call to convert a string to upper case
-	 * Access 
-	 * http://localhost:8080/jumpstart/string/toUpper?aString=<a string> 
+	 * Rest call to convert a string to upper case Access
+	 * http://localhost:8080/jumpstart/string/toUpper?aString=<a string>
 	 * 
 	 * @param aString
 	 * @return JSON {result:<the converted string>}
-	 */	 
+	 */
 	@RequestMapping(value = "/string/toUpper", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public String convertStringtoUpper(@ModelAttribute("aString") String aString) {
@@ -89,13 +89,10 @@ public class GettingStartedController {
 	}
 
 	/**
-	 * Rest call to convert a string in a message to upper or lower case
-	 * Access http://localhost:8080/jumpstart/string/convert
-	 * Accepts JSON: 
-	 * { 
-       "theString":"<a string>",
-       "conversionType":"LOWER" // UPPER or LOWER
-     * }
+	 * Rest call to convert a string in a message to upper or lower case Access
+	 * http://localhost:8080/jumpstart/string/convert Accepts JSON: {
+	 * "theString":"<a string>", "conversionType":"LOWER" // UPPER or LOWER }
+	 * 
 	 * @param msg
 	 * @return JSON {result:<the converted string>}
 	 */
@@ -119,13 +116,12 @@ public class GettingStartedController {
 	}
 
 	/**
-	 * Rest call to convert a string to upper case
-	 * Access 
-	 * http://localhost:8080/jumpstart/string/toLower?aString=<a string> 
+	 * Rest call to convert a string to upper case Access
+	 * http://localhost:8080/jumpstart/string/toLower?aString=<a string>
 	 * 
 	 * @param aString
 	 * @return JSON {result:<the converted string>}
-	 */	 
+	 */
 	@RequestMapping(value = "/string/toLower", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public String convertStringtoLower(@ModelAttribute("aString") String aString) {
@@ -137,12 +133,11 @@ public class GettingStartedController {
 	}
 	
 	/**
-	 * Provide a movie welcome to pz-service controller
-	 * Access 
+	 * Provide a movie welcome to pz-service controller Access
 	 * 
 	 * @param none
 	 * @return JSON {result:<A greeting>}
-	 */	 
+	 */
 	@RequestMapping(value = "/moviequotewelcome/{name}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public String movieWelcome(@PathVariable("name") String name) {
 		String message = welcomeMessages[getRandomNumber()];
@@ -160,14 +155,13 @@ public class GettingStartedController {
 		logger.log("Welcome generated" + message, Severity.INFORMATIONAL);
 		return "{\"message\":\"" + message + "\"}";
 	}
-	
+
 	/**
-	 * Provide a movie welcome to pz-service controller
-	 * Access 
+	 * Provide a movie welcome to pz-service controller Access
 	 * 
 	 * @param none
 	 * @return JSON {result:<A greeting>}
-	 */	 
+	 */
 	@RequestMapping(value = "/moviequotewelcome", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public String movieWelcomeParms(@RequestParam(value = "name", defaultValue = "World") String name) {
 		String message = welcomeMessages[getRandomNumber()];
@@ -182,7 +176,7 @@ public class GettingStartedController {
 
 		return "{\"message\":\"" + message + "\"}";
 	}
-	
+
 	private int getRandomNumber() {
 		Random rand = new SecureRandom();
 		return rand.nextInt(MESSSAGE_COUNT);

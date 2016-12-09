@@ -142,7 +142,7 @@ public class ServiceMessageWorker {
 
 			// Ensure the Job Type is of Execute Service Job
 			if ((job.getJobType() == null) || (job.getJobType() instanceof ExecuteServiceJob == false)) {
-				throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.");
+				throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.", HttpStatus.BAD_REQUEST.value() );
 			}
 
 			// Process the Execution of the External Service
@@ -200,8 +200,7 @@ public class ServiceMessageWorker {
 
 					// If an internal error occurred during Service Handling, then throw an exception.
 					if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
-						throw new PiazzaJobException(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
-								externalServiceResponse.getStatusCode().toString()));
+						throw new PiazzaJobException(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(), externalServiceResponse.getStatusCode().toString()), externalServiceResponse.getStatusCode().value());
 					}
 
 					// Process the Response and handle any Ingest that may result
@@ -241,6 +240,17 @@ public class ServiceMessageWorker {
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = hex.getResponseBodyAsString();
 				statusCode = hex.getStatusCode().value();
+			} catch (PiazzaJobException pex) {
+				LOGGER.error("PiazzaJobException 11111111111111111111111 occurred", pex);
+				coreLogger.log(pex.getMessage(), Severity.ERROR);
+				executeJobStatus = StatusUpdate.STATUS_ERROR;
+				handleTextUpdate = pex.getMessage();
+				statusCode = pex.getStatusCode();
+
+				LOGGER.error("inside piazzajobexception handling:");
+				LOGGER.error("executeJobStatus" + executeJobStatus);
+				LOGGER.error("pex.getMessage()" + pex.getMessage());
+				LOGGER.error("pex.getStatusCode()" + pex.getStatusCode());
 			}
 
 			if (Thread.interrupted()) {

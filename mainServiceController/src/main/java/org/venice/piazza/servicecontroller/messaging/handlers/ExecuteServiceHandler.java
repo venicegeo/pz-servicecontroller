@@ -154,18 +154,13 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				Entry<String, DataType> entry = it.next();
 				String inputName = entry.getKey();
 				coreLogger.log("The parameter is " + inputName, Severity.DEBUG);
-	
-	
+		
 				if (entry.getValue() instanceof URLParameterDataType) {
 					String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
 					if (inputName.length() == 0) {
 						coreLogger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
-	
-	
 						builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
 						coreLogger.log("Builder URL is " + builder.toUriString(), Severity.DEBUG);
-	
-	
 					} else {
 						builder.queryParam(inputName, paramValue);
 						coreLogger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
@@ -202,12 +197,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			}
 			
 			URI url = URI.create(builder.toUriString());
-
 			if (sMetadata.getMethod().equals("GET")) {
 				coreLogger.log("GetForEntity URL=" + url, Severity.INFORMATIONAL);
 				// execute job
 				responseEntity = template.getForEntity(url, String.class);
-			} else {
+			} else if (sMetadata.getMethod().equals("POST")) {
 				HttpHeaders headers = new HttpHeaders();
 				// Set the mimeType of the request
 				MediaType mediaType = createMediaType(requestMimeType);
@@ -216,6 +210,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 				coreLogger.log("PostForEntity URL=" + url, Severity.INFORMATIONAL);
 				responseEntity = template.postForEntity(url, requestEntity, String.class);
+			}
+			else
+			{
+				coreLogger.log("Request method type not specified", Severity.ERROR);
+				return new ResponseEntity<>("Request method type not specified", HttpStatus.BAD_REQUEST);
 			}
 
 			coreLogger.log(String.format("Triggered execution of service %s", sMetadata.getServiceId()), Severity.INFORMATIONAL, new AuditElement("serviceController", "executingExternalService", sMetadata.getServiceId()));

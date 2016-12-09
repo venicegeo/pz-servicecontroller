@@ -241,16 +241,11 @@ public class ServiceMessageWorker {
 				handleTextUpdate = hex.getResponseBodyAsString();
 				statusCode = hex.getStatusCode().value();
 			} catch (PiazzaJobException pex) {
-				LOGGER.error("PiazzaJobException 11111111111111111111111 occurred", pex);
+				LOGGER.error("PiazzaJobException occurred", pex);
 				coreLogger.log(pex.getMessage(), Severity.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = pex.getMessage();
 				statusCode = pex.getStatusCode();
-
-				LOGGER.error("inside piazzajobexception handling:");
-				LOGGER.error("executeJobStatus" + executeJobStatus);
-				LOGGER.error("pex.getMessage()" + pex.getMessage());
-				LOGGER.error("pex.getStatusCode()" + pex.getStatusCode());
 			}
 
 			if (Thread.interrupted()) {

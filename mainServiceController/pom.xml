@@ -115,9 +115,9 @@
 		<dependency>
 			<groupId>org.venice.piazza</groupId>
 			<artifactId>pz-jobcommon</artifactId>
-			<version>Sprint06-249-gcf1d083</version>
-		</dependency>
-
+			<version>Sprint06-261-g01ddf50</version>
+		</dependency>		
+	
 		<dependency>
 			<groupId>org.mongojack</groupId>
 			<artifactId>mongojack</artifactId>

@@ -87,7 +87,7 @@ public class AsynchronousServiceWorker {
 	private ObjectMapper objectMapper = new ObjectMapper();
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(AsynchronousServiceWorker.class);
-	
+
 	@PostConstruct
 	public void initialize() {
 		String KAFKA_HOST = KAFKA_HOST_PORT.split(":")[0];
@@ -205,8 +205,8 @@ public class AsynchronousServiceWorker {
 			updateFailureCount(instance);
 			String error = String.format(
 					"HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
-					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(),
-					instance.getJobId(), instance.getNumberErrorResponses());
+					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
+					instance.getNumberErrorResponses());
 			LOGGER.error(error, exception);
 			logger.log(error, Severity.WARNING);
 		} catch (Exception exception) {
@@ -320,8 +320,7 @@ public class AsynchronousServiceWorker {
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
 			LOGGER.error("Could not send Error Status to Job Manager. Error serializing Status", exception);
-			logger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
-					Severity.ERROR);
+			logger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(), Severity.ERROR);
 		}
 	}
 
@@ -333,23 +332,24 @@ public class AsynchronousServiceWorker {
 	 */
 	@Async
 	public void sendCancellationStatus(AsyncServiceInstance instance) {
-		// Send the DELETE request to the external User Service
-		Service service = accessor.getServiceById(instance.getServiceId());
-		if (service == null) {
-			return;
-		}
-		String url = String.format("%s/%s/%s", service.getUrl(), DELETE_ENDPOINT, instance.getInstanceId());
-		try {
-			restTemplate.delete(url);
-		} catch (HttpClientErrorException | HttpServerErrorException exception) {
-			String error = String.format("Error Cancelling Service Instance on external User Service: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. No subsequent calls will be made.",
-					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(),
-					instance.getJobId());
-			LOGGER.error(error, exception);
-			logger.log(error, Severity.WARNING);
-		}
 		// Remove this from the Instance Table
 		accessor.deleteAsyncServiceInstance(instance.getJobId());
+
+		// Send the DELETE request to the external User Service
+		Service service = accessor.getServiceById(instance.getServiceId());
+		if (service != null) {
+			String url = String.format("%s/%s/%s", service.getUrl(), DELETE_ENDPOINT, instance.getInstanceId());
+			try {
+				restTemplate.delete(url);
+			} catch (HttpClientErrorException | HttpServerErrorException exception) {
+				String error = String.format(
+						"Error Cancelling Service Instance on external User Service: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. No subsequent calls will be made.",
+						exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId());
+				LOGGER.error(error, exception);
+				logger.log(error, Severity.WARNING);
+			}
+		}
+
 		// Send the Kafka Message for successful Cancellation status
 		try {
 			producer.send(

@@ -17,7 +17,6 @@ package org.venice.piazza.servicecontroller.messaging;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -41,7 +40,6 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -55,8 +53,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.MongoInterruptedException;
-
 import exception.DataInspectException;
 import exception.PiazzaJobException;
 import messaging.job.JobMessageFactory;
@@ -64,7 +60,6 @@ import messaging.job.WorkerCallback;
 import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
-import model.data.type.GeoJsonDataType;
 import model.data.type.TextDataType;
 import model.data.type.URLParameterDataType;
 import model.job.Job;
@@ -132,7 +127,6 @@ public class ServiceMessageWorker {
 			String executeJobStatus = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
 			ResponseEntity<String> externalServiceResponse = null;
-			ErrorResult errorDetails = new ErrorResult(); 
 			int statusCode = 400;
 
 			// Ensure a valid Job has been received through Kafka
@@ -187,11 +181,9 @@ public class ServiceMessageWorker {
 					try {
 						externalServiceResponse = esHandler.handle(jobType);
 					} catch (Exception exception) {
-						// Mongo implements a thread interrupted check, but it doesn't throw an InterruptedException. It throws
-						// its own custom exception type. We will catch that exception type here, and then rethrow with a standard
 						// InterruptedException to ensure a common handled exception type.
-						LOGGER.info("MongoDB exception occurred", exception);
-						throw new InterruptedException();
+						LOGGER.info("Exception occurred", exception);
+						throw new InterruptedException(exception.getMessage());
 					}
 
 					if (Thread.interrupted()) {
@@ -264,12 +256,13 @@ public class ServiceMessageWorker {
 							new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
 				}
 			}
-
 		} catch (InterruptedException ex) { //NOSONAR normal handling of InterruptedException 
 			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), Severity.INFORMATIONAL);
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
+			TextResult result = new TextResult(ex.toString());
+			statusUpdate.setResult(result);
+
 			try {
-				
 				producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate, SPACE));
 			} catch (JsonProcessingException jsonException) {
 				LOGGER.error("Json processing error occurred", jsonException);

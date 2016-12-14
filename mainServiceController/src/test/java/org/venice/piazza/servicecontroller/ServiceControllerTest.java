@@ -79,46 +79,32 @@ public class ServiceControllerTest {
 	
 	@InjectMocks
     private ServiceController sc;
-	
 	@Mock
 	private RegisterServiceHandler rsHandlerMock;
-	
 	@Mock
 	private ExecuteServiceHandler esHandlerMock;
-	
 	@Mock
 	private DescribeServiceHandler dsHandlerMock;
-	
 	@Mock
 	private UpdateServiceHandler usHandlerMock;
-	
 	@Mock
 	private ListServiceHandler lsHandlerMock;
-	
 	@Mock
 	private DeleteServiceHandler dlHandlerMock;
-	
 	@Mock
 	private SearchServiceHandler ssHandlerMock;
-	
 	@Mock
 	private MongoAccessor accessorMock;
-	
 	@Mock 
 	private ElasticSearchAccessor elasticAccessorMock;
-	
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
-	
 	@Mock 
 	private PiazzaLogger loggerMock;
-	
 	@Mock
 	private LocalValidatorFactoryBean validator;
-	
 	@InjectMocks
 	private org.mongojack.DBCursor<Service> dbCursorMock;
-
 	@Mock
 	private JacksonDBCollection<Service, String> colMock;
 
@@ -167,8 +153,6 @@ public class ServiceControllerTest {
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		Mockito.doReturn(testServiceId).when(rsHandlerMock).handle(rsj.data);
 
-        //Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
-		
 		// Should check to make sure each of the handlers are not null
 		PiazzaResponse piazzaResponse = sc.registerService(pjr).getBody();
 
@@ -232,7 +216,6 @@ public class ServiceControllerTest {
 
 		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", "").getBody();
 		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ServiceListResponse.class));
-		
 	}
 	
 	@Test
@@ -251,7 +234,6 @@ public class ServiceControllerTest {
 
 		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", "").getBody();
 		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
-		
 	}
 	
 	@Test
@@ -266,7 +248,6 @@ public class ServiceControllerTest {
 		// Should check to make sure each of the handlers are not null
 		PiazzaResponse piazzaResponse = sc.unregisterService(testServiceId, false).getBody();
 		assertThat("The unregistration  should be successful",piazzaResponse, instanceOf(SuccessResponse.class));
-
 	}
 	
 	@Test
@@ -296,7 +277,6 @@ public class ServiceControllerTest {
 		// Should check to make sure each of the handlers are not null
 		PiazzaResponse piazzaResponse = sc.unregisterService(null, false).getBody();
 		
-
 		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 	}
 	
@@ -305,14 +285,11 @@ public class ServiceControllerTest {
 	 * Test unsuccessful un-registration soft delete
 	 */
 	public void testUnregisterServiceServiceIdSD() {
-		
 		// Should check to make sure each of the handlers are not null
 		Mockito.doThrow(new MongoException("Error")).when(dlHandlerMock).handle(null, true);
 
 		// Should check to make sure each of the handlers are not null
 		PiazzaResponse piazzaResponse = sc.unregisterService(null, true).getBody();
-		
-
 		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 	}
 
@@ -388,11 +365,12 @@ public class ServiceControllerTest {
 
 
 	}
+
 	@Test
 	/**
 	 * Test Executing a service
 	 */
-	public void testExecuteService() {
+	public void testExecuteService() throws InterruptedException {
 		ExecuteServiceData edata = new ExecuteServiceData();
 		//edata.resourceId = "8";
 		edata.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
@@ -416,7 +394,7 @@ public class ServiceControllerTest {
 	/**
 	 * Test Executing a service throwing an Exception
 	 */
-	public void testExecuteServiceThrowException() {
+	public void testExecuteServiceThrowException() throws InterruptedException {
 		ExecuteServiceData edata = new ExecuteServiceData();
 		//edata.resourceId = "8";
 		edata.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
@@ -453,7 +431,6 @@ public class ServiceControllerTest {
 	/**
 	 * tests the deleteService.  This is called internally for testing
 	 */
-	
 	public void testDeleteService() {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060f";
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to delete " + serviceId, HttpStatus.OK); 
@@ -467,7 +444,6 @@ public class ServiceControllerTest {
 	/**
 	 * tests the listService.  This is called internally for testing
 	 */
-	
 	public void testListService() {
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to list", HttpStatus.OK); 
         Mockito.doReturn(responseEntity ).when(lsHandlerMock).handle();
@@ -479,7 +455,6 @@ public class ServiceControllerTest {
 	/**
 	 * tests the search.  This is called internally for testing
 	 */
-	
 	public void testSearch() {
 		SearchCriteria criteria = new SearchCriteria();
 		criteria.field = "name";
@@ -490,6 +465,7 @@ public class ServiceControllerTest {
         ResponseEntity<String> result = sc.search(criteria);
         assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
 	}
+
 	@Test
 	/**
 	 * test health check
@@ -504,6 +480,7 @@ public class ServiceControllerTest {
         assertEquals("The response should be 200", result.getStatusCode(), HttpStatus.OK);
         assertTrue("The response contains the appropriate message", result.getBody().contains(htmlMessage));
 	}
+
 	/**
 	 * Return a list of generic services for testing.  
 	 * Each service has a unique serviceId
@@ -513,7 +490,6 @@ public class ServiceControllerTest {
 		List <Service> services = new ArrayList <> ();
 		
 		for (int i =0; i < 10; i++) {
-		
 			// Setup a Service with some Resource Metadata
 			ResourceMetadata rm = new ResourceMetadata();
 			rm.name = "toUpper Params";
@@ -524,7 +500,7 @@ public class ServiceControllerTest {
 			service.setServiceId("9a6baae" + TestUtilities.randInt(0,  9) + 
 					"-bd" + TestUtilities.randInt(0, 9) +
 					"4-4c4b-9a65-c45e" + TestUtilities.randInt(0, 9) + "cd" + 
-					TestUtilities.randInt(0,  9) + "060");
+					TestUtilities.randInt(0, 9) + "060");
 			service.setMethod("POST");
 			service.setResourceMetadata(rm);
 			service.setUrl("http://localhost:8082/string/toUpper");
@@ -532,5 +508,4 @@ public class ServiceControllerTest {
 		}
 		return services;
 	}
-	    
 }

@@ -17,7 +17,6 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,8 +33,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -93,10 +92,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
      * Handler for handling execute service requests. This method will execute a service given 
      * the resourceId and return a response to the job manager.
      * (non-Javadoc)
+     * @throws InterruptedException 
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
 	@Override
-	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) {
+	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) throws InterruptedException {
 		coreLogger.log("Executing a Service.", Severity.DEBUG);
 
 
@@ -124,8 +124,9 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * 
 	 * @param message
 	 * @return the Response as a String
+	 * @throws InterruptedException 
 	 */
-	public ResponseEntity<String> handle(ExecuteServiceData data) {
+	public ResponseEntity<String> handle(ExecuteServiceData data) throws InterruptedException {
 		coreLogger.log(String.format("Beginning execution of Service ID %s", data.getServiceId()), Severity.INFORMATIONAL);
 		ResponseEntity<String> responseEntity = null;
 		String serviceId = data.getServiceId();
@@ -209,7 +210,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				HttpEntity<String> requestEntity = makeHttpEntity(headers, postString);
 
 				coreLogger.log("PostForEntity URL=" + url, Severity.INFORMATIONAL);
-				responseEntity = template.postForEntity(url, requestEntity, String.class);
+				try {
+					responseEntity = template.postForEntity(url, requestEntity, String.class);
+				} catch (HttpServerErrorException hex) {
+					throw new InterruptedException(hex.getResponseBodyAsString());
+				}
 			}
 			else
 			{

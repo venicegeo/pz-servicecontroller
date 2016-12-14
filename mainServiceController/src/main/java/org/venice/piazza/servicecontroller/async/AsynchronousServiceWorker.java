@@ -100,9 +100,10 @@ public class AsynchronousServiceWorker {
 	 * 
 	 * @param jobType
 	 *            The Piazza Job Type, describing everything about the Service execution.
+	 * @throws InterruptedException 
 	 */
 	@Async
-	public void executeService(ExecuteServiceJob job) {
+	public void executeService(ExecuteServiceJob job) throws InterruptedException {
 		// Log the Request
 		logger.log(String.format("Processing Asynchronous User Service with Job ID %s", job.getJobId()), Severity.INFORMATIONAL);
 		// Handle the external HTTP execution to the Service

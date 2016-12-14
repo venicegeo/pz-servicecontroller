@@ -279,7 +279,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
 	 * return the Result of the data.
 	 */
-	public DataResult processExecutionResult(String outputType, Producer<String, String> producer, String status,
+	public DataResult processExecutionResult(Service service, String outputType, Producer<String, String> producer, String status,
 			ResponseEntity<String> handleResult, String dataId) throws JsonProcessingException, IOException, InterruptedException {
 		coreLogger.log("Send Execute Status Kafka", Severity.DEBUG);
 		// Initialize ingest job items
@@ -297,10 +297,9 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 			try {
 				// Now produce a new record
-				jobRequest.createdBy = "pz-sc-ingest";
+				jobRequest.createdBy = service.getResourceMetadata().getCreatedBy();
 				data.dataId = dataId;
 				coreLogger.log("dataId is " + data.dataId, Severity.DEBUG);
-
 				data = objectMapper.readValue(serviceControlString, DataResource.class);
 
 				// Now check to see if the conversion is actually a proper DataResource

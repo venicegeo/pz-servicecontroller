@@ -227,8 +227,9 @@ public class ServiceMessageWorker {
 					// Process the Response and handle any Ingest that may result
 					String dataId = uuidFactory.getUUID();
 					String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
-					DataResult result = esHandler.processExecutionResult(outputType, producer, executeJobStatus, externalServiceResponse,
-							dataId);
+
+					DataResult result = esHandler.processExecutionResult(service, outputType, producer, executeJobStatus,
+							externalServiceResponse, dataId);
 
 					if (Thread.interrupted()) {
 						throw new InterruptedException();

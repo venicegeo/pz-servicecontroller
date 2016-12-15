@@ -265,7 +265,7 @@ public class AsynchronousServiceWorker {
 			ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 			String dataId = uuidFactory.getUUID();
 			// Get the Result of the Service
-			DataResult result = executeServiceHandler.processExecutionResult(instance.getOutputType(), producer,
+			DataResult result = executeServiceHandler.processExecutionResult(service, instance.getOutputType(), producer,
 					StatusUpdate.STATUS_SUCCESS, response, dataId);
 			// Send the Completed Status to the Job Manager, including the Result
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);

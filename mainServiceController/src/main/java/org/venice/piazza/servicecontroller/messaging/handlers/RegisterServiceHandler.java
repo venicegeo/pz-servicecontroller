@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
+import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
 import model.job.PiazzaJobType;
 import model.job.type.RegisterServiceJob;
@@ -53,6 +54,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	private PiazzaLogger coreLogger;
 	@Autowired
 	private UUIDFactory uuidFactory;
+	@Autowired
+	private ServiceTaskManager serviceTaskManager;
 
 	private static final long HTTP_REQUEST_TIMEOUT = 600;
 
@@ -122,6 +125,8 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 					}
 				}
 
+				// Create the Task Management Service Queue for this Service
+				serviceTaskManager.createServiceQueue(resultServiceId);
 			}
 
 			// Commit

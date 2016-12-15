@@ -18,8 +18,10 @@ package org.venice.piazza.servicecontroller.taskmanaged;
 import javax.annotation.PostConstruct;
 
 import org.apache.kafka.clients.producer.Producer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import messaging.job.KafkaClientFactory;
 import model.job.type.ExecuteServiceJob;
@@ -47,6 +49,9 @@ public class ServiceTaskManager {
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String KAFKA_HOST;
 
+	@Autowired
+	private MongoAccessor mongoAccessor;
+
 	private Producer<String, String> producer;
 
 	@PostConstruct
@@ -57,10 +62,21 @@ public class ServiceTaskManager {
 	}
 
 	/**
+	 * Creates a Service Queue for a newly registered Job.
+	 * 
+	 * @param serviceId
+	 *            The Id of the Service
+	 */
+	public void createServiceQueue(String serviceId) {
+		mongoAccessor.createServiceQueue(new ServiceQueue(serviceId));
+	}
+
+	/**
 	 * Adds a Job to the Service's queue.
 	 * 
 	 * @param job
-	 *            The Job to be executed
+	 *            The Job to be executed. This information contains the serviceId, which is used to lookup the
+	 *            appropriate Service Queue.
 	 */
 	public void addJobToQueue(ExecuteServiceJob job) {
 		// Add the Job to the Jobs queue

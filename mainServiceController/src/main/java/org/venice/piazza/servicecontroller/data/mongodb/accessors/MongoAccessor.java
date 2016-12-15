@@ -48,6 +48,7 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
+import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.logger.AuditElement;
 import model.logger.Severity;
@@ -77,6 +78,8 @@ public class MongoAccessor {
 	private MongoClient mongoClient;
 	@Value("${mongo.db.servicequeue.collection.name}")
 	private String SERVICE_QUEUE_COLLECTION_NAME;
+	@Value("${mongo.db.job.collection.name}")
+	private String JOB_COLLECTION_NAME;
 
 	@Value("${async.stale.instance.threshold.seconds}")
 	private int STALE_INSTANCE_THRESHOLD_SECONDS;
@@ -487,5 +490,42 @@ public class MongoAccessor {
 
 	public void removeJobFromServiceQueue(String jobId) {
 
+	}
+
+	/**
+	 * Gets a reference to the MongoDB's Job Collection.
+	 * 
+	 * @return
+	 */
+	public JacksonDBCollection<Job, String> getJobCollection() {
+		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(JOB_COLLECTION_NAME);
+		return JacksonDBCollection.wrap(collection, Job.class, String.class);
+	}
+
+	/**
+	 * Returns a Job that matches the specified Id.
+	 * 
+	 * @param jobId
+	 *            Job Id
+	 * @return The Job with the specified Id
+	 * @throws InterruptedException
+	 */
+	public Job getJobById(String jobId) throws ResourceAccessException, InterruptedException {
+		BasicDBObject query = new BasicDBObject("jobId", jobId);
+		Job job;
+
+		try {
+			if ((job = getJobCollection().findOne(query)) == null) {
+				// In case the Job was being updated, or it doesn't exist at this point, try once more. I admit this is
+				// not optimal, but it certainly covers a host of race conditions.
+				Thread.sleep(100);
+				job = getJobCollection().findOne(query);
+			}
+		} catch (MongoTimeoutException mte) {
+			LOGGER.error(mte.getMessage(), mte);
+			throw new ResourceAccessException("MongoDB instance not available.");
+		}
+
+		return job;
 	}
 }

@@ -17,7 +17,6 @@ package org.venice.piazza.servicecontroller.taskmanaged;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -25,16 +24,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.controller.ServiceController;
+import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import exception.InvalidInputException;
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
+import model.job.Job;
 import model.job.type.ExecuteServiceJob;
+import model.logger.Severity;
 import model.status.StatusUpdate;
+import util.PiazzaLogger;
 
 /**
  * Functionality for Task-Managed Services.
@@ -58,11 +61,13 @@ public class ServiceTaskManager {
 	private String SPACE;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String KAFKA_HOST;
-	@Autowired
-	private ObjectMapper objectMapper;
 
 	@Autowired
+	private ObjectMapper objectMapper;
+	@Autowired
 	private MongoAccessor mongoAccessor;
+	@Autowired
+	private PiazzaLogger piazzaLogger;
 
 	private Producer<String, String> producer;
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceTaskManager.class);
@@ -115,15 +120,50 @@ public class ServiceTaskManager {
 	 *            The ID of the Service whose Queue to pull a Job from
 	 * @return The Job information
 	 */
-	public ExecuteServiceJob getNextJobFromQueue(String serviceId) {
+	public ExecuteServiceJob getNextJobFromQueue(String serviceId)
+			throws ResourceAccessException, InterruptedException, InvalidInputException {
 		// Pull the Job off of the queue.
 		ServiceJob serviceJob = mongoAccessor.getNextJobInServiceQueue(serviceId);
-		String jobId = serviceJob.getJobId();
+
+		// If no Job exists in the Queue, then return null. No work needs to be done.
+		if (serviceJob == null) {
+			return null;
+		}
+
 		// Read the Jobs collection for the full Job Details
+		String jobId = serviceJob.getJobId();
+		Job job = mongoAccessor.getJobById(jobId);
+		// Ensure the Job exists. If it does not, then throw an error.
+		if (job == null) {
+			String error = String.format(
+					"Error pulling Service Job off Job Queue for Service %s and Job Id %s. The Job was not found in the database.",
+					serviceId, jobId);
+			piazzaLogger.log(error, Severity.ERROR);
+			throw new ResourceAccessException(error);
+		}
 
-		// Update the Job Status as Running
+		// Update the Job Status as Running to Kafka
+		StatusUpdate statusUpdate = new StatusUpdate();
+		statusUpdate.setStatus(StatusUpdate.STATUS_RUNNING);
+		ProducerRecord<String, String> statusUpdateRecord;
+		try {
+			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
+					jobId, objectMapper.writeValueAsString(statusUpdate));
+			producer.send(statusUpdateRecord);
+		} catch (JsonProcessingException exception) {
+			LOGGER.error("Error Sending Pending Job Status to Job Manager: " + exception.getMessage(), exception);
+		}
 
-		// Return the Job
-		return null;
+		// Return the Job Execution Information, including payload and parameters.
+		if (job.getJobType() instanceof ExecuteServiceJob) {
+			return (ExecuteServiceJob) job.getJobType();
+		} else {
+			// The Job must be an ExecuteServiceJob. If for some reason it is not, then throw an error.
+			String error = String.format(
+					"Error pulling Job %s off of the Jobs Queue for Service %s. The Job was not the proper ExecuteServiceJob type. This Job cannot be processed.",
+					jobId, serviceId);
+			piazzaLogger.log(error, Severity.ERROR);
+			throw new InvalidInputException(error);
+		}
 	}
 }

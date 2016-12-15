@@ -17,14 +17,24 @@ package org.venice.piazza.servicecontroller.taskmanaged;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.venice.piazza.servicecontroller.controller.ServiceController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import model.job.type.ExecuteServiceJob;
+import model.status.StatusUpdate;
 
 /**
  * Functionality for Task-Managed Services.
@@ -48,11 +58,14 @@ public class ServiceTaskManager {
 	private String SPACE;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String KAFKA_HOST;
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	@Autowired
 	private MongoAccessor mongoAccessor;
 
 	private Producer<String, String> producer;
+	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceTaskManager.class);
 
 	@PostConstruct
 	public void initialize() {
@@ -80,9 +93,19 @@ public class ServiceTaskManager {
 	 */
 	public void addJobToQueue(ExecuteServiceJob job) {
 		// Add the Job to the Jobs queue
-
-		// Update the Job Status as Pending
-
+		ServiceJob serviceJob = new ServiceJob(job.getJobId());
+		mongoAccessor.addJobToServiceQueue(serviceJob);
+		// Update the Job Status as Pending to Kafka
+		StatusUpdate statusUpdate = new StatusUpdate();
+		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
+		ProducerRecord<String, String> statusUpdateRecord;
+		try {
+			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
+					job.getJobId(), objectMapper.writeValueAsString(statusUpdate));
+			producer.send(statusUpdateRecord);
+		} catch (JsonProcessingException exception) {
+			LOGGER.error("Error Sending Pending Job Status to Job Manager: " + exception.getMessage(), exception);
+		}
 	}
 
 	/**
@@ -94,6 +117,9 @@ public class ServiceTaskManager {
 	 */
 	public ExecuteServiceJob getNextJobFromQueue(String serviceId) {
 		// Pull the Job off of the queue.
+		ServiceJob serviceJob = mongoAccessor.getNextJobInServiceQueue(serviceId);
+		String jobId = serviceJob.getJobId();
+		// Read the Jobs collection for the full Job Details
 
 		// Update the Job Status as Running
 

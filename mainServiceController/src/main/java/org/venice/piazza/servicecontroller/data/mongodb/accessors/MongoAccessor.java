@@ -37,6 +37,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.async.AsyncServiceInstance;
+import org.venice.piazza.servicecontroller.taskmanaged.ServiceJob;
+import org.venice.piazza.servicecontroller.taskmanaged.ServiceQueue;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
@@ -73,6 +75,8 @@ public class MongoAccessor {
 	private String SERVICE_COLLECTION_NAME;
 	private static final String ASYNC_INSTANCE_COLLECTION_NAME = "AsyncServiceInstances";
 	private MongoClient mongoClient;
+	@Value("${mongo.db.servicequeue.collection.name}")
+	private String SERVICE_QUEUE_COLLECTION_NAME;
 
 	@Value("${async.stale.instance.threshold.seconds}")
 	private int STALE_INSTANCE_THRESHOLD_SECONDS;
@@ -135,9 +139,10 @@ public class MongoAccessor {
 
 			WriteResult<Service, String> writeResult = coll.update(query, sMetadata);
 			logger.log(String.format("%s %s", "The result is", writeResult.toString()), Severity.INFORMATIONAL);
-			
-			logger.log(String.format("Updating resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL, new AuditElement("serviceController", "Updated Service", sMetadata.getServiceId()));
-			
+
+			logger.log(String.format("Updating resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
+					new AuditElement("serviceController", "Updated Service", sMetadata.getServiceId()));
+
 			// Return the id that was used
 			return sMetadata.getServiceId().toString();
 		} catch (MongoException ex) {
@@ -182,8 +187,9 @@ public class MongoAccessor {
 				result = " service " + serviceId + " deleted ";
 			}
 
-			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.INFORMATIONAL, new AuditElement("serviceController", "Deleted Service", serviceId));
-			
+			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.INFORMATIONAL,
+					new AuditElement("serviceController", "Deleted Service", serviceId));
+
 			return result;
 		} catch (MongoException ex) {
 			String message = String.format("Error Deleting Mongo Service entry : %s", ex.getMessage());
@@ -204,7 +210,8 @@ public class MongoAccessor {
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
 
-			logger.log(String.format("Saving resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL, new AuditElement("serviceController", "Created Service ", sMetadata.getServiceId()));
+			logger.log(String.format("Saving resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
+					new AuditElement("serviceController", "Created Service ", sMetadata.getServiceId()));
 
 			// Return the id that was used
 			return sMetadata.getServiceId();
@@ -450,5 +457,35 @@ public class MongoAccessor {
 	 */
 	public void deleteAsyncServiceInstance(String jobId) {
 		getAsyncServiceInstancesCollection().remove(DBQuery.is("jobId", jobId));
+	}
+
+	//
+
+	//
+
+	//
+
+	public void createServiceQueue(ServiceQueue serviceQueue) {
+
+	}
+
+	public void getServiceQueue(String serviceId) {
+
+	}
+
+	public ServiceJob getNextJobInServiceQueue(String serviceId) {
+		return null;
+	}
+
+	public List<ServiceJob> getTimedOutServiceJobs(String serviceId) {
+		return null;
+	}
+
+	public void addJobToServiceQueue(ServiceJob serviceJob) {
+
+	}
+
+	public void removeJobFromServiceQueue(String jobId) {
+
 	}
 }

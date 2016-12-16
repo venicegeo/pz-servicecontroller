@@ -99,7 +99,7 @@ public class ServiceTaskManager {
 	public void addJobToQueue(ExecuteServiceJob job) {
 		// Add the Job to the Jobs queue
 		ServiceJob serviceJob = new ServiceJob(job.getJobId());
-		mongoAccessor.addJobToServiceQueue(serviceJob);
+		mongoAccessor.addJobToServiceQueue(job.getData().getServiceId(), serviceJob);
 		// Update the Job Status as Pending to Kafka
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
@@ -109,7 +109,39 @@ public class ServiceTaskManager {
 					job.getJobId(), objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
-			LOGGER.error("Error Sending Pending Job Status to Job Manager: " + exception.getMessage(), exception);
+			String error = "Error Sending Pending Job Status to Job Manager: " + exception.getMessage();
+			LOGGER.error(error, exception);
+			piazzaLogger.log(error, Severity.ERROR);
+		}
+	}
+
+	/**
+	 * Processes the external Worker requesting a Status Update for a running job.
+	 * 
+	 * @param serviceId
+	 *            The ID of the Service
+	 * @param jobId
+	 *            The ID of the Job
+	 * @param statusUpdate
+	 *            The Status of the Job
+	 */
+	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate) {
+		// Send the Update to Kafka
+		ProducerRecord<String, String> statusUpdateRecord;
+		try {
+			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
+					jobId, objectMapper.writeValueAsString(statusUpdate));
+			producer.send(statusUpdateRecord);
+		} catch (JsonProcessingException exception) {
+			String error = "Error Sending Job Status from External Service to Job Manager: " + exception.getMessage();
+			LOGGER.error(error, exception);
+			piazzaLogger.log(error, Severity.ERROR);
+		}
+		// If done, remove the Job from the Service Queue
+		String status = statusUpdate.getStatus();
+		if ((StatusUpdate.STATUS_CANCELLED.equals(status)) || (StatusUpdate.STATUS_ERROR.equals(status))
+				|| (StatusUpdate.STATUS_FAIL.equals(status)) || (StatusUpdate.STATUS_SUCCESS.equals(status))) {
+			mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
 		}
 	}
 
@@ -151,7 +183,9 @@ public class ServiceTaskManager {
 					jobId, objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
-			LOGGER.error("Error Sending Pending Job Status to Job Manager: " + exception.getMessage(), exception);
+			String error = "Error Sending Pending Job Status to Job Manager: ";
+			LOGGER.error(error, exception);
+			piazzaLogger.log(error, Severity.ERROR);
 		}
 
 		// Return the Job Execution Information, including payload and parameters.

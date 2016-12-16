@@ -43,10 +43,12 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
+import com.mongodb.client.model.Updates;
 
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
@@ -468,15 +470,22 @@ public class MongoAccessor {
 
 	//
 
+	/**
+	 * Adds a Service Queue to the database.
+	 * 
+	 * @param serviceQueue
+	 *            Service Queue to add
+	 */
 	public void createServiceQueue(ServiceQueue serviceQueue) {
-
-	}
-
-	public void getServiceQueue(String serviceId) {
-
+		getServiceQueueCollection().insert(serviceQueue);
 	}
 
 	public ServiceJob getNextJobInServiceQueue(String serviceId) {
+		// Query for the oldest Job in the queue that has not been started.
+
+		// Set the current time that this Job was pulled off the queue
+
+		// Return the Job
 		return null;
 	}
 
@@ -484,16 +493,44 @@ public class MongoAccessor {
 		return null;
 	}
 
-	public void addJobToServiceQueue(ServiceJob serviceJob) {
-
-	}
-
-	public void removeJobFromServiceQueue(String jobId) {
-
+	/**
+	 * Adds a new Service Job reference to the specified Service's Job Queue.
+	 * 
+	 * @param serviceId
+	 *            The ID of the Service
+	 * @param serviceJob
+	 *            The ServiceJob, describing the ID of the Job
+	 */
+	public void addJobToServiceQueue(String serviceId, ServiceJob serviceJob) {
+		DBObject findQuery = new BasicDBObject("serviceId", serviceId);
+		DBObject addToSet = new BasicDBObject("$addToSet", new BasicDBObject("jobs", serviceJob));
+		getServiceQueueCollection().update(findQuery, addToSet);
 	}
 
 	/**
-	 * Gets a reference to the MongoDB's Job Collection.
+	 * Removes the specified Job ID from the Service Queue for the specified Service
+	 * 
+	 * @param serviceId
+	 *            The ID of the service whose Job to remove
+	 * @param jobId
+	 *            The ID of the Job to remove from the queue
+	 */
+	public void removeJobFromServiceQueue(String serviceId, String jobId) {
+		DBObject findService = new BasicDBObject("serviceId", serviceId);
+		DBObject update = new BasicDBObject("jobs", new BasicDBObject("jobId", jobId));
+		getServiceQueueCollection().update(findService, new BasicDBObject("$pull", update));
+	}
+
+	/**
+	 * Gets a reference to the Service Queue Jobs Collection.
+	 */
+	public JacksonDBCollection<ServiceQueue, String> getServiceQueueCollection() {
+		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_QUEUE_COLLECTION_NAME);
+		return JacksonDBCollection.wrap(collection, ServiceQueue.class, String.class);
+	}
+
+	/**
+	 * Gets a reference to the JobManager's Jobs Collection.
 	 * 
 	 * @return
 	 */

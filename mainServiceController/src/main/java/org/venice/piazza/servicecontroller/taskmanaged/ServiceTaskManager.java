@@ -35,6 +35,7 @@ import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import model.job.Job;
 import model.job.type.ExecuteServiceJob;
+import model.logger.AuditElement;
 import model.logger.Severity;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
@@ -61,6 +62,8 @@ public class ServiceTaskManager {
 	private String SPACE;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
 	private String KAFKA_HOST;
+	@Value("${task.managed.error.limit}")
+	private Integer TIMEOUT_LIMIT_COUNT;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -199,5 +202,47 @@ public class ServiceTaskManager {
 			piazzaLogger.log(error, Severity.ERROR);
 			throw new InvalidInputException(error);
 		}
+	}
+
+	/**
+	 * Handles the Timeout logic for a timed out Service Job.
+	 * 
+	 * @param serviceId
+	 *            The Service ID
+	 * @param serviceJob
+	 *            The ServiceJob that has timed out
+	 */
+	public void processTimedOutServiceJob(String serviceId, ServiceJob serviceJob) {
+		// Check if the Job has received too many timeouts thus far.
+		if (serviceJob.getTimeouts().intValue() >= TIMEOUT_LIMIT_COUNT) {
+			piazzaLogger.log(
+					String.format("Service Job %s for Service %s has timed out too many times and is being removed from the Jobs Queue.",
+							serviceId, serviceJob.getJobId(),
+							new AuditElement("serviceController", "failTimedOutJob", serviceJob.getJobId())),
+					Severity.INFORMATIONAL);
+			// If the Job has too many timeouts, then fail the Job.
+			mongoAccessor.removeJobFromServiceQueue(serviceId, serviceJob.getJobId());
+			// Send the Kafka message that this Job has failed.
+			StatusUpdate statusUpdate = new StatusUpdate();
+			statusUpdate.setStatus(StatusUpdate.STATUS_ERROR);
+			ProducerRecord<String, String> statusUpdateRecord;
+			try {
+				statusUpdateRecord = new ProducerRecord<String, String>(
+						String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), serviceJob.getJobId(),
+						objectMapper.writeValueAsString(statusUpdate));
+				producer.send(statusUpdateRecord);
+			} catch (JsonProcessingException exception) {
+				String error = "Error Sending Failed/Timed Out Job Status to Job Manager: ";
+				LOGGER.error(error, exception);
+				piazzaLogger.log(error, Severity.ERROR);
+			}
+		} else {
+			// Otherwise, increment the failure count and try again.
+			piazzaLogger.log(String.format("Service Job %s for Service %s has timed out for the %s time and will be retried again.",
+					serviceId, serviceJob.getJobId(), serviceJob.getTimeouts() + 1), Severity.INFORMATIONAL);
+			// Increment the failure count and tag for retry
+			mongoAccessor.incrementServiceJobTimeout(serviceId, serviceJob);
+		}
+
 	}
 }

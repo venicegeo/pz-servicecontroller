@@ -465,6 +465,15 @@ public class MongoAccessor {
 	}
 
 	/**
+	 * Gets a list of all Piazza Services that are registered as a Task-Managed Service.
+	 * 
+	 * @return List of Task-Managed Services
+	 */
+	public List<Service> getTaskManagedServices() {
+		return getServiceCollection().find().and(DBQuery.is("isTaskManaged", true)).toArray();
+	}
+
+	/**
 	 * Gets the next Job in the queue for a particular service.
 	 * <p>
 	 * This method is synchronized because it is incredibly important that we never return the same job twice, avoiding

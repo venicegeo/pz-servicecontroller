@@ -16,7 +16,9 @@
 package org.venice.piazza.servicecontroller.data.mongodb.accessors;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
@@ -525,6 +527,30 @@ public class MongoAccessor {
 	}
 
 	/**
+	 * Gets the Service Job for the specified service with the specified Job ID
+	 * 
+	 * @param serviceId
+	 *            The ID of the Service
+	 * @param jobId
+	 *            The ID of the Job
+	 * @return
+	 */
+	public ServiceJob getServiceJob(String serviceId, String jobId) throws MongoException {
+		BasicDBObject query = new BasicDBObject("jobId", jobId);
+		ServiceJob serviceJob;
+
+		try {
+			serviceJob = getServiceJobCollection(serviceId).findOne(query);
+		} catch (MongoTimeoutException mte) {
+			String error = "Mongo Instance Not Available.";
+			LOGGER.error(error, mte);
+			throw new MongoException(error);
+		}
+
+		return serviceJob;
+	}
+
+	/**
 	 * Increments the timeout count for the Job ID
 	 * 
 	 * @param serviceId
@@ -634,5 +660,19 @@ public class MongoAccessor {
 	 */
 	private String getServiceQueueCollectionName(String serviceId) {
 		return String.format("%s-%s", SERVICE_QUEUE_COLLECTION_PREFIX, serviceId);
+	}
+
+	/**
+	 * Gets Metadata on the specified Service Queue
+	 * 
+	 * @param serviceId
+	 *            The ID of the service
+	 * @return Map containing metadata information
+	 */
+	public Map<String, Object> getServiceQueueCollectionMetadata(String serviceId) {
+		Map<String, Object> map = new HashMap<>();
+		// Get the Length
+		map.put("totalJobCount", getServiceJobCollection(serviceId).find().count());
+		return map;
 	}
 }

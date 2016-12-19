@@ -29,11 +29,13 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoException;
 
 import exception.InvalidInputException;
 import messaging.job.JobMessageFactory;
 import messaging.job.KafkaClientFactory;
 import model.job.Job;
+import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
@@ -129,7 +131,13 @@ public class ServiceTaskManager {
 	 * @param statusUpdate
 	 *            The Status of the Job
 	 */
-	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate) {
+	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate)
+			throws MongoException, InvalidInputException {
+		// Validate the Service ID exists, and contains the Job ID
+		ServiceJob serviceJob = mongoAccessor.getServiceJob(serviceId, jobId);
+		if (serviceJob == null) {
+			throw new InvalidInputException(String.format("Cannot find the specified Job - does not exist in queue.", jobId, serviceId));
+		}
 		// Send the Update to Kafka
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
@@ -216,15 +224,16 @@ public class ServiceTaskManager {
 	public void processTimedOutServiceJob(String serviceId, ServiceJob serviceJob) {
 		// Check if the Job has received too many timeouts thus far.
 		if (serviceJob.getTimeouts().intValue() >= TIMEOUT_LIMIT_COUNT) {
-			piazzaLogger.log(
-					String.format("Service Job %s for Service %s has timed out too many times and is being removed from the Jobs Queue.",
-							serviceId, serviceJob.getJobId(),
-							new AuditElement("serviceController", "failTimedOutJob", serviceJob.getJobId())),
-					Severity.INFORMATIONAL);
+			String error = String.format(
+					"Service Job %s for Service %s has timed out too many times and is being removed from the Jobs Queue.", serviceId,
+					serviceJob.getJobId());
+			piazzaLogger.log(error, Severity.INFORMATIONAL,
+					new AuditElement("serviceController", "failTimedOutJob", serviceJob.getJobId()));
 			// If the Job has too many timeouts, then fail the Job.
 			mongoAccessor.removeJobFromServiceQueue(serviceId, serviceJob.getJobId());
 			// Send the Kafka message that this Job has failed.
 			StatusUpdate statusUpdate = new StatusUpdate();
+			statusUpdate.setResult(new ErrorResult("Service Timed Out", error));
 			statusUpdate.setStatus(StatusUpdate.STATUS_ERROR);
 			ProducerRecord<String, String> statusUpdateRecord;
 			try {
@@ -233,9 +242,9 @@ public class ServiceTaskManager {
 						objectMapper.writeValueAsString(statusUpdate));
 				producer.send(statusUpdateRecord);
 			} catch (JsonProcessingException exception) {
-				String error = "Error Sending Failed/Timed Out Job Status to Job Manager: ";
-				LOGGER.error(error, exception);
-				piazzaLogger.log(error, Severity.ERROR);
+				String innerError = "Error Sending Failed/Timed Out Job Status to Job Manager: ";
+				LOGGER.error(innerError, exception);
+				piazzaLogger.log(innerError, Severity.ERROR);
 			}
 		} else {
 			// Otherwise, increment the failure count and try again.

@@ -32,6 +32,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ServiceJob {
 	public String jobId;
+	public Integer timeouts;
 	/**
 	 * The time that work began processing on this Job.
 	 */
@@ -45,6 +46,7 @@ public class ServiceJob {
 
 	public ServiceJob() {
 		this.queuedOn = new DateTime();
+		this.timeouts = new Integer(0);
 	}
 
 	public ServiceJob(String jobId) {
@@ -108,5 +110,13 @@ public class ServiceJob {
 	@JsonProperty("queuedOn")
 	public void setQueuedOnString(String queuedOn) {
 		this.queuedOn = new DateTime(queuedOn);
+	}
+
+	public Integer getTimeouts() {
+		return timeouts;
+	}
+
+	public void setTimeouts(Integer timeouts) {
+		this.timeouts = timeouts;
 	}
 }

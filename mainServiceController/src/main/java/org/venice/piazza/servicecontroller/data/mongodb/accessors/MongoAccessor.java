@@ -473,20 +473,62 @@ public class MongoAccessor {
 	 * 
 	 * @param serviceId
 	 *            The ID of the Service to fetch work for.
-	 * @return The next ServiceJob in the Service Queue, if one exists; null if the Queue is empty.
+	 * @return The next ServiceJob in the Service Queue, if one exists; null if the Queue has no Jobs ready to be
+	 *         processed.
 	 */
 	public synchronized ServiceJob getNextJobInServiceQueue(String serviceId) {
-		// Query for Service Jobs, sort by Time, so that we get the single stalest.
-
-		// Set the current time that this Job was pulled off the queue
-
+		// Query for Service Jobs, sort by Queue Time, so that we get the single most stale Job. Ignore Jobs that have
+		// already been started. Find the latest.
+		DBCursor<ServiceJob> cursor = getServiceJobCollection(serviceId).find().sort(DBSort.desc("queuedOn"))
+				.and(DBQuery.is("startedOn", null)).limit(1);
+		if (!cursor.hasNext()) {
+			// No available Jobs to be processed.
+			return null;
+		}
+		ServiceJob serviceJob = cursor.next();
+		// Set the current Started Time that this Job was pulled off the queue
+		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()),
+				DBUpdate.set("startedOn", new DateTime().toString()));
 		// Return the Job
-		return null;
+		return serviceJob;
 	}
 
+	/**
+	 * Gets the complete list of all Jobs in the Service's Service Queue that have exceeded the length of time for
+	 * processing, and are thus considered timed out.
+	 * 
+	 * @param serviceId
+	 *            The ID of the Service whose Queue to check
+	 * @return The list of timed out Jobs
+	 */
 	public List<ServiceJob> getTimedOutServiceJobs(String serviceId) {
-		// TODO
-		return null;
+		// Get the Service details to find out the timeout information
+		Service service = getServiceById(serviceId);
+		Long timeout = service.getTimeout();
+		// The timeout is in seconds. Get the current time and subtract the number of seconds to find the timestamp of a
+		// timed out service.
+		long timeoutEpoch = new DateTime().minusSeconds(timeout.intValue()).getMillis();
+		// Query the database for Jobs whose startedOn field is older than the timeout date.
+		DBCursor<ServiceJob> cursor = getServiceJobCollection(serviceId).find(DBQuery.lessThan("startedOn", timeoutEpoch))
+				.and(DBQuery.exists("startedOn"));
+		// Return the list
+		return cursor.toArray();
+	}
+
+	/**
+	 * Increments the timeout count for the Job ID
+	 * 
+	 * @param serviceId
+	 *            The Service ID containing the Job
+	 * @param serviceJob
+	 *            The ServiceJob that has timed out
+	 */
+	public synchronized void incrementServiceJobTimeout(String serviceId, ServiceJob serviceJob) {
+		// Increment the failure count.
+		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()),
+				DBUpdate.set("timeouts", serviceJob.getTimeouts() + 1));
+		// Delete the previous Started On date.
+		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()), DBUpdate.set("startedOn", null));
 	}
 
 	/**

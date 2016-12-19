@@ -37,6 +37,7 @@ import model.job.Job;
 import model.job.type.ExecuteServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
+import model.service.taskmanaged.ServiceJob;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 
@@ -101,7 +102,7 @@ public class ServiceTaskManager {
 	 */
 	public void addJobToQueue(ExecuteServiceJob job) {
 		// Add the Job to the Jobs queue
-		ServiceJob serviceJob = new ServiceJob(job.getJobId());
+		ServiceJob serviceJob = new ServiceJob(job.getJobId(), job.getData().getServiceId());
 		mongoAccessor.addJobToServiceQueue(job.getData().getServiceId(), serviceJob);
 		// Update the Job Status as Pending to Kafka
 		StatusUpdate statusUpdate = new StatusUpdate();

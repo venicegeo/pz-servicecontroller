@@ -37,7 +37,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.async.AsyncServiceInstance;
-import org.venice.piazza.servicecontroller.taskmanaged.ServiceJob;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
@@ -57,6 +56,7 @@ import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
 import model.service.SearchCriteria;
 import model.service.metadata.Service;
+import model.service.taskmanaged.ServiceJob;
 import util.PiazzaLogger;
 
 /**

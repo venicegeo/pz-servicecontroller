@@ -28,6 +28,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 
 import model.logger.Severity;
 import model.service.metadata.Service;
+import model.service.taskmanaged.ServiceJob;
 import util.PiazzaLogger;
 
 /**

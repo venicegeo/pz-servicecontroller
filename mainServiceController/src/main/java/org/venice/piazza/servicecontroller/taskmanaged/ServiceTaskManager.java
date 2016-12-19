@@ -86,7 +86,7 @@ public class ServiceTaskManager {
 	 *            The Id of the Service
 	 */
 	public void createServiceQueue(String serviceId) {
-		mongoAccessor.createServiceQueue(new ServiceQueue(serviceId));
+		// TODO: Initialization can be done here.
 	}
 
 	/**

@@ -38,7 +38,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.async.AsyncServiceInstance;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceJob;
-import org.venice.piazza.servicecontroller.taskmanaged.ServiceQueue;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.mongodb.BasicDBObject;
@@ -48,7 +47,6 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
-import com.mongodb.client.model.Updates;
 
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
@@ -78,8 +76,8 @@ public class MongoAccessor {
 	private String SERVICE_COLLECTION_NAME;
 	private static final String ASYNC_INSTANCE_COLLECTION_NAME = "AsyncServiceInstances";
 	private MongoClient mongoClient;
-	@Value("${mongo.db.servicequeue.collection.name}")
-	private String SERVICE_QUEUE_COLLECTION_NAME;
+	@Value("${mongo.db.servicequeue.collection.prefix}")
+	private String SERVICE_QUEUE_COLLECTION_PREFIX;
 	@Value("${mongo.db.job.collection.name}")
 	private String JOB_COLLECTION_NAME;
 
@@ -190,6 +188,8 @@ public class MongoAccessor {
 				deleteQuery.append("serviceId", serviceId);
 				collection.remove(deleteQuery);
 				result = " service " + serviceId + " deleted ";
+				// If any Service Queue exists, also delete that here.
+				deleteServiceQueue(serviceId);
 			}
 
 			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.INFORMATIONAL,
@@ -454,7 +454,7 @@ public class MongoAccessor {
 	}
 
 	/**
-	 * Deletese an Async Service Instance by Job ID. This is done when the Service has been processed to completion and
+	 * Deletes an Async Service Instance by Job ID. This is done when the Service has been processed to completion and
 	 * the instance is no longer needed.
 	 * 
 	 * @param id
@@ -464,24 +464,19 @@ public class MongoAccessor {
 		getAsyncServiceInstancesCollection().remove(DBQuery.is("jobId", jobId));
 	}
 
-	//
-
-	//
-
-	//
-
 	/**
-	 * Adds a Service Queue to the database.
+	 * Gets the next Job in the queue for a particular service.
+	 * <p>
+	 * This method is synchronized because it is incredibly important that we never return the same job twice, avoiding
+	 * potential race conditions.
+	 * </p>
 	 * 
-	 * @param serviceQueue
-	 *            Service Queue to add
+	 * @param serviceId
+	 *            The ID of the Service to fetch work for.
+	 * @return The next ServiceJob in the Service Queue, if one exists; null if the Queue is empty.
 	 */
-	public void createServiceQueue(ServiceQueue serviceQueue) {
-		getServiceQueueCollection().insert(serviceQueue);
-	}
-
-	public ServiceJob getNextJobInServiceQueue(String serviceId) {
-		// Query for the oldest Job in the queue that has not been started.
+	public synchronized ServiceJob getNextJobInServiceQueue(String serviceId) {
+		// Query for Service Jobs, sort by Time, so that we get the single stalest.
 
 		// Set the current time that this Job was pulled off the queue
 
@@ -490,6 +485,7 @@ public class MongoAccessor {
 	}
 
 	public List<ServiceJob> getTimedOutServiceJobs(String serviceId) {
+		// TODO
 		return null;
 	}
 
@@ -502,13 +498,11 @@ public class MongoAccessor {
 	 *            The ServiceJob, describing the ID of the Job
 	 */
 	public void addJobToServiceQueue(String serviceId, ServiceJob serviceJob) {
-		DBObject findQuery = new BasicDBObject("serviceId", serviceId);
-		DBObject addToSet = new BasicDBObject("$addToSet", new BasicDBObject("jobs", serviceJob));
-		getServiceQueueCollection().update(findQuery, addToSet);
+		getServiceJobCollection(serviceId).insert(serviceJob);
 	}
 
 	/**
-	 * Removes the specified Job ID from the Service Queue for the specified Service
+	 * Removes the specified Service Job (by ID) from the Service Queue for the specified Service
 	 * 
 	 * @param serviceId
 	 *            The ID of the service whose Job to remove
@@ -516,17 +510,17 @@ public class MongoAccessor {
 	 *            The ID of the Job to remove from the queue
 	 */
 	public void removeJobFromServiceQueue(String serviceId, String jobId) {
-		DBObject findService = new BasicDBObject("serviceId", serviceId);
-		DBObject update = new BasicDBObject("jobs", new BasicDBObject("jobId", jobId));
-		getServiceQueueCollection().update(findService, new BasicDBObject("$pull", update));
+		DBObject matchJob = new BasicDBObject("jobId", jobId);
+		getServiceJobCollection(serviceId).remove(matchJob);
 	}
 
 	/**
-	 * Gets a reference to the Service Queue Jobs Collection.
+	 * Gets a reference to the Service Job collection for a Service
 	 */
-	public JacksonDBCollection<ServiceQueue, String> getServiceQueueCollection() {
-		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(SERVICE_QUEUE_COLLECTION_NAME);
-		return JacksonDBCollection.wrap(collection, ServiceQueue.class, String.class);
+	public JacksonDBCollection<ServiceJob, String> getServiceJobCollection(String serviceId) {
+		String serviceCollectionName = getServiceQueueCollectionName(serviceId);
+		DBCollection collection = mongoClient.getDB(DATABASE_NAME).getCollection(serviceCollectionName);
+		return JacksonDBCollection.wrap(collection, ServiceJob.class, String.class);
 	}
 
 	/**
@@ -564,5 +558,30 @@ public class MongoAccessor {
 		}
 
 		return job;
+	}
+
+	/**
+	 * Completely deletes a Service Queue for a registered service.
+	 * 
+	 * @param serviceId
+	 *            The ID of the Service whose queue to drop.
+	 */
+	public void deleteServiceQueue(String serviceId) {
+		getServiceJobCollection(serviceId).drop();
+	}
+
+	/**
+	 * Gets the MongoDB Collection name for the list of Service Jobs for a specific Service.
+	 * <p>
+	 * Each Task-Managed Service will receive its own collection name based on its Service ID. By having separate
+	 * collections, instead of a single collection for all Service Queues, this allows for much faster queries.
+	 * </p>
+	 * 
+	 * @param serviceId
+	 *            The ID of the Service
+	 * @return The Collection Name for that Service's Service Queues
+	 */
+	private String getServiceQueueCollectionName(String serviceId) {
+		return String.format("%s-%s", SERVICE_QUEUE_COLLECTION_PREFIX, serviceId);
 	}
 }

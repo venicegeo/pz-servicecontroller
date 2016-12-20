@@ -499,7 +499,7 @@ public class MongoAccessor {
 		ServiceJob serviceJob = cursor.next();
 		// Set the current Started Time that this Job was pulled off the queue
 		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()),
-				DBUpdate.set("startedOn", new DateTime().toString()));
+				DBUpdate.set("startedOn", new DateTime().getMillis()));
 		// Return the Job
 		return serviceJob;
 	}
@@ -516,14 +516,19 @@ public class MongoAccessor {
 		// Get the Service details to find out the timeout information
 		Service service = getServiceById(serviceId);
 		Long timeout = service.getTimeout();
+		if (timeout == null) {
+			// If no timeout is specified for the Service, then we can't check for timeouts.
+			return new ArrayList<ServiceJob>();
+		}
 		// The timeout is in seconds. Get the current time and subtract the number of seconds to find the timestamp of a
 		// timed out service.
 		long timeoutEpoch = new DateTime().minusSeconds(timeout.intValue()).getMillis();
 		// Query the database for Jobs whose startedOn field is older than the timeout date.
-		DBCursor<ServiceJob> cursor = getServiceJobCollection(serviceId).find(DBQuery.lessThan("startedOn", timeoutEpoch))
-				.and(DBQuery.exists("startedOn"));
+		JacksonDBCollection<ServiceJob, String> collection = getServiceJobCollection(serviceId);
+		DBCursor<ServiceJob> jobs = collection.find(DBQuery.exists("startedOn"));
+		jobs = jobs.and(DBQuery.lessThan("startedOn", timeoutEpoch));
 		// Return the list
-		return cursor.toArray();
+		return jobs.toArray();
 	}
 
 	/**

@@ -58,7 +58,7 @@ public class TaskManagerTimeoutScheduler {
 	@PostConstruct
 	public void startPolling() {
 		// Begin polling at the determined frequency
-		pollTimer.schedule(timeoutTask, 0, POLL_FREQUENCY_SECONDS * (long) 1000);
+		pollTimer.schedule(timeoutTask, 10000, POLL_FREQUENCY_SECONDS * (long) 1000);
 	}
 
 	/**

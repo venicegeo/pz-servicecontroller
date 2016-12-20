@@ -17,7 +17,6 @@ package org.venice.piazza.servicecontroller.messaging.handlers;
 
 import java.util.ArrayList;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -112,7 +111,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			}
 
 			// Set the Administrators of the service, if none have been specified.
-			if (BooleanUtils.isTrue(service.getIsTaskManaged())) {
+			if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
 				String createdBy = service.getResourceMetadata().getCreatedBy();
 				if (service.getTaskAdministrators() == null) {
 					// If no administration list has been specified, then create one by default.

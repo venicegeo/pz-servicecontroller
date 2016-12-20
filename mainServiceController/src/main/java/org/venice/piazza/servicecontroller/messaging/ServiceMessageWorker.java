@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -163,7 +162,11 @@ public class ServiceMessageWorker {
 				// request will be made directly to the Service URL. If this is a Task-Managed Service, then the Job
 				// will be put into the Jobs queue.
 				StatusUpdate su = new StatusUpdate();
-				su.setStatus(BooleanUtils.isTrue(service.getIsTaskManaged()) ? StatusUpdate.STATUS_PENDING : StatusUpdate.STATUS_RUNNING);
+				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
+					su.setStatus(StatusUpdate.STATUS_PENDING);
+				} else {
+					su.setStatus(StatusUpdate.STATUS_RUNNING);
+				}
 				ProducerRecord<String, String> statusUpdateRecord = new ProducerRecord<String, String>(
 						String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
 						objectMapper.writeValueAsString(su));
@@ -185,7 +188,7 @@ public class ServiceMessageWorker {
 					}
 					// Determine if this is a Service that is processed Asynchronously, or is Task Managed. If so, then
 					// branch here.
-					if (BooleanUtils.isTrue(service.getIsAsynchronous())) {
+					if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().booleanValue())) {
 						// Perform Asynchronous Logic
 						asynchronousServiceWorker.executeService(jobItem);
 						// Return null. This future will not be tracked by the Service Thread Manager.
@@ -193,7 +196,7 @@ public class ServiceMessageWorker {
 						// we don't have to scatter return statements throughout this method.
 						callback.onComplete(consumerRecord.key());
 						return null;
-					} else if (BooleanUtils.isTrue(service.getIsTaskManaged())) {
+					} else if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
 						// If this is a Task Managed service, then insert this Job into the Task Management queue.
 						serviceTaskManager.addJobToQueue(jobItem);
 						return null;

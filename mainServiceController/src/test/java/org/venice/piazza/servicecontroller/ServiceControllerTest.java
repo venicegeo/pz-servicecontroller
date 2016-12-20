@@ -474,8 +474,9 @@ public class ServiceControllerTest {
 		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
 		htmlMessage = htmlMessage + "<BODY><BR> Welcome from the Piazza Service Controller. "
 				+ "<BR>For details on running and using the ServiceController, "
-				+ "See the Piazza Developer's Guide<A> for details."
+				+ "<BR>see The Piazza Developer's Guide<A> for details."
 				+ "<BODY></HTML>";
+		
 		ResponseEntity<String> result = sc.healthCheck();
         assertEquals("The response should be 200", result.getStatusCode(), HttpStatus.OK);
         assertTrue("The response contains the appropriate message", result.getBody().contains(htmlMessage));

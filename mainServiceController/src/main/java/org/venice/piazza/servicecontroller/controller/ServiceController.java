@@ -111,8 +111,6 @@ public class ServiceController {
 	/**
 	 * Registers a service with the piazza service controller.
 	 * 
-	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/post_service"
-	 * 
 	 *      This service is meant for internal Piazza use, Swiss-Army-Knife
 	 *      (SAK) administration and for testing of the serviceController.
 	 * @param serviceMetadata
@@ -140,9 +138,6 @@ public class ServiceController {
 	/**
 	 * Gets service metadata, based on its Id.
 	 * 
-	 * @see "@see "
-	 *      http://pz-swagger.stage.geointservices.io/#!/Service/post_service"
-	 * 
 	 * @param serviceId
 	 *            The Id of the service.
 	 * @return The service metadata or appropriate error
@@ -168,8 +163,6 @@ public class ServiceController {
 
 	/**
 	 * Gets the list of services currently registered.
-	 * 
-	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/get_service"
 	 * 
 	 * @return The list of registered services.
 	 */
@@ -201,8 +194,6 @@ public class ServiceController {
 
 	/**
 	 * Deletes a registered service.
-	 * 
-	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/delete_service_serviceId"
 	 * 
 	 * @param serviceId
 	 *            The Id of the service to delete.
@@ -241,8 +232,6 @@ public class ServiceController {
 	
 	/**
 	 * Updates a service with new Metadata.
-	 * 
-	 * @see "http://pz-swagger.stage.geointservices.io/#!/Service/put_service_serviceId"
 	 * 
 	 * @param serviceId
 	 *            Service Id to delete.
@@ -451,7 +440,7 @@ public class ServiceController {
 		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
 		htmlMessage = htmlMessage + "<BODY><BR> Welcome from the Piazza Service Controller. "
 				+ "<BR>For details on running and using the ServiceController, "
-				+ "<BR>see <A HREF=\"http://pz-docs.geointservices.io/devguide/index.html\"> The Piazza Developer's Guide<A> for details."
+				+ "<BR>see The Piazza Developer's Guide<A> for details."
 				+ "<BODY></HTML>";
 		ResponseEntity<String> response = new ResponseEntity<String>(htmlMessage, responseHeaders, HttpStatus.OK);
 

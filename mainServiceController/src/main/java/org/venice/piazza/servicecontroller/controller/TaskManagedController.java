@@ -80,7 +80,7 @@ public class TaskManagedController {
 			// Get the Job. This will mark the Job as being processed.
 			ExecuteServiceJob serviceJob = serviceTaskManager.getNextJobFromQueue(serviceId);
 			// Return
-			return new ResponseEntity<>(new ServiceJobResponse(serviceJob), HttpStatus.OK);
+			return new ResponseEntity<>(new ServiceJobResponse(serviceJob, serviceJob.getJobId()), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Getting next Service Job for Service %s by User %s: %s", serviceId, userName,
 					exception.getMessage());

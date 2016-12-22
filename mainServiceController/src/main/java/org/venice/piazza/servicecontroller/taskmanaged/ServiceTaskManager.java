@@ -202,7 +202,13 @@ public class ServiceTaskManager {
 
 		// Return the Job Execution Information, including payload and parameters.
 		if (job.getJobType() instanceof ExecuteServiceJob) {
-			return (ExecuteServiceJob) job.getJobType();
+			// Ensure that the ServiceJob has the JobID populated
+			ExecuteServiceJob executeServiceJob = (ExecuteServiceJob) job.getJobType();
+			if (executeServiceJob.getJobId() == null) {
+				executeServiceJob.setJobId(jobId);
+			}
+			// Return
+			return executeServiceJob;
 		} else {
 			// The Job must be an ExecuteServiceJob. If for some reason it is not, then throw an error.
 			String error = String.format(

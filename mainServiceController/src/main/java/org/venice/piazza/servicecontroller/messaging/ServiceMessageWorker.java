@@ -48,11 +48,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
+import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import exception.DataInspectException;
 import exception.PiazzaJobException;
 import messaging.job.JobMessageFactory;
@@ -109,20 +111,24 @@ public class ServiceMessageWorker {
 
 	@Autowired
 	private ExecuteServiceHandler esHandler;
-	
+
 	@Autowired
 	private AsynchronousServiceWorker asynchronousServiceWorker;
 
 	@Autowired
+	private ServiceTaskManager serviceTaskManager;
+
+	@Autowired
 	private RestTemplate restTemplate;
-	
+
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
 
 	/**
 	 * Handles service job requests on a thread
 	 */
 	@Async
-	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job, WorkerCallback callback) {
+	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job,
+			WorkerCallback callback) {
 		try {
 			String executeJobStatus = StatusUpdate.STATUS_SUCCESS;
 			String handleTextUpdate = "";
@@ -136,7 +142,8 @@ public class ServiceMessageWorker {
 
 			// Ensure the Job Type is of Execute Service Job
 			if ((job.getJobType() == null) || (job.getJobType() instanceof ExecuteServiceJob == false)) {
-				throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.", HttpStatus.BAD_REQUEST.value() );
+				throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.",
+						HttpStatus.BAD_REQUEST.value());
 			}
 
 			// Process the Execution of the External Service
@@ -145,28 +152,43 @@ public class ServiceMessageWorker {
 
 				coreLogger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), Severity.DEBUG);
 
-				// Get the ResourceMetadata
+				// Get the Job Data and Service information.
 				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
 				jobItem.setJobId(consumerRecord.key());
 				ExecuteServiceData esData = jobItem.data;
+				Service service = accessor.getServiceById(esData.getServiceId());
+
+				// Send the Job Status that this Job has been handled. If this is a typical sync/async service, then the
+				// request will be made directly to the Service URL. If this is a Task-Managed Service, then the Job
+				// will be put into the Jobs queue.
+				StatusUpdate su = new StatusUpdate();
+				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
+					su.setStatus(StatusUpdate.STATUS_PENDING);
+				} else {
+					su.setStatus(StatusUpdate.STATUS_RUNNING);
+				}
+				ProducerRecord<String, String> statusUpdateRecord = new ProducerRecord<String, String>(
+						String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
+						objectMapper.writeValueAsString(su));
+				producer.send(statusUpdateRecord);
+
 				if (esData.dataOutput != null) {
 
 					if (Thread.interrupted()) {
 						throw new InterruptedException();
 					}
-					
-					Service service = accessor.getServiceById(esData.getServiceId());
 					// First check to see if the service is OFFLINE, if so
 					// do not execute a thing
 					ResourceMetadata rMetadata = service.getResourceMetadata();
-					if ((rMetadata != null) &&
-						(rMetadata.getAvailability() != null) && 
-						(rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE.toString()))) {
-						throw new DataInspectException("The service " + esData.getServiceId() + " is " + ResourceMetadata.STATUS_TYPE.OFFLINE.toString());
+					if ((rMetadata != null) && (rMetadata.getAvailability() != null)
+							&& (rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE.toString()))) {
+						throw new DataInspectException(
+								"The service " + esData.getServiceId() + " is " + ResourceMetadata.STATUS_TYPE.OFFLINE.toString());
 
 					}
-					// Determine if this is a Synchronous or an Asynchronous Job. 
-					if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().equals(true))) {
+					// Determine if this is a Service that is processed Asynchronously, or is Task Managed. If so, then
+					// branch here.
+					if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().booleanValue())) {
 						// Perform Asynchronous Logic
 						asynchronousServiceWorker.executeService(jobItem);
 						// Return null. This future will not be tracked by the Service Thread Manager.
@@ -174,7 +196,14 @@ public class ServiceMessageWorker {
 						// we don't have to scatter return statements throughout this method.
 						callback.onComplete(consumerRecord.key());
 						return null;
+					} else if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
+						// If this is a Task Managed service, then insert this Job into the Task Management queue.
+						serviceTaskManager.addJobToQueue(jobItem);
+						return null;
 					}
+
+					// If the Service is neither Asynchronous or Task Managed, then process it in the normal Synchronous
+					// manner.
 
 					coreLogger.log("ExecuteServiceJob Original Way", Severity.DEBUG);
 					// Execute the external Service and get the Response Entity
@@ -192,13 +221,18 @@ public class ServiceMessageWorker {
 
 					// If an internal error occurred during Service Handling, then throw an exception.
 					if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
-						throw new PiazzaJobException(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(), externalServiceResponse.getStatusCode().toString()), externalServiceResponse.getStatusCode().value());
+						throw new PiazzaJobException(
+								String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
+										externalServiceResponse.getStatusCode().toString()),
+								externalServiceResponse.getStatusCode().value());
 					}
 
 					// Process the Response and handle any Ingest that may result
 					String dataId = uuidFactory.getUUID();
 					String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
-					DataResult result = esHandler.processExecutionResult(service, outputType, producer, executeJobStatus, externalServiceResponse, dataId);
+
+					DataResult result = esHandler.processExecutionResult(service, outputType, producer, executeJobStatus,
+							externalServiceResponse, dataId);
 
 					if (Thread.interrupted()) {
 						throw new InterruptedException();
@@ -208,7 +242,8 @@ public class ServiceMessageWorker {
 					if (result != null) {
 						StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 						statusUpdate.setResult(result);
-						ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
+						ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate,
+								SPACE);
 						producer.send(prodRecord);
 					}
 
@@ -219,7 +254,8 @@ public class ServiceMessageWorker {
 					callback.onComplete(consumerRecord.key());
 					return new AsyncResult<String>("ServiceMessageWorker_Thread");
 				} else {
-					externalServiceResponse = new ResponseEntity<>("DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
+					externalServiceResponse = new ResponseEntity<>(
+							"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
 				}
 			} catch (IOException | ResourceAccessException ex) {
 				LOGGER.error("Exception occurred", ex);
@@ -256,7 +292,7 @@ public class ServiceMessageWorker {
 							new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
 				}
 			}
-		} catch (InterruptedException ex) { //NOSONAR normal handling of InterruptedException 
+		} catch (InterruptedException ex) { // NOSONAR normal handling of InterruptedException
 			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), Severity.INFORMATIONAL);
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 			TextResult result = new TextResult(ex.toString());
@@ -323,7 +359,8 @@ public class ServiceMessageWorker {
 		try {
 			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.
 			String url = String.format("%s/%s?name=%s", WORKFLOW_URL, "eventType", "piazza:executionComplete");
-			EventType eventType = objectMapper.readValue(restTemplate.getForObject(url, String.class), EventTypeListResponse.class).data.get(0);
+			EventType eventType = objectMapper.readValue(restTemplate.getForObject(url, String.class), EventTypeListResponse.class).data
+					.get(0);
 
 			// Construct Event object
 			Map<String, Object> data = new HashMap<String, Object>();
@@ -350,7 +387,7 @@ public class ServiceMessageWorker {
 			coreLogger.log(error, Severity.ERROR);
 		}
 	}
-	
+
 	/**
 	 * This method is for demonstrating ingest of raster data This will be refactored once the API changes have been
 	 * communicated to other team members

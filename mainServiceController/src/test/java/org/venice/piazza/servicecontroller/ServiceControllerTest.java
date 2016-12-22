@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -59,7 +60,6 @@ import model.data.DataType;
 import model.data.type.BodyDataType;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.RegisterServiceJob;
-import model.logger.Severity;
 import model.request.PiazzaJobRequest;
 import model.response.ErrorResponse;
 import model.response.Pagination;
@@ -470,6 +470,7 @@ public class ServiceControllerTest {
 	/**
 	 * test health check
 	 */
+	@Ignore
 	public void testHealthCheck() {
 		String htmlMessage = "<HTML><TITLE>Piazza Service Controller Welcome</TITLE>";
 		htmlMessage = htmlMessage + "<BODY><BR> Welcome from the Piazza Service Controller. "

@@ -178,15 +178,6 @@ public class ServiceMessageThreadManager {
 						if (job != null) {
 							// Log the request.
 							coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(), consumerRecord.key()), Severity.INFORMATIONAL);
-							
-							// Update the status to say the job is in progress
-							StatusUpdate su = new StatusUpdate();
-							su.setStatus(StatusUpdate.STATUS_RUNNING);
-
-							ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
-									mapper.writeValueAsString(su));
-							producer.send(prodRecord);
 
 							// start a new thread
 							Future<?> workerFuture = serviceMessageWorker.run(consumerRecord, producer, job, callback);

@@ -153,6 +153,8 @@ public class ServiceTaskManager {
 		String status = statusUpdate.getStatus();
 		if ((StatusUpdate.STATUS_CANCELLED.equals(status)) || (StatusUpdate.STATUS_ERROR.equals(status))
 				|| (StatusUpdate.STATUS_FAIL.equals(status)) || (StatusUpdate.STATUS_SUCCESS.equals(status))) {
+			piazzaLogger.log(String.format("Job %s For Service %s has reached final state %s. Removing from Service Jobs Queue.", jobId,
+					serviceId, status), Severity.INFORMATIONAL);
 			mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
 		}
 	}

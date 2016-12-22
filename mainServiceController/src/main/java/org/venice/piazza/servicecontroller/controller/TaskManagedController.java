@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
+import exception.InvalidInputException;
 import model.job.type.ExecuteServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
@@ -40,6 +41,7 @@ import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
 import model.response.ServiceJobResponse;
 import model.response.SuccessResponse;
+import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
 
@@ -80,7 +82,14 @@ public class TaskManagedController {
 			// Get the Job. This will mark the Job as being processed.
 			ExecuteServiceJob serviceJob = serviceTaskManager.getNextJobFromQueue(serviceId);
 			// Return
-			return new ResponseEntity<>(new ServiceJobResponse(serviceJob, serviceJob.getJobId()), HttpStatus.OK);
+			if (serviceJob != null) {
+				// Return Job Information
+				return new ResponseEntity<>(new ServiceJobResponse(serviceJob, serviceJob.getJobId()), HttpStatus.OK);
+			} else {
+				// No Job Found. Return Null in the Response.
+				return new ResponseEntity<>(new ServiceJobResponse(), HttpStatus.OK);
+			}
+
 		} catch (Exception exception) {
 			String error = String.format("Error Getting next Service Job for Service %s by User %s: %s", serviceId, userName,
 					exception.getMessage());
@@ -142,6 +151,11 @@ public class TaskManagedController {
 			// Log the Request
 			piazzaLogger.log(String.format("User %s Requesting Task-Managed Service Information for Service %s", userName, serviceId),
 					Severity.INFORMATIONAL);
+			// Ensure this Service exists and is Task-Managed
+			Service service = mongoAccessor.getServiceById(serviceId);
+			if ((service.getIsTaskManaged() == null) || (service.getIsTaskManaged() == false)) {
+				throw new InvalidInputException("The specified Service is not a Task-Managed Service.");
+			}
 			// Fill Map with Metadata
 			Map<String, Object> response = mongoAccessor.getServiceQueueCollectionMetadata(serviceId);
 			// Respond

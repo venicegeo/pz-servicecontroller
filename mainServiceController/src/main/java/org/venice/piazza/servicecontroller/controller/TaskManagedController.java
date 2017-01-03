@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
@@ -79,6 +80,13 @@ public class TaskManagedController {
 			// Log the Request
 			piazzaLogger.log(String.format("User %s Requesting to perform Work on Next Job for %s Service Queue.", userName, serviceId),
 					Severity.INFORMATIONAL);
+
+			// Check for Access
+			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
+			if (!canAccess) {
+				throw new ResourceAccessException("Service does not allow this user to access.");
+			}
+
 			// Get the Job. This will mark the Job as being processed.
 			ExecuteServiceJob serviceJob = serviceTaskManager.getNextJobFromQueue(serviceId);
 			// Return
@@ -121,6 +129,13 @@ public class TaskManagedController {
 			// Log the Request
 			piazzaLogger.log(String.format("User %s Requesting to Update Job Status for Job %s for Task-Managed Service.", userName, jobId),
 					Severity.INFORMATIONAL);
+
+			// Check for Access
+			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
+			if (!canAccess) {
+				throw new ResourceAccessException("Service does not allow this user to access.");
+			}
+
 			// Process the Update
 			serviceTaskManager.processStatusUpdate(serviceId, jobId, statusUpdate);
 			// Return Success
@@ -151,6 +166,13 @@ public class TaskManagedController {
 			// Log the Request
 			piazzaLogger.log(String.format("User %s Requesting Task-Managed Service Information for Service %s", userName, serviceId),
 					Severity.INFORMATIONAL);
+
+			// Check for Access
+			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
+			if (!canAccess) {
+				throw new ResourceAccessException("Service does not allow this user to access.");
+			}
+
 			// Ensure this Service exists and is Task-Managed
 			Service service = mongoAccessor.getServiceById(serviceId);
 			if ((service.getIsTaskManaged() == null) || (service.getIsTaskManaged() == false)) {

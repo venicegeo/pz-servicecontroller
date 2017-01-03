@@ -653,6 +653,24 @@ public class MongoAccessor {
 	}
 
 	/**
+	 * Determines if the User is able to access the Service Queue for the specified service or not.
+	 * 
+	 * @param serviceId
+	 *            The ID of the Service
+	 * @param username
+	 *            The user name
+	 * @return True if able to access, false if not.
+	 */
+	public boolean canUserAccessServiceQueue(String serviceId, String username) throws ResourceAccessException {
+		Service service = getServiceById(serviceId);
+		if (service.getTaskAdministrators() != null) {
+			return service.getTaskAdministrators().contains(username);
+		} else {
+			return false;
+		}
+	}
+
+	/**
 	 * Gets the MongoDB Collection name for the list of Service Jobs for a specific Service.
 	 * <p>
 	 * Each Task-Managed Service will receive its own collection name based on its Service ID. By having separate

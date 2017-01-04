@@ -136,7 +136,7 @@ public class ServiceTaskManager {
 		// Validate the Service ID exists, and contains the Job ID
 		ServiceJob serviceJob = mongoAccessor.getServiceJob(serviceId, jobId);
 		if (serviceJob == null) {
-			throw new InvalidInputException(String.format("Cannot find the specified Job - does not exist in queue.", jobId, serviceId));
+			throw new InvalidInputException(String.format("Cannot find the specified Job %s for this Service %s", jobId, serviceId));
 		}
 		// Send the Update to Kafka
 		ProducerRecord<String, String> statusUpdateRecord;

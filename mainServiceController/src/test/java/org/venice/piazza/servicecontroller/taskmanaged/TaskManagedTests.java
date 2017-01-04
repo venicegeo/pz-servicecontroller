@@ -181,10 +181,18 @@ public class TaskManagedTests {
 	}
 
 	/**
-	 * Test logic that processes timed out service jobs
+	 * Test logic that processes timed out service jobs. Ensures no exceptions are thrown.
 	 */
 	@Test
 	public void processTimeoutJobs() {
+		// Mock
+		ServiceJob mockJob = new ServiceJob("job123", "service123");
+		mockJob.setTimeouts(0);
 
+		// Test - No Timeout exceeded
+		serviceTaskManager.processTimedOutServiceJob("service123", mockJob);
+
+		// Test - Timeout exceeded
+		mockJob.setTimeouts(100);
 	}
 }

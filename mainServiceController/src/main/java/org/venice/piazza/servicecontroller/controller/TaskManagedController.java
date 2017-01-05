@@ -103,7 +103,8 @@ public class TaskManagedController {
 					exception.getMessage());
 			LOGGER.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "errorGettingServiceJob", serviceId));
-			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
+			HttpStatus status = exception instanceof ResourceAccessException ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR;
+			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), status);
 		}
 	}
 
@@ -145,7 +146,8 @@ public class TaskManagedController {
 					exception.getMessage());
 			LOGGER.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToUpdateServiceJob", jobId));
-			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
+			HttpStatus status = exception instanceof ResourceAccessException ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR;
+			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), status);
 		}
 	}
 
@@ -188,7 +190,8 @@ public class TaskManagedController {
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToRetrieveServiceQueueMetadata", serviceId));
 			Map<String, Object> response = new HashMap<>();
 			response.put("message", error);
-			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+			HttpStatus status = exception instanceof ResourceAccessException ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR;
+			return new ResponseEntity<>(response, status);
 		}
 	}
 }

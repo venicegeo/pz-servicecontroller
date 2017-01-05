@@ -567,8 +567,8 @@ public class MongoAccessor {
 		// Increment the failure count.
 		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()),
 				DBUpdate.set("timeouts", serviceJob.getTimeouts() + 1));
-		// Delete the previous Started On date.
-		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()), DBUpdate.set("startedOn", null));
+		// Delete the previous Started On date, so that it can be picked up again.
+		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()), DBUpdate.unset("startedOn"));
 	}
 
 	/**

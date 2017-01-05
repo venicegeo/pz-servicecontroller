@@ -490,7 +490,7 @@ public class MongoAccessor {
 	public synchronized ServiceJob getNextJobInServiceQueue(String serviceId) {
 		// Query for Service Jobs, sort by Queue Time, so that we get the single most stale Job. Ignore Jobs that have
 		// already been started. Find the latest.
-		DBCursor<ServiceJob> cursor = getServiceJobCollection(serviceId).find().sort(DBSort.desc("queuedOn"))
+		DBCursor<ServiceJob> cursor = getServiceJobCollection(serviceId).find().sort(DBSort.asc("queuedOn"))
 				.and(DBQuery.is("startedOn", null)).limit(1);
 		if (!cursor.hasNext()) {
 			// No available Jobs to be processed.

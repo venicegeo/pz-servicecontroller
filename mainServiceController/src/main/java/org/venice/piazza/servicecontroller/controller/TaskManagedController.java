@@ -103,7 +103,12 @@ public class TaskManagedController {
 					exception.getMessage());
 			LOGGER.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "errorGettingServiceJob", serviceId));
-			HttpStatus status = exception instanceof ResourceAccessException ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR;
+			HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+			if (exception instanceof ResourceAccessException) {
+				status = HttpStatus.UNAUTHORIZED;
+			} else if (exception instanceof InvalidInputException) {
+				status = HttpStatus.NOT_FOUND;
+			}
 			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), status);
 		}
 	}
@@ -146,7 +151,12 @@ public class TaskManagedController {
 					exception.getMessage());
 			LOGGER.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToUpdateServiceJob", jobId));
-			HttpStatus status = exception instanceof ResourceAccessException ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR;
+			HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+			if (exception instanceof ResourceAccessException) {
+				status = HttpStatus.UNAUTHORIZED;
+			} else if (exception instanceof InvalidInputException) {
+				status = HttpStatus.NOT_FOUND;
+			}
 			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), status);
 		}
 	}
@@ -190,7 +200,12 @@ public class TaskManagedController {
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToRetrieveServiceQueueMetadata", serviceId));
 			Map<String, Object> response = new HashMap<>();
 			response.put("message", error);
-			HttpStatus status = exception instanceof ResourceAccessException ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR;
+			HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+			if (exception instanceof ResourceAccessException) {
+				status = HttpStatus.UNAUTHORIZED;
+			} else if (exception instanceof InvalidInputException) {
+				status = HttpStatus.NOT_FOUND;
+			}
 			return new ResponseEntity<>(response, status);
 		}
 	}

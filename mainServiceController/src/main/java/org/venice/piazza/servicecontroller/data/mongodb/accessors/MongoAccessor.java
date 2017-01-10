@@ -49,6 +49,7 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
 
+import exception.InvalidInputException;
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.logger.AuditElement;
@@ -661,12 +662,18 @@ public class MongoAccessor {
 	 *            The user name
 	 * @return True if able to access, false if not.
 	 */
-	public boolean canUserAccessServiceQueue(String serviceId, String username) throws ResourceAccessException {
-		Service service = getServiceById(serviceId);
-		if (service.getTaskAdministrators() != null) {
-			return service.getTaskAdministrators().contains(username);
-		} else {
-			return false;
+	public boolean canUserAccessServiceQueue(String serviceId, String username) throws InvalidInputException {
+		try {
+			Service service = getServiceById(serviceId);
+			if (service.getTaskAdministrators() != null) {
+				return service.getTaskAdministrators().contains(username);
+			} else {
+				return false;
+			}
+		} catch (ResourceAccessException exception) {
+			LOGGER.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %", username, serviceId),
+					exception);
+			throw new InvalidInputException("Service Not Found.");
 		}
 	}
 

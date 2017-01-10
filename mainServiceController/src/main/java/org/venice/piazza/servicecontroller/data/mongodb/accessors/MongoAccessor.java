@@ -671,7 +671,7 @@ public class MongoAccessor {
 				return false;
 			}
 		} catch (ResourceAccessException exception) {
-			LOGGER.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %", username, serviceId),
+			LOGGER.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %s", username, serviceId),
 					exception);
 			throw new InvalidInputException("Service Not Found.");
 		}

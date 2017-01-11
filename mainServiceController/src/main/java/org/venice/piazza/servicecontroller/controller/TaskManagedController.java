@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
@@ -142,6 +143,11 @@ public class TaskManagedController {
 				throw new ResourceAccessException("Service does not allow this user to access.");
 			}
 
+			// Simple Validation
+			if ((statusUpdate.getStatus() == null) || (statusUpdate.getStatus().isEmpty())) {
+				throw new HttpServerErrorException(HttpStatus.BAD_REQUEST, "`status` property must be provided in Update payload.");
+			}
+
 			// Process the Update
 			serviceTaskManager.processStatusUpdate(serviceId, jobId, statusUpdate);
 			// Return Success
@@ -156,6 +162,8 @@ public class TaskManagedController {
 				status = HttpStatus.UNAUTHORIZED;
 			} else if (exception instanceof InvalidInputException) {
 				status = HttpStatus.NOT_FOUND;
+			} else if (exception instanceof HttpServerErrorException) {
+				status = ((HttpServerErrorException) exception).getStatusCode();
 			}
 			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), status);
 		}

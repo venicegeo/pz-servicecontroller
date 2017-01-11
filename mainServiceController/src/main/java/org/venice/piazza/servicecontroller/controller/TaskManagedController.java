@@ -180,7 +180,7 @@ public class TaskManagedController {
 	 */
 	@RequestMapping(value = {
 			"/service/{serviceId}/task/metadata" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Map<String, Object>> getServiceQueueData(@RequestParam(value = "userName", required = true) String userName,
+	public ResponseEntity<?> getServiceQueueData(@RequestParam(value = "userName", required = true) String userName,
 			@PathVariable(value = "serviceId") String serviceId) {
 		try {
 			// Log the Request
@@ -201,20 +201,18 @@ public class TaskManagedController {
 			// Fill Map with Metadata
 			Map<String, Object> response = mongoAccessor.getServiceQueueCollectionMetadata(serviceId);
 			// Respond
-			return new ResponseEntity<>(response, HttpStatus.OK);
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Could not retrieve Service Queue data for %s : %s", serviceId, exception.getMessage());
 			LOGGER.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToRetrieveServiceQueueMetadata", serviceId));
-			Map<String, Object> response = new HashMap<>();
-			response.put("message", error);
 			HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 			if (exception instanceof ResourceAccessException) {
 				status = HttpStatus.UNAUTHORIZED;
 			} else if (exception instanceof InvalidInputException) {
 				status = HttpStatus.NOT_FOUND;
 			}
-			return new ResponseEntity<>(response, status);
+			return new ResponseEntity<String>(error, status);
 		}
 	}
 }

@@ -138,6 +138,11 @@ public class ServiceTaskManager {
 				if (job.getJobType() instanceof ExecuteServiceJob) {
 					ExecuteServiceJob executeJob = (ExecuteServiceJob) job.getJobType();
 					String serviceId = executeJob.getData().getServiceId();
+
+					// Log the cancellation
+					piazzaLogger.log(String.format("Removing Service Job %s from Service Queue for %s", jobId, serviceId),
+							Severity.INFORMATIONAL);
+
 					// Determine if the Service ID is Task-Managed
 					Service service = mongoAccessor.getServiceById(serviceId);
 					if (service.getIsTaskManaged() == true) {
@@ -158,6 +163,10 @@ public class ServiceTaskManager {
 							LOGGER.error(error, exception);
 							piazzaLogger.log(error, Severity.ERROR);
 						}
+
+						// Log the success
+						piazzaLogger.log(String.format("Successfully removed Service Job %s from Service Queue for %s", jobId, serviceId),
+								Severity.INFORMATIONAL);
 					}
 				}
 			}

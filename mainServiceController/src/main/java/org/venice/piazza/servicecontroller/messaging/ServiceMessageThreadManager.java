@@ -29,7 +29,6 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.async.AsyncServiceInstanceScheduler;
+import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,7 +49,6 @@ import model.job.type.AbortJob;
 import model.job.type.ExecuteServiceJob;
 import model.logger.Severity;
 import model.request.PiazzaJobRequest;
-import model.status.StatusUpdate;
 import util.PiazzaLogger;
 
 @Component
@@ -60,7 +59,7 @@ public class ServiceMessageThreadManager {
 	private String KAFKA_HOST;
 	private String KAFKA_PORT;
 	private String KAFKA_GROUP;
-		
+
 	/*
 	 * TODO need to determine how statuses will be sent to update the job (Call back?)
 	 */
@@ -70,7 +69,7 @@ public class ServiceMessageThreadManager {
 	private final AtomicBoolean closed;
 
 	private Map<String, Future<?>> runningServiceRequests;
-	
+
 	@Value("${SPACE}")
 	private String SPACE;
 
@@ -82,12 +81,15 @@ public class ServiceMessageThreadManager {
 
 	@Autowired
 	ServiceMessageWorker serviceMessageWorker;
-	
+
+	@Autowired
+	private ServiceTaskManager serviceTaskManager;
+
 	@Autowired
 	private AsyncServiceInstanceScheduler asyncServiceInstanceManager;
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
-	
+
 	/**
 	 * Constructor for ServiceMessageThreadManager
 	 */
@@ -97,11 +99,11 @@ public class ServiceMessageThreadManager {
 	}
 
 	/**
-	 * Initializing stuff 
+	 * Initializing stuff
 	 */
 	@PostConstruct
 	public void initialize() {
-		
+
 		// Initialize dynamic topic names
 		EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", (new ExecuteServiceJob()).getClass().getSimpleName(), SPACE);
 
@@ -141,7 +143,7 @@ public class ServiceMessageThreadManager {
 		consumer.subscribe(topics);
 		kafkaListenerThread.start();
 
-		// Start polling for Kafka Abort Jobs on the unique Consumer.	
+		// Start polling for Kafka Abort Jobs on the unique Consumer.
 		Thread pollAbortThread = new Thread() {
 			@Override
 			public void run() {
@@ -177,7 +179,8 @@ public class ServiceMessageThreadManager {
 
 						if (job != null) {
 							// Log the request.
-							coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(), consumerRecord.key()), Severity.INFORMATIONAL);
+							coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(),
+									consumerRecord.key()), Severity.INFORMATIONAL);
 
 							// start a new thread
 							Future<?> workerFuture = serviceMessageWorker.run(consumerRecord, producer, job, callback);
@@ -198,15 +201,14 @@ public class ServiceMessageThreadManager {
 	}
 
 	/**
-	 * Begins listening for Abort Jobs. If a Job is owned by this component,
-	 * then it will be terminated.
+	 * Begins listening for Abort Jobs. If a Job is owned by this component, then it will be terminated.
 	 */
 	public void pollAbortServiceJobs() {
 		Consumer<String, String> uniqueConsumer;
 		uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT,
 				String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
 		ObjectMapper mapper = new ObjectMapper();
-		
+
 		try {
 			// Create the Unique Consumer
 
@@ -230,21 +232,26 @@ public class ServiceMessageThreadManager {
 						coreLogger.log(error, Severity.ERROR);
 						continue;
 					}
-					
+
 					// Determine if this a Sync or Async job
 					if (runningServiceRequests.containsKey(jobId)) {
 						// Cancel the Running Synchronous Job by terminating its thread
 						boolean cancelled = runningServiceRequests.get(jobId).cancel(true);
 						if (cancelled) {
 							// Log the cancellation has occurred
-							coreLogger.log(String.format("Successfully requested termination of Job thread for Job ID %s", jobId), Severity.INFORMATIONAL);
+							coreLogger.log(String.format("Successfully requested termination of Job thread for Job ID %s", jobId),
+									Severity.INFORMATIONAL);
 						} else {
-							coreLogger.log(String.format("Attempted to Cancel running job thread for ID %s, but the thread could not be forcefully cancelled.", jobId), Severity.ERROR);
+							coreLogger.log(String.format(
+									"Attempted to Cancel running job thread for ID %s, but the thread could not be forcefully cancelled.",
+									jobId), Severity.ERROR);
 						}
 						// Remove it from the list of Running Jobs
 						runningServiceRequests.remove(jobId);
 					} else {
-						// Cancel the running Asynchronous Job
+						// Is this a Task Managed Job? Remove it from the Jobs queue if it is pending.
+						serviceTaskManager.cancelJob(jobId);
+						// Is this an Async Job? Send a cancellation to the running service.
 						asyncServiceInstanceManager.cancelInstance(jobId);
 					}
 
@@ -261,12 +268,12 @@ public class ServiceMessageThreadManager {
 			uniqueConsumer.close();
 		}
 	}
-	
+
 	public ObjectMapper makeObjectMapper() {
 		return new ObjectMapper();
 	}
-	
-	public AtomicBoolean makeAtomicBoolean () {
+
+	public AtomicBoolean makeAtomicBoolean() {
 		return new AtomicBoolean();
 	}
 }

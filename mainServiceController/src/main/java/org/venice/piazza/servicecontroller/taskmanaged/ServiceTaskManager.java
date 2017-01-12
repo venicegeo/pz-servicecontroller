@@ -39,6 +39,7 @@ import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
+import model.service.metadata.Service;
 import model.service.taskmanaged.ServiceJob;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
@@ -116,6 +117,37 @@ public class ServiceTaskManager {
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: " + exception.getMessage();
+			LOGGER.error(error, exception);
+			piazzaLogger.log(error, Severity.ERROR);
+		}
+	}
+
+	/**
+	 * Attempts to cancel a Job. This will use a Job lookup in order to find the Service that was executed. If this
+	 * Service was task managed, then that Job will be removed from the queue.
+	 * 
+	 * @param jobId
+	 *            The ID of the Job to attempt to cancel.
+	 */
+	public void cancelJob(String jobId) {
+		try {
+			// Attempt to get the Service that executed this Job
+			Job job = mongoAccessor.getJobById(jobId);
+			if (job != null) {
+				// If this was an Execute Service Job
+				if (job.getJobType() instanceof ExecuteServiceJob) {
+					ExecuteServiceJob executeJob = (ExecuteServiceJob) job.getJobType();
+					String serviceId = executeJob.getData().getServiceId();
+					// Determine if the Service ID is Task-Managed
+					Service service = mongoAccessor.getServiceById(serviceId);
+					if (service.getIsTaskManaged() == true) {
+						// If this is a Task Managed Service, then remove the Job from the Queue.
+						mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
+					}
+				}
+			}
+		} catch (Exception exception) {
+			String error = String.format("Error Removing Job %s from a Task-Managed Service Queue : %s", jobId, exception.getMessage());
 			LOGGER.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}

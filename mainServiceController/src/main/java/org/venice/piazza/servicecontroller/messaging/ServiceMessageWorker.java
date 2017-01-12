@@ -199,6 +199,7 @@ public class ServiceMessageWorker {
 					} else if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
 						// If this is a Task Managed service, then insert this Job into the Task Management queue.
 						serviceTaskManager.addJobToQueue(jobItem);
+						callback.onComplete(consumerRecord.key());
 						return null;
 					}
 

@@ -143,6 +143,21 @@ public class ServiceTaskManager {
 					if (service.getIsTaskManaged() == true) {
 						// If this is a Task Managed Service, then remove the Job from the Queue.
 						mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
+						// Send the Kafka Message that this Job has been cancelled
+						StatusUpdate statusUpdate = new StatusUpdate();
+						statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
+						ProducerRecord<String, String> statusUpdateRecord;
+						try {
+							statusUpdateRecord = new ProducerRecord<String, String>(
+									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+									objectMapper.writeValueAsString(statusUpdate));
+							producer.send(statusUpdateRecord);
+						} catch (JsonProcessingException exception) {
+							String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId,
+									exception.getMessage());
+							LOGGER.error(error, exception);
+							piazzaLogger.log(error, Severity.ERROR);
+						}
 					}
 				}
 			}

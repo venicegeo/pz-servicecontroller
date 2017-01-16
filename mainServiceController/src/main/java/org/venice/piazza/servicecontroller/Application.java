@@ -80,15 +80,7 @@ public class Application extends SpringBootServletInitializer {
 		return restTemplate;
 	}
 
-//	@Bean
-//	public Client getClient() throws UnknownHostException {
-//		Settings settings = Settings.settingsBuilder().put("cluster.name", clustername).build();
-//		TransportClient transportClient = TransportClient.builder().settings(settings).build();
-//		transportClient.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(elasticSearchHost, elasticSearchPort)));
-//		return transportClient;
-//	}
 	public static void main(String[] args) {
-
 		ApplicationContext ctx = SpringApplication.run(Application.class, args); //NOSONAR
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment

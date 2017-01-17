@@ -115,9 +115,8 @@
 		<dependency>
 			<groupId>org.venice.piazza</groupId>
 			<artifactId>pz-jobcommon</artifactId>
-			<version>elasticlogging</version>
-<!-- 			<version>Sprint06-281-g5e93cff</version> -->
-		</dependency>		
+			<version>Sprint06-296-g6366112</version>
+		</dependency>
 	
 		<dependency>
 			<groupId>org.mongojack</groupId>

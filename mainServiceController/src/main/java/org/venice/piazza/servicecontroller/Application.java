@@ -29,12 +29,14 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
+
 
 /**
  * Main class for the pz-servicecontroller. Launches the application
@@ -46,6 +48,7 @@ import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
 @SpringBootApplication
 @EnableConfigurationProperties
 @EnableAsync
+@ComponentScan({"org.venice.piazza.servicecontroller","util"})
 @EnableMongoRepositories("org.venice.piazza.serviceregistry.data.mongodb.repository")
 /* Enable Boot application and MongoRepositories */
 public class Application extends SpringBootServletInitializer {
@@ -78,7 +81,6 @@ public class Application extends SpringBootServletInitializer {
 	}
 
 	public static void main(String[] args) {
-
 		ApplicationContext ctx = SpringApplication.run(Application.class, args); //NOSONAR
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment

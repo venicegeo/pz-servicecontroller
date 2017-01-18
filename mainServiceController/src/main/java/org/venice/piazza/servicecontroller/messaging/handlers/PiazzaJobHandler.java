@@ -33,5 +33,5 @@ public interface PiazzaJobHandler {
 	 * @return
 	 * @throws InterruptedException 
 	 */
-	public ResponseEntity<String> handle(PiazzaJobType jobRequest) throws Exception;
+	public ResponseEntity<String> handle(PiazzaJobType jobRequest) throws InterruptedException;
 }

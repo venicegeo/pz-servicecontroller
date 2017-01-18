@@ -63,9 +63,9 @@ import util.PiazzaLogger;
 import util.UUIDFactory;
 
 /**
- * Handler for handling executeService requests.  This handler is used 
- * when execute-service kafka topics are received or when clients utilize the 
- * ServiceController service.
+ * Handler for handling executeService requests. This handler is used when execute-service kafka topics are received or
+ * when clients utilize the ServiceController service.
+ * 
  * @author mlynum & Sonny.Saniev
  * @version 1.0
  */
@@ -87,67 +87,65 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private String SPACE;
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ExecuteServiceHandler.class);
-	
-    /**
-     * Handler for handling execute service requests. This method will execute a service given 
-     * the resourceId and return a response to the job manager.
-     * (non-Javadoc)
-     * @throws InterruptedException 
-     * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
-     */
+
+	/**
+	 * Handler for handling execute service requests. This method will execute a service given the resourceId and return
+	 * a response to the job manager. (non-Javadoc)
+	 * 
+	 * @throws InterruptedException
+	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
+	 */
 	@Override
-	public ResponseEntity<String> handle (PiazzaJobType jobRequest ) throws InterruptedException {
+	public ResponseEntity<String> handle(PiazzaJobType jobRequest) throws InterruptedException {
 		coreLogger.log("Executing a Service.", Severity.DEBUG);
 
-
-		ExecuteServiceJob job = (ExecuteServiceJob)jobRequest;
+		ExecuteServiceJob job = (ExecuteServiceJob) jobRequest;
 		// Check to see if this is a valid request
-		if (job != null)  {
+		if (job != null) {
 			// Get the ResourceMetadata
 			ExecuteServiceData esData = job.data;
 			ResponseEntity<String> handleResult = handle(esData);
 			ResponseEntity<String> result = new ResponseEntity<>(handleResult.getBody(), handleResult.getStatusCode());
 			coreLogger.log("The result is " + result, Severity.DEBUG);
-			
+
 			// TODO Use the result, send a message with the resource Id and jobId
 			return result;
-		}
-		else {
+		} else {
 			coreLogger.log("Job is null", Severity.ERROR);
 			return new ResponseEntity<>("Job is null", HttpStatus.BAD_REQUEST);
 		}
 	}
 
 	/**
-	 * Handles requests to execute a service. 
-	 * TODO this needs to change to leverage pz-jbcommon ExecuteServiceMessage after it builds.
+	 * Handles requests to execute a service. TODO this needs to change to leverage pz-jbcommon ExecuteServiceMessage
+	 * after it builds.
 	 * 
 	 * @param message
 	 * @return the Response as a String
-	 * @throws InterruptedException 
+	 * @throws InterruptedException
 	 */
 	public ResponseEntity<String> handle(ExecuteServiceData data) throws InterruptedException {
 		coreLogger.log(String.format("Beginning execution of Service ID %s", data.getServiceId()), Severity.INFORMATIONAL);
 		ResponseEntity<String> responseEntity = null;
 		String serviceId = data.getServiceId();
 		Service sMetadata = null;
-	 	// Default request mimeType application/json
+		// Default request mimeType application/json
 		String requestMimeType = "application/json";
 		try {
 			// Accessor throws exception if can't find service
-			sMetadata= accessor.getServiceById(serviceId);
-	
+			sMetadata = accessor.getServiceById(serviceId);
+
 			ObjectMapper om = new ObjectMapper();
-		    String result = om.writeValueAsString(sMetadata);
-		    coreLogger.log(result, Severity.INFORMATIONAL);
+			String result = om.writeValueAsString(sMetadata);
+			coreLogger.log(result, Severity.INFORMATIONAL);
 		} catch (ResourceAccessException | JsonProcessingException ex) {
 			LOGGER.error("Exception occurred", ex);
 		}
 		if (sMetadata != null) {
 			String rawURL = sMetadata.getUrl();
-		    coreLogger.log(String.format("Executing Service with URL %s with ID %s", rawURL, serviceId),  Severity.INFORMATIONAL);
+			coreLogger.log(String.format("Executing Service with URL %s with ID %s", rawURL, serviceId), Severity.INFORMATIONAL);
 			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);
-	
+
 			Map<String, DataType> postObjects = new HashMap<>();
 			Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
 			String postString = "";
@@ -155,7 +153,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				Entry<String, DataType> entry = it.next();
 				String inputName = entry.getKey();
 				coreLogger.log("The parameter is " + inputName, Severity.DEBUG);
-		
+
 				if (entry.getValue() instanceof URLParameterDataType) {
 					String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
 					if (inputName.length() == 0) {
@@ -181,7 +179,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					postObjects.put(inputName, entry.getValue());
 				}
 			}
-	
+
 			coreLogger.log("Final Builder URL" + builder.toUriString(), Severity.INFORMATIONAL);
 			if (postString.length() > 0 && postObjects.size() > 0) {
 				coreLogger.log("String Input not consistent with other Inputs", Severity.ERROR);
@@ -196,7 +194,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
 				}
 			}
-			
+
 			URI url = URI.create(builder.toUriString());
 			if (sMetadata.getMethod().equals("GET")) {
 				coreLogger.log("GetForEntity URL=" + url, Severity.INFORMATIONAL);
@@ -213,24 +211,24 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				try {
 					responseEntity = template.postForEntity(url, requestEntity, String.class);
 				} catch (HttpServerErrorException hex) {
+					LOGGER.info(String.format("Server Error for URL %s:  %s", url, hex.getResponseBodyAsString()), hex);
 					throw new InterruptedException(hex.getResponseBodyAsString());
 				}
-			}
-			else
-			{
+			} else {
 				coreLogger.log("Request method type not specified", Severity.ERROR);
 				return new ResponseEntity<>("Request method type not specified", HttpStatus.BAD_REQUEST);
 			}
 
-			coreLogger.log(String.format("Triggered execution of service %s", sMetadata.getServiceId()), Severity.INFORMATIONAL, new AuditElement("serviceController", "executingExternalService", sMetadata.getServiceId()));
-		} else
-		{
-			coreLogger.log(String.format("The service was NOT found id %s", data.getServiceId()), Severity.ERROR, new AuditElement("serviceController", "notFound", data.getServiceId()));
+			coreLogger.log(String.format("Triggered execution of service %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
+					new AuditElement("serviceController", "executingExternalService", sMetadata.getServiceId()));
+		} else {
+			coreLogger.log(String.format("The service was NOT found id %s", data.getServiceId()), Severity.ERROR,
+					new AuditElement("serviceController", "notFound", data.getServiceId()));
 			return new ResponseEntity<>("Service Id " + data.getServiceId() + " not found", HttpStatus.NOT_FOUND);
 		}
 		return responseEntity;
 	}
-	
+
 	/**
 	 * This method creates a MediaType based on the mimetype that was provided
 	 * 
@@ -255,7 +253,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 		return mediaType;
 	}
-	
+
 	/**
 	 * create HttpEntity
 	 */
@@ -315,8 +313,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					coreLogger.log("The data being sent is " + tr.content, Severity.DEBUG);
 
 					data.dataType = tr;
-				}
-				else if ((null != data) && (null != data.getDataType())) { //NOSONAR
+				} else if ((null != data) && (null != data.getDataType())) { // NOSONAR
 					data.dataId = dataId;
 				}
 			} catch (Exception ex) {
@@ -324,11 +321,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				coreLogger.log(ex.getMessage(), Severity.ERROR);
 
 				// Checking payload type and settings the correct type
-				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) { //NOSONAR
+				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) { // NOSONAR
 					TextDataType newDataType = new TextDataType();
 					newDataType.content = serviceControlString;
 					data.dataType = newDataType;
-				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) { //NOSONAR
+				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) { // NOSONAR
 					GeoJsonDataType newDataType = new GeoJsonDataType();
 					newDataType.setGeoJsonContent(serviceControlString);
 					data.dataType = newDataType;

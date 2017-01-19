@@ -252,7 +252,14 @@ public class ServiceController {
 			}
 
 			// Get the existing service.
-			Service existingService = accessor.getServiceById(serviceId);
+			Service existingService;
+			try {
+				existingService = accessor.getServiceById(serviceId);
+			} catch (ResourceAccessException rae) {
+				LOGGER.info(rae.getMessage(), rae);
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(rae.getMessage(), "ServiceController"),
+						HttpStatus.NOT_FOUND);
+			}
 
 			// Log
 			logger.log(String.format("Updating Service with ID %s", serviceId), Severity.INFORMATIONAL);
@@ -300,25 +307,6 @@ public class ServiceController {
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"),
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-	}
-
-	/**
-	 * Updates metadata about an existing service registered in the
-	 * ServiceController.
-	 * 
-	 * This service is meant for internal Piazza use, Swiss-Army-Knife (SAK)
-	 * administration and for testing of the serviceController.
-	 * 
-	 * @param serviceMetadata
-	 *            metadata bout the service
-	 * @return A Json message with the resourceId {resourceId="<the id>"}
-	 */
-	@RequestMapping(value = "/updateService", method = RequestMethod.PUT, headers = "Accept=application/json", produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody String updateService(@RequestBody Service serviceMetadata) {
-		String result = usHandler.handle(serviceMetadata);
-		logger.log("ServiceController: Result is" + "{\"resourceId:" + "\"" + result + "\"}", Severity.DEBUG);
-		String responseString = "{\"resourceId\":" + "\"" + result + "\"}";
-		return responseString;
 	}
 
 	/**

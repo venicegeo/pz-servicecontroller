@@ -349,22 +349,6 @@ public class ServiceControllerTest {
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
 		assertThat("The update of service metadata should be unsuccessful", piazzaResponse.getBody(), instanceOf(ErrorResponse.class));
 	}
-	
-	@Test
-	/**
-	 * Update Service Info
-	 */
-	public void testUpdateService() {
-		
-		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
-		service.setServiceId(testServiceId);
-		Mockito.doReturn(testServiceId).when(usHandlerMock).handle(service);
-
-		String result = sc.updateService(service);
-		assertTrue("The serviceId should be in the response", result.contains(testServiceId));
-
-
-	}
 
 	@Test
 	/**

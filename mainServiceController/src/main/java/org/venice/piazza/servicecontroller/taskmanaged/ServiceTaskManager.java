@@ -65,7 +65,7 @@ public class ServiceTaskManager {
 	@Value("${SPACE}")
 	private String SPACE;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
-	private String KAFKA_HOST;
+	private String KAFKA_HOSTS;
 	@Value("${task.managed.error.limit}")
 	private Integer TIMEOUT_LIMIT_COUNT;
 
@@ -81,9 +81,7 @@ public class ServiceTaskManager {
 
 	@PostConstruct
 	public void initialize() {
-		String kafkaHost = KAFKA_HOST.split(":")[0];
-		String kafkaPort = KAFKA_HOST.split(":")[1];
-		producer = KafkaClientFactory.getProducer(kafkaHost, kafkaPort);
+		producer = KafkaClientFactory.getProducer(KAFKA_HOSTS);
 	}
 
 	/**

@@ -56,35 +56,29 @@ public class ServiceMessageThreadManager {
 
 	private String EXECUTE_SERVICE_JOB_TOPIC_NAME;
 
-	private String KAFKA_HOST;
-	private String KAFKA_PORT;
-	private String KAFKA_GROUP;
-
 	/*
 	 * TODO need to determine how statuses will be sent to update the job (Call back?)
 	 */
 	private Producer<String, String> producer;
 	private Consumer<String, String> consumer;
-	private List<String> topics;
-	private final AtomicBoolean closed;
-
 	private Map<String, Future<?>> runningServiceRequests;
-
+	private List<String> topics;
+	@Value("${vcap.services.pz-kafka.credentials.host}")
+	private String KAFKA_HOSTS;
+	@Value("${kafka.group.name}")
+	private String KAFKA_GROUP;
+	private final AtomicBoolean closed;
 	@Value("${SPACE}")
 	private String SPACE;
 
 	@Autowired
 	private CoreServiceProperties coreServiceProperties;
-
 	@Autowired
 	private PiazzaLogger coreLogger;
-
 	@Autowired
 	ServiceMessageWorker serviceMessageWorker;
-
 	@Autowired
 	private ServiceTaskManager serviceTaskManager;
-
 	@Autowired
 	private AsyncServiceInstanceScheduler asyncServiceInstanceManager;
 
@@ -109,23 +103,15 @@ public class ServiceMessageThreadManager {
 
 		topics = Arrays.asList(EXECUTE_SERVICE_JOB_TOPIC_NAME);
 
-		// Initialize the Kafka consumer/producer
-		String kafkaHostFull = coreServiceProperties.getKafkaHost();
-		KAFKA_GROUP = coreServiceProperties.getKafkaGroup();
-
-		KAFKA_HOST = kafkaHostFull.split(":")[0];
-		KAFKA_PORT = kafkaHostFull.split(":")[1];
-
 		coreLogger.log("============================================================", Severity.INFORMATIONAL);
 		coreLogger.log("EXECUTE_SERVICE_JOB_TOPIC_NAME=" + EXECUTE_SERVICE_JOB_TOPIC_NAME, Severity.INFORMATIONAL);
 		coreLogger.log("KAFKA_GROUP=" + KAFKA_GROUP, Severity.INFORMATIONAL);
-		coreLogger.log("KAFKA_HOST=" + KAFKA_HOST, Severity.INFORMATIONAL);
-		coreLogger.log("KAFKA_PORT=" + KAFKA_PORT, Severity.INFORMATIONAL);
+		coreLogger.log("KAFKA_HOSTS=" + KAFKA_HOSTS, Severity.INFORMATIONAL);
 		coreLogger.log("============================================================", Severity.INFORMATIONAL);
 
 		/* Initialize producer and consumer for the Kafka Queue */
-		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
-		consumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP);
+		producer = KafkaClientFactory.getProducer(KAFKA_HOSTS);
+		consumer = KafkaClientFactory.getConsumer(KAFKA_HOSTS, KAFKA_GROUP);
 
 		// Initialize the HashMap
 		runningServiceRequests = new HashMap<String, Future<?>>();
@@ -204,8 +190,7 @@ public class ServiceMessageThreadManager {
 	 * Begins listening for Abort Jobs. If a Job is owned by this component, then it will be terminated.
 	 */
 	public void pollAbortServiceJobs() {
-		Consumer<String, String> uniqueConsumer;
-		uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOST, KAFKA_PORT,
+		Consumer<String, String> uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOSTS,
 				String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
 		ObjectMapper mapper = new ObjectMapper();
 

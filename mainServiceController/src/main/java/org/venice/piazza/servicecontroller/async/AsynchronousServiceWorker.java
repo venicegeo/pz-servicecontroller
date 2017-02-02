@@ -67,7 +67,7 @@ public class AsynchronousServiceWorker {
 	@Value("${async.delete.endpoint}")
 	private String DELETE_ENDPOINT;
 	@Value("${vcap.services.pz-kafka.credentials.host}")
-	private String KAFKA_HOST_PORT;
+	private String KAFKA_HOSTS;
 	@Value("${SPACE}")
 	private String SPACE;
 	@Value("${async.status.error.limit}")
@@ -90,9 +90,7 @@ public class AsynchronousServiceWorker {
 
 	@PostConstruct
 	public void initialize() {
-		String KAFKA_HOST = KAFKA_HOST_PORT.split(":")[0];
-		String KAFKA_PORT = KAFKA_HOST_PORT.split(":")[1];
-		producer = KafkaClientFactory.getProducer(KAFKA_HOST, KAFKA_PORT);
+		producer = KafkaClientFactory.getProducer(KAFKA_HOSTS);
 	}
 
 	/**

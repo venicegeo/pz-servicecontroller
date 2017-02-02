@@ -67,7 +67,7 @@ public class TaskManagedTests {
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
 
-		ReflectionTestUtils.setField(serviceTaskManager, "KAFKA_HOST", "localhost:1234");
+		ReflectionTestUtils.setField(serviceTaskManager, "KAFKA_HOSTS", "localhost:1234");
 		ReflectionTestUtils.setField(serviceTaskManager, "SPACE", "UnitTest");
 		ReflectionTestUtils.setField(serviceTaskManager, "TIMEOUT_LIMIT_COUNT", 5);
 	}

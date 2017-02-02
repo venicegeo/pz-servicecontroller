@@ -45,6 +45,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 import com.mongodb.MongoTimeoutException;
@@ -109,7 +110,9 @@ public class MongoAccessor {
 		LOGGER.debug("====================================================");
 
 		try {
-			mongoClient = new MongoClient(new MongoClientURI(DATABASE_HOST + "?waitQueueMultiple=" + mongoThreadMultiplier));
+			MongoClientOptions.Builder builder = new MongoClientOptions.Builder();
+			mongoClient = new MongoClient(
+					new MongoClientURI(DATABASE_HOST, builder.threadsAllowedToBlockForConnectionMultiplier(mongoThreadMultiplier)));
 		} catch (Exception ex) {
 			String message = String.format("Error Contacting Mongo Host %s: %s", DATABASE_HOST, ex.getMessage());
 			logger.log(message, Severity.ERROR);

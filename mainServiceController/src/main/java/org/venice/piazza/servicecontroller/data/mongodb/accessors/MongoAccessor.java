@@ -89,6 +89,7 @@ public class MongoAccessor {
 	private String DATABASE_CREDENTIAL;
 	@Value("${mongo.thread.multiplier}")
 	private int mongoThreadMultiplier;
+	@Value("${mongo.db.collection.name}")
 	private String SERVICE_COLLECTION_NAME;
 	private static final String ASYNC_INSTANCE_COLLECTION_NAME = "AsyncServiceInstances";
 	private MongoClient mongoClient;
@@ -96,7 +97,6 @@ public class MongoAccessor {
 	private String SERVICE_QUEUE_COLLECTION_PREFIX;
 	@Value("${mongo.db.job.collection.name}")
 	private String JOB_COLLECTION_NAME;
-
 	@Value("${async.stale.instance.threshold.seconds}")
 	private int STALE_INSTANCE_THRESHOLD_SECONDS;
 	@Autowired

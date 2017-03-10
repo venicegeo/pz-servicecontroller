@@ -143,7 +143,7 @@ public class ServiceTaskManager {
 
 					// Determine if the Service ID is Task-Managed
 					Service service = mongoAccessor.getServiceById(serviceId);
-					if (service.getIsTaskManaged() == true) {
+					if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
 						// If this is a Task Managed Service, then remove the Job from the Queue.
 						mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
 						// Send the Kafka Message that this Job has been cancelled

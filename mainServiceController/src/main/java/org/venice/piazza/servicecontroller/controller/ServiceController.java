@@ -132,9 +132,17 @@ public class ServiceController {
 
 			String serviceId = rsHandler.handle(serviceJob.data);
 			return new ResponseEntity<PiazzaResponse>(new ServiceIdResponse(serviceId), HttpStatus.OK);
-		} catch (Exception exception) {
+		}
+		catch (InvalidInputException exception) {
 			LOGGER.error("Error Registering Service", exception);
-			logger.log(exception.toString(), Severity.ERROR);
+			logger.log(String.format("Error Registering Service: %s", exception.getMessage()), Severity.ERROR,
+					new AuditElement("serviceController", "registeringService", "jobRequest"));
+			return new ResponseEntity<PiazzaResponse>(
+					new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()), "Service Controller"),
+					HttpStatus.BAD_REQUEST);
+		}
+		catch (Exception exception) {
+			LOGGER.error("Error Registering Service", exception);
 			logger.log(String.format("Error Registering Service: %s", exception.getMessage()), Severity.ERROR,
 					new AuditElement("serviceController", "registeringService", "jobRequest"));
 			return new ResponseEntity<PiazzaResponse>(

@@ -356,7 +356,7 @@ public class MongoAccessor {
 
 		try {
 			if ((service = getServiceCollection().findOne(query)) == null) {
-				throw new ResourceAccessException("Service not found.");
+				throw new ResourceAccessException(String.format("Service not found : %s", serviceId));
 			}
 		} catch (MongoTimeoutException mte) {
 			LOGGER.error("MongoDB instance not available", mte);
@@ -693,7 +693,7 @@ public class MongoAccessor {
 		} catch (ResourceAccessException exception) {
 			LOGGER.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %s", username, serviceId),
 					exception);
-			throw new InvalidInputException("Service Not Found.");
+			throw new InvalidInputException(String.format("Service not found : %s", serviceId));
 		}
 	}
 

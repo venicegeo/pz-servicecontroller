@@ -122,7 +122,8 @@ public class ServiceController {
 		try {
 			RegisterServiceJob serviceJob = (RegisterServiceJob) jobRequest.jobType;
 
-			// For Task-Managed Services, URL is not required. For all other services, it is. Validate that here.
+			// For Task-Managed Services, URL is not required. For all other
+			// services, it is. Validate that here.
 			if ((serviceJob.data.getIsTaskManaged() == null) || (serviceJob.data.getIsTaskManaged() == false)) {
 				if ((serviceJob.data.getUrl() == null) || (serviceJob.data.getUrl().isEmpty())) {
 					// Throw validation error
@@ -132,21 +133,21 @@ public class ServiceController {
 
 			String serviceId = rsHandler.handle(serviceJob.data);
 			return new ResponseEntity<PiazzaResponse>(new ServiceIdResponse(serviceId), HttpStatus.OK);
-		}
-		catch (InvalidInputException exception) {
+		} catch (InvalidInputException exception) {
 			LOGGER.error("Error Registering Service", exception);
 			logger.log(String.format("Error Registering Service: %s", exception.getMessage()), Severity.ERROR,
 					new AuditElement("serviceController", "registeringService", "jobRequest"));
 			return new ResponseEntity<PiazzaResponse>(
-					new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()), "Service Controller"),
+					new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
+							"Service Controller"),
 					HttpStatus.BAD_REQUEST);
-		}
-		catch (Exception exception) {
+		} catch (Exception exception) {
 			LOGGER.error("Error Registering Service", exception);
 			logger.log(String.format("Error Registering Service: %s", exception.getMessage()), Severity.ERROR,
 					new AuditElement("serviceController", "registeringService", "jobRequest"));
 			return new ResponseEntity<PiazzaResponse>(
-					new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()), "Service Controller"),
+					new ErrorResponse(String.format("Error Registering Service: %s", exception.getMessage()),
+							"Service Controller"),
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

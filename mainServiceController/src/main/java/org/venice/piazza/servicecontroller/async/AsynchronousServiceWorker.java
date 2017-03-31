@@ -146,12 +146,12 @@ public class AsynchronousServiceWorker {
 	 */
 	@Async
 	public void pollStatus(AsyncServiceInstance instance) {
-		// Get the Service, so we can fetch the URL
-		Service service = accessor.getServiceById(instance.getServiceId());
-		// Build the GET URL
-		String url = String.format("%s/%s/%s", service.getUrl(), STATUS_ENDPOINT, instance.getInstanceId());
-		// Poll
 		try {
+			// Get the Service, so we can fetch the URL
+			Service service = accessor.getServiceById(instance.getServiceId());
+			// Build the GET URL
+			String url = String.format("%s/%s/%s", service.getUrl(), STATUS_ENDPOINT, instance.getInstanceId());
+
 			// Get the Status of the job.
 			StatusUpdate status = restTemplate.getForObject(url, StatusUpdate.class);
 

@@ -1,11 +1,14 @@
-# pz_servicecontroller
-Repository containing the framework/implementation of the Piazza ServiceController.  The ServiceController controls the registration, management and execution of service instances.    
+The ServiceController is a Spring Boot application and can be run directly from the command line. It uses an _**application.properties**_ file which contains port, hostname, database name and other information used by the ServiceController.  When the Piazza Discover Service is not available, the Service Controller utilizes information in the application.properties file to connect to supporting services.
 
-The ServiceController serves as a central location for Piazza users to register, discover and utilize services external to the Piazza core.  Service instances that are registered within Piazza expose a remote API (HTTP/REST) at a given location (URL containing host, port, servicename, etc.). A service instance is a web service which is external to the Piazza framework, but is registered within Piazza so it can be discovered and utilized by Piazza users.  
+_**application.properties**_ files are located in the mainServiceController/conf directory.  To run the ServiceController, locally, you have to choose _**application-local.properties**_ and place it in the location that the ServiceController is started from, in the _src/main/resources_ directory or in the classpath used by the ServiceController.
 
-Service developers can develop and register services using the Piazza JSON API.   The ServiceController contains a REST service which handles client requests and controls the execution of services.   The ServiceController also listens to specific ServiceController topics to handle requets for service management.
-
-For details on running and using the ServiceController, see https://github.com/venicegeo/venice/wiki/Pz-ServiceController
+When the pz-discover service is running and the location/api is specified in the application.properties file, the ServiceController uses the values registered in the Discover service to communicate with things such as Kafka, MongoDB and other Piazza Core Services.
 
 
+To run the ServiceController from the main directory, run the following command:
 
+    > java –jar <path to the location of the servicecontroller.jar>/piazzaServiceController-(version number).BUILD-SNAPSHOT.jar
+
+This will run the ServiceController, after initializing, the following message will be displayed:
+
+    o.v.p.servicecontroller.Application : Started Application in 8.994 seconds (JVM running for 9.658)

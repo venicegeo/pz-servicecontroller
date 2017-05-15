@@ -7,7 +7,7 @@ When the pz-discover service is running and the location/api is specified in the
 
 To run the ServiceController from the main directory, run the following command:
 
-    > java –jar <path to the location of the servicecontroller.jar>/piazzaServiceController-(version number).BUILD-SNAPSHOT.jar
+    > mvn clean install -U spring-boot:run
 
 This will run the ServiceController, after initializing, the following message will be displayed:
 

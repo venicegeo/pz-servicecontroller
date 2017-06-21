@@ -64,11 +64,11 @@ public class SearchServiceHandler implements PiazzaJobHandler {
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 		SearchServiceJob job = (SearchServiceJob) jobRequest;
 		ResponseEntity<String>responseEntity;
-		if ((job != null) && (job.data != null)) {
+		if ((job != null) && (job.getData() != null)) {
 			// Get the criteria to use for the search
-			SearchCriteria criteria = job.data;
+			SearchCriteria criteria = job.getData();
 
-			coreLogger.log("search " + " " + criteria.field + "->" + criteria.pattern, Severity.INFORMATIONAL);
+			coreLogger.log("search " + " " + criteria.getField() + "->" + criteria.getPattern(), Severity.INFORMATIONAL);
 	
 			ResponseEntity<String> response = handle(criteria);
 			responseEntity = new ResponseEntity<>(response.getBody(), response.getStatusCode());

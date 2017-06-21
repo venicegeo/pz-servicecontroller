@@ -124,14 +124,14 @@ public class ServiceController {
 
 			// For Task-Managed Services, URL is not required. For all other
 			// services, it is. Validate that here.
-			if ((serviceJob.data.getIsTaskManaged() == null) || (serviceJob.data.getIsTaskManaged() == false)) {
-				if ((serviceJob.data.getUrl() == null) || (serviceJob.data.getUrl().isEmpty())) {
+			if ((serviceJob.getData().getIsTaskManaged() == null) || (serviceJob.getData().getIsTaskManaged() == false)) {
+				if ((serviceJob.getData().getUrl() == null) || (serviceJob.getData().getUrl().isEmpty())) {
 					// Throw validation error
 					throw new InvalidInputException("`url` property is required.");
 				}
 			}
 
-			String serviceId = rsHandler.handle(serviceJob.data);
+			String serviceId = rsHandler.handle(serviceJob.getData());
 			return new ResponseEntity<PiazzaResponse>(new ServiceIdResponse(serviceId), HttpStatus.OK);
 		} catch (InvalidInputException exception) {
 			LOGGER.error("Error Registering Service", exception);
@@ -409,7 +409,7 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/search", method = RequestMethod.POST, headers = "Accept=application/json")
 	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
-		logger.log("search " + " " + criteria.field + "->" + criteria.pattern, Severity.INFORMATIONAL);
+		logger.log("search " + " " + criteria.getField() + "->" + criteria.getPattern(), Severity.INFORMATIONAL);
 		ResponseEntity<String> result = ssHandler.handle(criteria);
 		logger.log("Result is " + result, Severity.DEBUG);
 		return result;

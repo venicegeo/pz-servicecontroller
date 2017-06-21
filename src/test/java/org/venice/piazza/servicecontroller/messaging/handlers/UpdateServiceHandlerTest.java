@@ -110,11 +110,11 @@ public class UpdateServiceHandlerTest {
 	@Test
 	public void testValidUpdate() {
 		UpdateServiceJob job = new UpdateServiceJob();
-		job.data = service;
-		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		job.setData(service);
+		job.setJobId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
 		
 		ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(job.jobId);
+		resultList.add(job.getJobId());
 		resultList.add(service.getServiceId());
 		
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
@@ -135,11 +135,11 @@ public class UpdateServiceHandlerTest {
 	@Test
 	public void testUnsuccessfulUpdate() {
 		UpdateServiceJob job = new UpdateServiceJob();
-		job.data = service;
-		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		job.setData(service);
+		job.setJobId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
 		
 		ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(job.jobId);
+		resultList.add(job.getJobId());
 		resultList.add(service.getServiceId());
 		
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.UNPROCESSABLE_ENTITY);

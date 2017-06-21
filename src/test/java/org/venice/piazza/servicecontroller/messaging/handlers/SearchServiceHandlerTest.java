@@ -116,10 +116,10 @@ public class SearchServiceHandlerTest {
 		SearchServiceJob job = new SearchServiceJob();
 		
 		SearchCriteria criteria = new SearchCriteria();
-		criteria.field="animalType";
-		criteria.pattern="A*r";
+		criteria.setField("animalType");
+		criteria.setPattern("A*r");
 	
-		job.data =criteria;
+		job.setData(criteria);
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			String responseServiceString = mapper.writeValueAsString(services);
@@ -164,8 +164,8 @@ public class SearchServiceHandlerTest {
 			ObjectMapper mapper = new ObjectMapper();
 			String responseServiceString = mapper.writeValueAsString(services);
 			SearchCriteria criteria = new SearchCriteria();
-			criteria.field="animalType";
-			criteria.pattern="A*r";
+			criteria.setField("animalType");
+			criteria.setPattern("A*r");
 
 			ResponseEntity<String> responseEntity = new  ResponseEntity<String>(responseServiceString, HttpStatus.OK);
 			Mockito.doReturn(services).when(accessorMock).search(criteria);		
@@ -210,8 +210,8 @@ public class SearchServiceHandlerTest {
 	public void testSearchNoResults() {	
 
 		SearchCriteria criteria = new SearchCriteria();
-		criteria.field="animalType";
-		criteria.pattern="A*r";
+		criteria.setField("animalType");
+		criteria.setPattern("A*r");
 		List <String>results = new ArrayList<>();
 		String actualResponse = "No results were returned searching for field";
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(actualResponse, HttpStatus.NO_CONTENT);
@@ -237,8 +237,8 @@ public class SearchServiceHandlerTest {
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Could not search for services" , HttpStatus.NOT_FOUND);
 
 		SearchCriteria criteria = new SearchCriteria();
-		criteria.field="animalType";
-		criteria.pattern="A*r";
+		criteria.setField("animalType");
+		criteria.setPattern("A*r");
 		try {
 			final SearchServiceHandler ssMock = Mockito.spy (ssHandler);
 

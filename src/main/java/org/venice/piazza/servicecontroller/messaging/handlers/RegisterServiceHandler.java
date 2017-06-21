@@ -70,7 +70,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 
 		if (job != null) {
 			// Get the Service metadata
-			Service serviceMetadata = job.data;
+			Service serviceMetadata = job.getData();
 			coreLogger.log("serviceMetadata received is " + serviceMetadata, Severity.INFORMATIONAL);
 
 			String result = handle(serviceMetadata);

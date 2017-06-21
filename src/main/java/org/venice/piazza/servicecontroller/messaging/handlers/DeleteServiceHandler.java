@@ -71,7 +71,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 			DeleteServiceJob job = (DeleteServiceJob) jobRequest;
 
 			// Get the ResourceMetadata
-			String resourceId = job.serviceID;
+			String resourceId = job.getServiceID();
 			coreLogger.log("deleteService serviceId=" + resourceId, Severity.INFORMATIONAL);
 
 			String result = handle(resourceId, false);

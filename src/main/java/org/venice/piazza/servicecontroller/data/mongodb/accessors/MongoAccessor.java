@@ -378,8 +378,8 @@ public class MongoAccessor {
 			LOGGER.debug("Criteria field=" + criteria.getField());
 			LOGGER.debug("Criteria field=" + criteria.getPattern());
 
-			Pattern pattern = Pattern.compile(criteria.pattern);
-			BasicDBObject query = new BasicDBObject(criteria.field, pattern);
+			Pattern pattern = Pattern.compile(criteria.getPattern());
+			BasicDBObject query = new BasicDBObject(criteria.getField(), pattern);
 
 			try {
 
@@ -390,7 +390,7 @@ public class MongoAccessor {
 
 				// Now try to look for the field in the resourceMetadata just to make sure
 
-				query = new BasicDBObject("resourceMetadata." + criteria.field, pattern);
+				query = new BasicDBObject("resourceMetadata." + criteria.getField(), pattern);
 				cursor = getServiceCollection().find(query);
 				while (cursor.hasNext()) {
 					Service serviceItem = cursor.next();

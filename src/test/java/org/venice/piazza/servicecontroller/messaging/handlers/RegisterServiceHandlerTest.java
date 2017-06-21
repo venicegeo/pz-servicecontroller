@@ -98,7 +98,7 @@ public class RegisterServiceHandlerTest {
 	public void testSuccessRegistration() {
 		RegisterServiceJob job = new RegisterServiceJob();
 		String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-		job.data = service;
+		job.setData(service);
 
 		String responseString = "{\"resourceId\":" + "\"" + testServiceId + "\"}";
 
@@ -125,7 +125,7 @@ public class RegisterServiceHandlerTest {
 	public void testUnsuccessfulRegistration() {
 		RegisterServiceJob job = new RegisterServiceJob();
 		
-		job.data = service;
+		job.setData(service);
 
 		
 		final RegisterServiceHandler rsMock = Mockito.spy (rsHandler);

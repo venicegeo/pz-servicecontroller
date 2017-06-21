@@ -100,7 +100,7 @@ import util.UUIDFactory;
 		public void testSuccessDescribe() {
 			DescribeServiceMetadataJob job = new DescribeServiceMetadataJob();
 			String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-			job.serviceID = testServiceId;
+			job.setServiceID(testServiceId);
 			try {
 				ObjectMapper mapper = new ObjectMapper();
 				String responseServiceString = mapper.writeValueAsString(service);
@@ -130,7 +130,7 @@ import util.UUIDFactory;
 			DescribeServiceMetadataJob job = new DescribeServiceMetadataJob();
 			
 			String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-			job.serviceID = testServiceId;
+			job.setServiceID(testServiceId);
 			final DescribeServiceHandler dsMock = Mockito.spy (dsHandler);
 			ResponseEntity<String> responseEntity = new  ResponseEntity<String>("", HttpStatus.NOT_FOUND);
 

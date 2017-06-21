@@ -144,14 +144,14 @@ public class ServiceControllerTest {
 		// Setup the RegisterServiceJob and the PiazzaJobRequest
 		PiazzaJobRequest pjr= new PiazzaJobRequest();
 		RegisterServiceJob rsj = new RegisterServiceJob();
-		rsj.data = service;    
+		rsj.setData(service);
 		
 		pjr.jobType = rsj;
 		pjr.createdBy = "mlynum";
 		service.setServiceId("");
 		
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
-		Mockito.doReturn(testServiceId).when(rsHandlerMock).handle(rsj.data);
+		Mockito.doReturn(testServiceId).when(rsHandlerMock).handle(rsj.getData());
 
 		// Should check to make sure each of the handlers are not null
 		PiazzaResponse piazzaResponse = sc.registerService(pjr).getBody();
@@ -441,8 +441,8 @@ public class ServiceControllerTest {
 	 */
 	public void testSearch() {
 		SearchCriteria criteria = new SearchCriteria();
-		criteria.field = "name";
-		criteria.pattern = "M*";
+		criteria.setField("name");
+		criteria.setPattern("M*");
 		
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to search", HttpStatus.OK); 
         Mockito.doReturn(responseEntity ).when(ssHandlerMock).handle(criteria);

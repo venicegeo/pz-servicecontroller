@@ -68,7 +68,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		UpdateServiceJob job = (UpdateServiceJob) jobRequest;
 		if (job != null) {
 			// Get the ResourceMetadata
-			Service sMetadata = job.data;
+			Service sMetadata = job.getData();
 			LOGGER.info("serviceMetadata received is " + sMetadata);
 			coreLogger.log("serviceMetadata received is " + sMetadata, Severity.INFORMATIONAL);
 			String result = handle(sMetadata);

@@ -153,7 +153,7 @@ public class HandlerLoggingTest {
 		SearchCriteria criteria = new SearchCriteria();
 		criteria.setField("description");
 		criteria.setPattern("*bird*");
-		sjob.data = criteria;
+		sjob.setData(criteria);
 		logString = "";
 		ArrayList<Service> services = new ArrayList<Service>();
 		services.add(service);
@@ -169,7 +169,7 @@ public class HandlerLoggingTest {
 		SearchCriteria criteria = new SearchCriteria();
 		criteria.setField("description");
 		criteria.setPattern("*bird*");
-		sjob.data = criteria;
+		sjob.setData(criteria);
 		logString = "";
 		when(mockMongo.search(criteria)).thenReturn(new ArrayList<Service>());
 		ssHandler.handle(sjob);
@@ -180,7 +180,7 @@ public class HandlerLoggingTest {
 	@Ignore
 	public void TestDescribeServiceHandlerSuccessLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
-		dsmJob.serviceID = "8";
+		dsmJob.setServiceID("8");
 		when(mockMongo.getServiceById("8")).thenReturn(service);
 		dsHandler.handle(dsmJob);
 		assertTrue(logString.contains("Describing a service"));
@@ -213,7 +213,7 @@ public class HandlerLoggingTest {
 	@Ignore
 	public void TestDescribeServiceHandlerFailLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
-		dsmJob.serviceID = "8";
+		dsmJob.setServiceID("8");
 		NullPointerException ex = new NullPointerException();
 		when(mockMongo.getServiceById("8")).thenThrow(ex);
 		dsHandler.handle(dsmJob);
@@ -241,7 +241,7 @@ public class HandlerLoggingTest {
 		service.setUrl("http://localhost:8082/string/toUpper");
 
 		RegisterServiceJob rjob = new RegisterServiceJob();
-		rjob.data = service;
+		rjob.setData(service);
 		rsHandler.handle(rjob);
 		assertTrue(logString.contains("serviceMetadata received"));
 	}
@@ -265,7 +265,7 @@ public class HandlerLoggingTest {
 		service.setUrl("http://localhost:8082/string/toUpper");
 
 		UpdateServiceJob rjob = new UpdateServiceJob();
-		rjob.data = service;
+		rjob.setData(service);
 		when(mockMongo.update(service)).thenReturn("8");
 		when(mockElasticAccessor.update(service)).thenReturn(new ServiceResponse());
 		usHandler.handle(rjob);
@@ -293,7 +293,7 @@ public class HandlerLoggingTest {
 		service.setUrl("http://localhost:8082/string/toUpper");
 
 		UpdateServiceJob rjob = new UpdateServiceJob();
-		rjob.data = service;
+		rjob.setData(service);
 		when(mockMongo.update(service)).thenReturn("");
 		usHandler.handle(rjob);
 		assertTrue(logString.contains("something went wrong"));

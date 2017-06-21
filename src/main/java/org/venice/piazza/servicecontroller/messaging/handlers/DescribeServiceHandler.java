@@ -53,7 +53,7 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 		coreLogger.log("Describing a service", Severity.INFORMATIONAL);
 		DescribeServiceMetadataJob job = (DescribeServiceMetadataJob) jobRequest;
 		if (job != null ) {
-			ResponseEntity<String> handleResourceReturn = handle(job.serviceID);
+			ResponseEntity<String> handleResourceReturn = handle(job.getServiceID());
 	        if (handleResourceReturn.getBody().length() > 0) {
 	        	return new ResponseEntity<>(handleResourceReturn.getBody(), handleResourceReturn.getStatusCode());
 			} else {

@@ -56,7 +56,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private PiazzaLogger coreLogger;
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(UpdateServiceHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
     /**
      * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in MongoDB
@@ -64,12 +64,12 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
      */
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 
-		LOGGER.debug("Updating a service");
+		LOG.debug("Updating a service");
 		UpdateServiceJob job = (UpdateServiceJob) jobRequest;
 		if (job != null) {
 			// Get the ResourceMetadata
 			Service sMetadata = job.getData();
-			LOGGER.info("serviceMetadata received is " + sMetadata);
+			LOG.info("serviceMetadata received is " + sMetadata);
 			coreLogger.log("serviceMetadata received is " + sMetadata, Severity.INFORMATIONAL);
 			String result = handle(sMetadata);
 
@@ -130,7 +130,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				}*/
 	        }
         } catch (IllegalArgumentException ex) {
-        	LOGGER.error("IllegalArgumentException occurred", ex);
+        	LOG.error("IllegalArgumentException occurred", ex);
         	coreLogger.log(ex.getMessage(), Severity.ERROR);
         }
 

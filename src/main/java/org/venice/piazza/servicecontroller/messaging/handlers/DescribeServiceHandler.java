@@ -39,7 +39,7 @@ import util.PiazzaLogger;
 
 @Component
 public class DescribeServiceHandler implements PiazzaJobHandler { 
-	private static final Logger LOGGER = LoggerFactory.getLogger(DescribeServiceHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DescribeServiceHandler.class);
 	
 	@Autowired
 	private MongoAccessor accessor;
@@ -75,7 +75,7 @@ public class DescribeServiceHandler implements PiazzaJobHandler {
 			String result = mapper.writeValueAsString(sMetadata);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (JsonProcessingException ex) {
-			LOGGER.error("Could not retrieve resourceId", ex);
+			LOG.error("Could not retrieve resourceId", ex);
 			coreLogger.log("Could not retrieve resourceId " + serviceId, Severity.ERROR);
 			responseEntity = new ResponseEntity<>("Could not retrieve resourceId " + serviceId, HttpStatus.NOT_FOUND);
 		}

@@ -86,7 +86,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	@Value("${SPACE}")
 	private String SPACE;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(ExecuteServiceHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ExecuteServiceHandler.class);
 
 	/**
 	 * Handler for handling execute service requests. This method will execute a service given the resourceId and return
@@ -139,7 +139,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			String result = om.writeValueAsString(sMetadata);
 			coreLogger.log(result, Severity.INFORMATIONAL);
 		} catch (ResourceAccessException | JsonProcessingException ex) {
-			LOGGER.error("Exception occurred", ex);
+			LOG.error("Exception occurred", ex);
 		}
 		if (sMetadata != null) {
 			String rawURL = sMetadata.getUrl();
@@ -189,7 +189,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				try {
 					postString = mapper.writeValueAsString(postObjects);
 				} catch (JsonProcessingException e) {
-					LOGGER.error("Json processing error occurred", e);
+					LOG.error("Json processing error occurred", e);
 					coreLogger.log(e.getMessage(), Severity.ERROR);
 					return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
 				}
@@ -211,7 +211,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				try {
 					responseEntity = template.postForEntity(url, requestEntity, String.class);
 				} catch (HttpServerErrorException hex) {
-					LOGGER.info(String.format("Server Error for URL %s:  %s", url, hex.getResponseBodyAsString()), hex);
+					LOG.info(String.format("Server Error for URL %s:  %s", url, hex.getResponseBodyAsString()), hex);
 					throw new InterruptedException(hex.getResponseBodyAsString());
 				}
 			} else {
@@ -317,7 +317,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					data.dataId = dataId;
 				}
 			} catch (Exception ex) {
-				LOGGER.error("Exception occurred", ex);
+				LOG.error("Exception occurred", ex);
 				coreLogger.log(ex.getMessage(), Severity.ERROR);
 
 				// Checking payload type and settings the correct type

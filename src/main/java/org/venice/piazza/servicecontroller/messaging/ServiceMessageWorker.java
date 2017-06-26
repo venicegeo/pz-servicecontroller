@@ -121,8 +121,9 @@ public class ServiceMessageWorker {
 	@Autowired
 	private RestTemplate restTemplate;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageWorker.class);
-
+	private static final Logger LOG = LoggerFactory.getLogger(ServiceMessageWorker.class);
+	private static final String JSON_ERR = "Json processing error occurred";
+	
 	/**
 	 * Handles service job requests on a thread
 	 */
@@ -212,7 +213,7 @@ public class ServiceMessageWorker {
 						externalServiceResponse = esHandler.handle(jobType);
 					} catch (Exception exception) {
 						// InterruptedException to ensure a common handled exception type.
-						LOGGER.info("Exception occurred", exception);
+						LOG.info("Exception occurred", exception);
 						throw new InterruptedException(exception.getMessage());
 					}
 
@@ -259,18 +260,18 @@ public class ServiceMessageWorker {
 							"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
 				}
 			} catch (IOException | ResourceAccessException ex) {
-				LOGGER.error("Exception occurred", ex);
+				LOG.error("Exception occurred", ex);
 				coreLogger.log(ex.getMessage(), Severity.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = ex.getMessage();
 			} catch (HttpClientErrorException | HttpServerErrorException hex) {
-				LOGGER.error("HttpException occurred", hex);
+				LOG.error("HttpException occurred", hex);
 				coreLogger.log(hex.getMessage(), Severity.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = hex.getResponseBodyAsString();
 				statusCode = hex.getStatusCode().value();
 			} catch (PiazzaJobException pex) {
-				LOGGER.error("PiazzaJobException occurred", pex);
+				LOG.error("PiazzaJobException occurred", pex);
 				coreLogger.log(pex.getMessage(), Severity.ERROR);
 				executeJobStatus = StatusUpdate.STATUS_ERROR;
 				handleTextUpdate = pex.getMessage();
@@ -302,13 +303,13 @@ public class ServiceMessageWorker {
 			try {
 				producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate, SPACE));
 			} catch (JsonProcessingException jsonException) {
-				LOGGER.error("Json processing error occurred", jsonException);
+				LOG.error(JSON_ERR, jsonException);
 				coreLogger.log(String.format(
 						"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
 						consumerRecord.key(), jsonException.getMessage()), Severity.ERROR);
 			}
 		} catch (Exception ex) {
-			LOGGER.error("Unexpected Error in processing External Service", ex);
+			LOG.error("Unexpected Error in processing External Service", ex);
 			// Catch any General Exceptions that occur during runtime.
 			coreLogger.log(ex.getMessage(), Severity.ERROR);
 			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),
@@ -346,7 +347,7 @@ public class ServiceMessageWorker {
 			producer.send(prodRecord);
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
-			LOGGER.error("Json processing error occurred", exception);
+			LOG.error(JSON_ERR, exception);
 			coreLogger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
 					Severity.ERROR);
 		}
@@ -380,11 +381,11 @@ public class ServiceMessageWorker {
 			String error = String.format("Could not successfully send Event to Workflow Service. Returned with code %s and message %s",
 					exception.getStatusCode().toString(), exception.getResponseBodyAsString());
 			coreLogger.log(error, Severity.ERROR);
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 		} catch (IOException exception) {
 			String error = String.format("Could not send Event to Workflow Service. Serialization of Event failed with Error: %s",
 					exception.getMessage());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			coreLogger.log(error, Severity.ERROR);
 		}
 	}
@@ -443,7 +444,7 @@ public class ServiceMessageWorker {
 				postString = objectMapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
 				// TODO Auto-generated catch block
-				LOGGER.error("Json processing error occurred", e);
+				LOG.error(JSON_ERR, e);
 			}
 		}
 		URI url = URI.create(builder.toUriString());

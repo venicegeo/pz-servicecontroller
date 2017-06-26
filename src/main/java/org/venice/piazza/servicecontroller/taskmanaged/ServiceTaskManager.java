@@ -77,7 +77,7 @@ public class ServiceTaskManager {
 	private PiazzaLogger piazzaLogger;
 
 	private Producer<String, String> producer;
-	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceTaskManager.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ServiceTaskManager.class);
 
 	@PostConstruct
 	public void initialize() {
@@ -115,7 +115,7 @@ public class ServiceTaskManager {
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: " + exception.getMessage();
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 	}
@@ -158,7 +158,7 @@ public class ServiceTaskManager {
 						} catch (JsonProcessingException exception) {
 							String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId,
 									exception.getMessage());
-							LOGGER.error(error, exception);
+							LOG.error(error, exception);
 							piazzaLogger.log(error, Severity.ERROR);
 						}
 
@@ -170,7 +170,7 @@ public class ServiceTaskManager {
 			}
 		} catch (Exception exception) {
 			String error = String.format("Error Removing Job %s from a Task-Managed Service Queue : %s", jobId, exception.getMessage());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 	}
@@ -200,7 +200,7 @@ public class ServiceTaskManager {
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Job Status from External Service to Job Manager: " + exception.getMessage();
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 		// If done, remove the Job from the Service Queue
@@ -252,7 +252,7 @@ public class ServiceTaskManager {
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: ";
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 
@@ -305,7 +305,7 @@ public class ServiceTaskManager {
 				producer.send(statusUpdateRecord);
 			} catch (JsonProcessingException exception) {
 				String innerError = "Error Sending Failed/Timed Out Job Status to Job Manager: ";
-				LOGGER.error(innerError, exception);
+				LOG.error(innerError, exception);
 				piazzaLogger.log(innerError, Severity.ERROR);
 			}
 		} else {

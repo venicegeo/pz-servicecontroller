@@ -63,7 +63,8 @@ public class TaskManagedController {
 	@Autowired
 	private MongoAccessor mongoAccessor;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
+	private static final String NO_ACCESS_MSG = "Service does not allow this user to access.";
+	private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
 
 	/**
 	 * Pulls the next job off of the Service Queue.
@@ -85,7 +86,7 @@ public class TaskManagedController {
 			// Check for Access
 			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
 			if (!canAccess) {
-				throw new ResourceAccessException("Service does not allow this user to access.");
+				throw new ResourceAccessException(NO_ACCESS_MSG);
 			}
 
 			// Get the Job. This will mark the Job as being processed.
@@ -102,7 +103,7 @@ public class TaskManagedController {
 		} catch (Exception exception) {
 			String error = String.format("Error Getting next Service Job for Service %s by User %s: %s", serviceId, userName,
 					exception.getMessage());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "errorGettingServiceJob", serviceId));
 			HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 			if (exception instanceof ResourceAccessException) {
@@ -140,7 +141,7 @@ public class TaskManagedController {
 			// Check for Access
 			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
 			if (!canAccess) {
-				throw new ResourceAccessException("Service does not allow this user to access.");
+				throw new ResourceAccessException(NO_ACCESS_MSG);
 			}
 
 			// Simple Validation
@@ -155,7 +156,7 @@ public class TaskManagedController {
 		} catch (Exception exception) {
 			String error = String.format("Could not Update status for Job %s for Service %s : %s", jobId, serviceId,
 					exception.getMessage());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToUpdateServiceJob", jobId));
 			HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 			if (exception instanceof ResourceAccessException) {
@@ -180,7 +181,7 @@ public class TaskManagedController {
 	 */
 	@RequestMapping(value = {
 			"/service/{serviceId}/task/metadata" }, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getServiceQueueData(@RequestParam(value = "userName", required = true) String userName,
+	public ResponseEntity getServiceQueueData(@RequestParam(value = "userName", required = true) String userName,
 			@PathVariable(value = "serviceId") String serviceId) {
 		try {
 			// Log the Request
@@ -190,7 +191,7 @@ public class TaskManagedController {
 			// Check for Access
 			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
 			if (!canAccess) {
-				throw new ResourceAccessException("Service does not allow this user to access.");
+				throw new ResourceAccessException(NO_ACCESS_MSG);
 			}
 
 			// Ensure this Service exists and is Task-Managed
@@ -204,7 +205,7 @@ public class TaskManagedController {
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Could not retrieve Service Queue data for %s : %s", serviceId, exception.getMessage());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToRetrieveServiceQueueMetadata", serviceId));
 			HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 			if (exception instanceof ResourceAccessException) {

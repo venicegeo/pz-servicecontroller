@@ -82,8 +82,9 @@ public class ServiceMessageThreadManager {
 	@Autowired
 	private AsyncServiceInstanceScheduler asyncServiceInstanceManager;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
-
+	private static final Logger LOG = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
+	private static final String TOPIC_FORMAT = "%s-%s";
+	
 	/**
 	 * Constructor for ServiceMessageThreadManager
 	 */
@@ -99,7 +100,7 @@ public class ServiceMessageThreadManager {
 	public void initialize() {
 
 		// Initialize dynamic topic names
-		EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format("%s-%s", (new ExecuteServiceJob()).getClass().getSimpleName(), SPACE);
+		EXECUTE_SERVICE_JOB_TOPIC_NAME = String.format(TOPIC_FORMAT, (new ExecuteServiceJob()).getClass().getSimpleName(), SPACE);
 
 		topics = Arrays.asList(EXECUTE_SERVICE_JOB_TOPIC_NAME);
 
@@ -191,13 +192,13 @@ public class ServiceMessageThreadManager {
 	 */
 	public void pollAbortServiceJobs() {
 		Consumer<String, String> uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOSTS,
-				String.format("%s-%s", KAFKA_GROUP, UUID.randomUUID().toString()));
+				String.format(TOPIC_FORMAT, KAFKA_GROUP, UUID.randomUUID().toString()));
 		ObjectMapper mapper = new ObjectMapper();
 
 		try {
 			// Create the Unique Consumer
 
-			uniqueConsumer.subscribe(Arrays.asList(String.format("%s-%s", JobMessageFactory.ABORT_JOB_TOPIC_NAME, SPACE)));
+			uniqueConsumer.subscribe(Arrays.asList(String.format(TOPIC_FORMAT, JobMessageFactory.ABORT_JOB_TOPIC_NAME, SPACE)));
 
 			// Poll
 			while (!closed.get()) {
@@ -213,7 +214,7 @@ public class ServiceMessageThreadManager {
 					} catch (Exception exception) {
 						String error = String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
 								exception.getMessage());
-						LOGGER.error(error, exception);
+						LOG.error(error, exception);
 						coreLogger.log(error, Severity.ERROR);
 						continue;
 					}
@@ -244,11 +245,11 @@ public class ServiceMessageThreadManager {
 			}
 			uniqueConsumer.close();
 		} catch (WakeupException wex) {
-			LOGGER.error("Polling Thread forcefully closed", wex);
+			LOG.error("Polling Thread forcefully closed", wex);
 			coreLogger.log(String.format("Polling Thread forcefully closed: %s", wex.getMessage()), Severity.CRITICAL);
 			uniqueConsumer.close();
 		} catch (Exception ex) {
-			LOGGER.error("Polling Thread forcefully closed", ex);
+			LOG.error("Polling Thread forcefully closed", ex);
 			coreLogger.log(String.format("Polling Thread forcefully closed: %s", ex.getMessage()), Severity.CRITICAL);
 			uniqueConsumer.close();
 		}

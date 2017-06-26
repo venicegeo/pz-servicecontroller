@@ -52,9 +52,11 @@ public class ElasticSearchAccessor {
 	@Autowired
 	private CoreServiceProperties coreServiceProperties;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(ElasticSearchAccessor.class);
-
+	private static final Logger LOG = LoggerFactory.getLogger(ElasticSearchAccessor.class);
+	private static final String SAVING_SERVICE = "Saving service ";
+	
 	public ElasticSearchAccessor() {
+		// Expected for Component instantiation
 	}
 
 	@PostConstruct
@@ -74,7 +76,7 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse save(Service service) {
-		logger.log("Saving service " + service.getServiceId() + " " + SERVICEMETADATA_INGEST_URL, Severity.DEBUG);
+		logger.log(SAVING_SERVICE + service.getServiceId() + " " + SERVICEMETADATA_INGEST_URL, Severity.DEBUG);
 		return dispatchElasticSearch(service, SERVICEMETADATA_INGEST_URL);
 	}
 
@@ -86,7 +88,7 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse update(Service service) {
-		logger.log("Saving service " + service.getServiceId() + " " + SERVICEMETADATA_UPDATE_URL, Severity.DEBUG);
+		logger.log(SAVING_SERVICE + service.getServiceId() + " " + SERVICEMETADATA_UPDATE_URL, Severity.DEBUG);
 
 		return dispatchElasticSearch(service, SERVICEMETADATA_UPDATE_URL);
 	}
@@ -99,7 +101,7 @@ public class ElasticSearchAccessor {
 	 * @return PiazzaResponse
 	 */
 	public PiazzaResponse delete(Service service) {
-		logger.log("Saving service " + service.getServiceId() + " " + SERVICEMETADATA_DELETE_URL, Severity.DEBUG);
+		logger.log(SAVING_SERVICE + service.getServiceId() + " " + SERVICEMETADATA_DELETE_URL, Severity.DEBUG);
 		return dispatchElasticSearch(service, SERVICEMETADATA_DELETE_URL);
 	}
 	
@@ -127,7 +129,7 @@ public class ElasticSearchAccessor {
 			return restTemplate.postForObject(url, entity, PiazzaResponse.class);
 		} catch (Exception exception) {
 			String error = String.format("Could not Index ServiceMetaData to Service: %s", exception.getMessage());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			logger.log(error, Severity.ERROR);
 			return new ErrorResponse("Error connecting to ServiceMetadata Service: " + exception.getMessage(), "ServiceController");
 		}

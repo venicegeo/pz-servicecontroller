@@ -106,9 +106,15 @@ public class MongoAccessor {
 	@Autowired
 	private Environment environment;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(MongoAccessor.class);
-
+	private static final Logger LOG = LoggerFactory.getLogger(MongoAccessor.class);
+	private static final String SERVICE_ID = "serviceId";
+	private static final String SERVICE_CTR = "serviceController";
+	private static final String MONGO_NOT_AVAILABLE = "MongoDB instance not available.";
+	private static final String JOB_ID = "jobId";
+	private static final String STARTED_ON = "startedOn";
+	
 	public MongoAccessor() {
+		// Expected for Component instantiation
 	}
 
 	@PostConstruct
@@ -132,7 +138,7 @@ public class MongoAccessor {
 			}
 
 		} catch (Exception exception) {
-			LOGGER.error(String.format("Error connecting to MongoDB Instance. %s", exception.getMessage()), exception);
+			LOG.error(String.format("Error connecting to MongoDB Instance. %s", exception.getMessage()), exception);
 
 		}
 	}
@@ -161,20 +167,20 @@ public class MongoAccessor {
 
 			JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
 
-			Query query = DBQuery.is("serviceId", sMetadata.getServiceId());
+			Query query = DBQuery.is(SERVICE_ID, sMetadata.getServiceId());
 
 			WriteResult<Service, String> writeResult = coll.update(query, sMetadata);
 			logger.log(String.format("%s %s", "The result is", writeResult.toString()), Severity.INFORMATIONAL);
 
 			logger.log(String.format("Updating resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
-					new AuditElement("serviceController", "Updated Service", sMetadata.getServiceId()));
+					new AuditElement(SERVICE_CTR, "Updated Service", sMetadata.getServiceId()));
 
 			// Return the id that was used
 			return sMetadata.getServiceId().toString();
 		} catch (MongoException ex) {
 			String message = String.format("Error Updating Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, Severity.ERROR);
-			LOGGER.error(message, ex);
+			LOG.error(message, ex);
 		}
 		return result;
 	}
@@ -196,7 +202,7 @@ public class MongoAccessor {
 
 			if (softDelete) {
 				JacksonDBCollection<Service, String> coll = JacksonDBCollection.wrap(collection, Service.class, String.class);
-				Query query = DBQuery.is("serviceId", serviceId);
+				Query query = DBQuery.is(SERVICE_ID, serviceId);
 				WriteResult<Service, String> writeResult = coll.update(query,
 						DBUpdate.set("resourceMetadata.availability", ResourceMetadata.STATUS_TYPE.OFFLINE.toString()));
 				int recordsChanged = writeResult.getN();
@@ -208,7 +214,7 @@ public class MongoAccessor {
 			} else {
 				// Delete the existing entry for the Job
 				BasicDBObject deleteQuery = new BasicDBObject();
-				deleteQuery.append("serviceId", serviceId);
+				deleteQuery.append(SERVICE_ID, serviceId);
 				collection.remove(deleteQuery);
 				result = " service " + serviceId + " deleted ";
 				// If any Service Queue exists, also delete that here.
@@ -216,13 +222,13 @@ public class MongoAccessor {
 			}
 
 			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.INFORMATIONAL,
-					new AuditElement("serviceController", "Deleted Service", serviceId));
+					new AuditElement(SERVICE_CTR, "Deleted Service", serviceId));
 
 			return result;
 		} catch (MongoException ex) {
 			String message = String.format("Error Deleting Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, Severity.ERROR);
-			LOGGER.error(message, ex);
+			LOG.error(message, ex);
 		}
 
 		return result;
@@ -239,14 +245,14 @@ public class MongoAccessor {
 			WriteResult<Service, String> writeResult = coll.insert(sMetadata);
 
 			logger.log(String.format("Saving resource in MongoDB %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
-					new AuditElement("serviceController", "Created Service ", sMetadata.getServiceId()));
+					new AuditElement(SERVICE_CTR, "Created Service ", sMetadata.getServiceId()));
 
 			// Return the id that was used
 			return sMetadata.getServiceId();
 		} catch (MongoException ex) {
 			String message = String.format("Error Saving Mongo Service entry : %s", ex.getMessage());
 			logger.log(message, Severity.ERROR);
-			LOGGER.error(message, ex);
+			LOG.error(message, ex);
 		}
 		return result;
 	}
@@ -271,7 +277,7 @@ public class MongoAccessor {
 		} catch (MongoException ex) {
 			String message = String.format("Error Listing Mongo Service entries : %s", ex.getMessage());
 			logger.log(message, Severity.ERROR);
-			LOGGER.error(message, ex);
+			LOG.error(message, ex);
 		}
 
 		return result;
@@ -312,7 +318,7 @@ public class MongoAccessor {
 			Pattern regex = Pattern.compile(String.format("(?i)%s", keyword));
 			// Querying specific fields for the keyword
 			query.or(DBQuery.regex("resourceMetadata.name", regex), DBQuery.regex("resourceMetadata.description", regex),
-					DBQuery.regex("url", regex), DBQuery.regex("serviceId", regex));
+					DBQuery.regex("url", regex), DBQuery.regex(SERVICE_ID, regex));
 		}
 
 		// Username clause, if provided
@@ -351,7 +357,7 @@ public class MongoAccessor {
 	 * @return The Job with the specified Id
 	 */
 	public Service getServiceById(String serviceId) throws ResourceAccessException {
-		BasicDBObject query = new BasicDBObject("serviceId", serviceId);
+		BasicDBObject query = new BasicDBObject(SERVICE_ID, serviceId);
 		Service service;
 
 		try {
@@ -359,8 +365,8 @@ public class MongoAccessor {
 				throw new ResourceAccessException(String.format("Service not found : %s", serviceId));
 			}
 		} catch (MongoTimeoutException mte) {
-			LOGGER.error("MongoDB instance not available", mte);
-			throw new ResourceAccessException("MongoDB instance not available.");
+			LOG.error("MongoDB instance not available", mte);
+			throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
 		}
 
 		return service;
@@ -375,8 +381,8 @@ public class MongoAccessor {
 		List<Service> results = new ArrayList<Service>();
 		if (criteria != null) {
 
-			LOGGER.debug("Criteria field=" + criteria.getField());
-			LOGGER.debug("Criteria field=" + criteria.getPattern());
+			LOG.debug("Criteria field=" + criteria.getField());
+			LOG.debug("Criteria field=" + criteria.getPattern());
 
 			Pattern pattern = Pattern.compile(criteria.getPattern());
 			BasicDBObject query = new BasicDBObject(criteria.getField(), pattern);
@@ -399,8 +405,8 @@ public class MongoAccessor {
 				}
 
 			} catch (MongoTimeoutException mte) {
-				LOGGER.error("MongoDB instance not available", mte);
-				throw new ResourceAccessException("MongoDB instance not available.");
+				LOG.error("MongoDB instance not available", mte);
+				throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
 			}
 		}
 
@@ -464,7 +470,7 @@ public class MongoAccessor {
 	 * @return The async service instance
 	 */
 	public AsyncServiceInstance getInstanceByJobId(String jobId) {
-		BasicDBObject query = new BasicDBObject("jobId", jobId);
+		BasicDBObject query = new BasicDBObject(JOB_ID, jobId);
 		AsyncServiceInstance instance = getAsyncServiceInstancesCollection().findOne(query);
 		return instance;
 	}
@@ -473,7 +479,7 @@ public class MongoAccessor {
 	 * Updates an Async Service instance.
 	 */
 	public void updateAsyncServiceInstance(AsyncServiceInstance instance) {
-		getAsyncServiceInstancesCollection().update(DBQuery.is("jobId", instance.getJobId()), instance);
+		getAsyncServiceInstancesCollection().update(DBQuery.is(JOB_ID, instance.getJobId()), instance);
 	}
 
 	/**
@@ -484,7 +490,7 @@ public class MongoAccessor {
 	 *            The Job ID of the Async Service Instance.
 	 */
 	public void deleteAsyncServiceInstance(String jobId) {
-		getAsyncServiceInstancesCollection().remove(DBQuery.is("jobId", jobId));
+		getAsyncServiceInstancesCollection().remove(DBQuery.is(JOB_ID, jobId));
 	}
 
 	/**
@@ -512,15 +518,15 @@ public class MongoAccessor {
 		// Query for Service Jobs, sort by Queue Time, so that we get the single most stale Job. Ignore Jobs that have
 		// already been started. Find the latest.
 		DBCursor<ServiceJob> cursor = getServiceJobCollection(serviceId).find().sort(DBSort.asc("queuedOn"))
-				.and(DBQuery.is("startedOn", null)).limit(1);
+				.and(DBQuery.is(STARTED_ON, null)).limit(1);
 		if (!cursor.hasNext()) {
 			// No available Jobs to be processed.
 			return null;
 		}
 		ServiceJob serviceJob = cursor.next();
 		// Set the current Started Time that this Job was pulled off the queue
-		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()),
-				DBUpdate.set("startedOn", new DateTime().getMillis()));
+		getServiceJobCollection(serviceId).update(DBQuery.is(JOB_ID, serviceJob.getJobId()),
+				DBUpdate.set(STARTED_ON, new DateTime().getMillis()));
 		// Return the Job
 		return serviceJob;
 	}
@@ -546,8 +552,8 @@ public class MongoAccessor {
 		long timeoutEpoch = new DateTime().minusSeconds(timeout.intValue()).getMillis();
 		// Query the database for Jobs whose startedOn field is older than the timeout date.
 		JacksonDBCollection<ServiceJob, String> collection = getServiceJobCollection(serviceId);
-		DBCursor<ServiceJob> jobs = collection.find(DBQuery.exists("startedOn"));
-		jobs = jobs.and(DBQuery.lessThan("startedOn", timeoutEpoch));
+		DBCursor<ServiceJob> jobs = collection.find(DBQuery.exists(STARTED_ON));
+		jobs = jobs.and(DBQuery.lessThan(STARTED_ON, timeoutEpoch));
 		// Return the list
 		return jobs.toArray();
 	}
@@ -562,14 +568,14 @@ public class MongoAccessor {
 	 * @return
 	 */
 	public ServiceJob getServiceJob(String serviceId, String jobId) throws MongoException {
-		BasicDBObject query = new BasicDBObject("jobId", jobId);
+		BasicDBObject query = new BasicDBObject(JOB_ID, jobId);
 		ServiceJob serviceJob;
 
 		try {
 			serviceJob = getServiceJobCollection(serviceId).findOne(query);
 		} catch (MongoTimeoutException mte) {
 			String error = "Mongo Instance Not Available.";
-			LOGGER.error(error, mte);
+			LOG.error(error, mte);
 			throw new MongoException(error);
 		}
 
@@ -586,10 +592,10 @@ public class MongoAccessor {
 	 */
 	public synchronized void incrementServiceJobTimeout(String serviceId, ServiceJob serviceJob) {
 		// Increment the failure count.
-		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()),
+		getServiceJobCollection(serviceId).update(DBQuery.is(JOB_ID, serviceJob.getJobId()),
 				DBUpdate.set("timeouts", serviceJob.getTimeouts() + 1));
 		// Delete the previous Started On date, so that it can be picked up again.
-		getServiceJobCollection(serviceId).update(DBQuery.is("jobId", serviceJob.getJobId()), DBUpdate.unset("startedOn"));
+		getServiceJobCollection(serviceId).update(DBQuery.is(JOB_ID, serviceJob.getJobId()), DBUpdate.unset(STARTED_ON));
 	}
 
 	/**
@@ -613,7 +619,7 @@ public class MongoAccessor {
 	 *            The ID of the Job to remove from the queue
 	 */
 	public void removeJobFromServiceQueue(String serviceId, String jobId) {
-		DBObject matchJob = new BasicDBObject("jobId", jobId);
+		DBObject matchJob = new BasicDBObject(JOB_ID, jobId);
 		getServiceJobCollection(serviceId).remove(matchJob);
 	}
 
@@ -645,7 +651,7 @@ public class MongoAccessor {
 	 * @throws InterruptedException
 	 */
 	public Job getJobById(String jobId) throws ResourceAccessException, InterruptedException {
-		BasicDBObject query = new BasicDBObject("jobId", jobId);
+		BasicDBObject query = new BasicDBObject(JOB_ID, jobId);
 		Job job;
 
 		try {
@@ -656,8 +662,8 @@ public class MongoAccessor {
 				job = getJobCollection().findOne(query);
 			}
 		} catch (MongoTimeoutException mte) {
-			LOGGER.error(mte.getMessage(), mte);
-			throw new ResourceAccessException("MongoDB instance not available.");
+			LOG.error(mte.getMessage(), mte);
+			throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
 		}
 
 		return job;
@@ -691,7 +697,7 @@ public class MongoAccessor {
 				return false;
 			}
 		} catch (ResourceAccessException exception) {
-			LOGGER.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %s", username, serviceId),
+			LOG.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %s", username, serviceId),
 					exception);
 			throw new InvalidInputException(String.format("Service not found : %s", serviceId));
 		}

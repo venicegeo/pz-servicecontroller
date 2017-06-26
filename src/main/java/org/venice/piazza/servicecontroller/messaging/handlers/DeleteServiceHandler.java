@@ -53,7 +53,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private PiazzaLogger coreLogger;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(DeleteServiceHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DeleteServiceHandler.class);
 	
 	/**
 	 * Handler for the DeleteServiceJob that was submitted. Stores the metadata
@@ -108,7 +108,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		try {
 			result = accessor.delete(resourceId, softDelete);
 		} catch (Exception e) {
-			LOGGER.error("Unable to delete from mongoDB", e);
+			LOG.error("Unable to delete from mongoDB", e);
 			coreLogger.log(e.toString(), Severity.ERROR);
 		}
 

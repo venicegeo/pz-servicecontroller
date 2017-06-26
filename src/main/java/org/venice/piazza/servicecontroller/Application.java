@@ -59,7 +59,7 @@ public class Application extends SpringBootServletInitializer {
 	@Value("${http.request.timeout}")
 	private int httpRequestTimeout;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(Application.class);
+	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 	
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
@@ -98,13 +98,13 @@ public class Application extends SpringBootServletInitializer {
 	 */
 	public static void inspectSprintEnv(ApplicationContext ctx) {
 
-		LOGGER.info("Spring Boot Beans");
-		LOGGER.info("-----------------");
+		LOG.info("Spring Boot Beans");
+		LOG.info("-----------------");
 
 		String[] beanNames = ctx.getBeanDefinitionNames();
 		Arrays.sort(beanNames);
 		for (String beanName : beanNames) {
-			LOGGER.info(beanName);
+			LOG.info(beanName);
 		}
 	}
 

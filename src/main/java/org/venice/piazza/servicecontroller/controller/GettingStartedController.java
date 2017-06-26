@@ -44,23 +44,23 @@ import util.PiazzaLogger;
 @RequestMapping("/jumpstart")
 public class GettingStartedController {
 
-	private final static int MESSSAGE_COUNT = 15;
-	private final static String ORACLE_WELCOME = "Here, take a cookie. I promise, by the time you're done eating it, you'll feel right as rain.";
-	private final static String JAWS_WELCOME = "You're gonna need a bigger boat.";
-	private final static String ANCHORMAN_WELCOME = "I'm Ron Burgandyyyy?";
-	private final static String BATTLESTAR_WELCOME = "So say we all.";
-	private final static String PREDATOR_WELCOME = "If it bleeds, we can kill it.";
-	private final static String FEWGOODMEN_WELCOME = "You want me on that wall. You NEED me on that wall";
-	private final static String GOODFATHER_WELCOME = "Leave the gun. Take the cannoli.";
-	private final static String HUNTREDOCTOBER_WELCOME = "Re-verify our range to target... one ping only. ";
-	private final static String HEAT_WELCOME = "Clean up, go home.";
-	private final static String DUNE_WELCOME = "And how can this be? For he is the Kwisatz Haderach!";
-	private final static String USUAL_SUSPECTS_WELCOME = "The greatest trick the Devil "
+	private static final int MESSSAGE_COUNT = 15;
+	private static final String ORACLE_WELCOME = "Here, take a cookie. I promise, by the time you're done eating it, you'll feel right as rain.";
+	private static final String JAWS_WELCOME = "You're gonna need a bigger boat.";
+	private static final String ANCHORMAN_WELCOME = "I'm Ron Burgandyyyy?";
+	private static final String BATTLESTAR_WELCOME = "So say we all.";
+	private static final String PREDATOR_WELCOME = "If it bleeds, we can kill it.";
+	private static final String FEWGOODMEN_WELCOME = "You want me on that wall. You NEED me on that wall";
+	private static final String GOODFATHER_WELCOME = "Leave the gun. Take the cannoli.";
+	private static final String HUNTREDOCTOBER_WELCOME = "Re-verify our range to target... one ping only. ";
+	private static final String HEAT_WELCOME = "Clean up, go home.";
+	private static final String DUNE_WELCOME = "And how can this be? For he is the Kwisatz Haderach!";
+	private static final String USUAL_SUSPECTS_WELCOME = "The greatest trick the Devil "
 			+ "ever pulled was convincing the world he didn't exist. " + "And like that, poof. He's gone.";
-	private final static String PASSENGER57_WELCOME = "Ever played roulette?......Well, let me give you a word of advice..... Always bet on black!";
-	private final static String DEVILWEARSPRADA_WELCOME = "Why is no one ready...?";
-	private final static String FUNNYFARM_WELCOME = "Cue the deer.";
-	private final static String PRESTIGE_WELCOME = "You always were the better magician, we both know that. "
+	private static final String PASSENGER57_WELCOME = "Ever played roulette?......Well, let me give you a word of advice..... Always bet on black!";
+	private static final String DEVILWEARSPRADA_WELCOME = "Why is no one ready...?";
+	private static final String FUNNYFARM_WELCOME = "Cue the deer.";
+	private static final String PRESTIGE_WELCOME = "You always were the better magician, we both know that. "
 			+ "But whatever your secret was, you will have to agree, mine is better......";
 												 		
 	String[] welcomeMessages = { ORACLE_WELCOME, JAWS_WELCOME, ANCHORMAN_WELCOME, BATTLESTAR_WELCOME, PREDATOR_WELCOME,

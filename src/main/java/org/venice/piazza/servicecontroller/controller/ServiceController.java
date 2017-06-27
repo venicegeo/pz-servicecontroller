@@ -102,7 +102,7 @@ public class ServiceController {
 	private static final String RESULT_IS = "Result is ";
 	private static final String SERVICE = "Service";
 	private static final String SERVICE_CONTROLLER_LOWER = "serviceController";
-	private static final String SERVICE_CONTROLLER_UPPER = "Service Controller";
+	private static final String SERVICE_CONTROLLER_UPPER = "ServiceController";
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
 
 	/**
@@ -232,7 +232,7 @@ public class ServiceController {
 			}
 			// remove from elastic search as well....
 			dlHandler.handle(serviceId, softDelete);
-			return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was deleted successfully.", "ServiceController"),
+			return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was deleted successfully.", SERVICE_CONTROLLER_UPPER),
 					HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Deleting service %s: %s", serviceId, exception.getMessage());
@@ -268,7 +268,7 @@ public class ServiceController {
 				existingService = accessor.getServiceById(serviceId);
 			} catch (ResourceAccessException rae) {
 				LOG.info(rae.getMessage(), rae);
-				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(rae.getMessage(), "ServiceController"), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(rae.getMessage(), SERVICE_CONTROLLER_UPPER), HttpStatus.NOT_FOUND);
 			}
 
 			// Log
@@ -297,11 +297,11 @@ public class ServiceController {
 			existingService.setServiceId(serviceId);
 			String result = usHandler.handle(existingService);
 			if (result.length() > 0) {
-				return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", "ServiceController"),
+				return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", SERVICE_CONTROLLER_UPPER),
 						HttpStatus.OK);
 			} else {
 				return new ResponseEntity<PiazzaResponse>(
-						new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", "ServiceController"),
+						new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", SERVICE_CONTROLLER_UPPER),
 						HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 
@@ -310,7 +310,7 @@ public class ServiceController {
 			LOG.error(error, exception);
 			logger.log(error, Severity.ERROR);
 			logger.log(error, Severity.ERROR, new AuditElement(SERVICE_CONTROLLER_LOWER, "updateServiceMetadata", SERVICE));
-			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, "ServiceController"), HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, SERVICE_CONTROLLER_UPPER), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 

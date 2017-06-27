@@ -78,7 +78,8 @@ public class ServiceTaskManager {
 
 	private Producer<String, String> producer;
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceTaskManager.class);
-
+	private static final String TOPIC_FORMAT = "%s-%s";
+	
 	@PostConstruct
 	public void initialize() {
 		producer = KafkaClientFactory.getProducer(KAFKA_HOSTS);
@@ -110,7 +111,7 @@ public class ServiceTaskManager {
 		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
+			statusUpdateRecord = new ProducerRecord<String, String>(String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
 					job.getJobId(), objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
@@ -152,7 +153,7 @@ public class ServiceTaskManager {
 						ProducerRecord<String, String> statusUpdateRecord;
 						try {
 							statusUpdateRecord = new ProducerRecord<String, String>(
-									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+									String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
 									objectMapper.writeValueAsString(statusUpdate));
 							producer.send(statusUpdateRecord);
 						} catch (JsonProcessingException exception) {
@@ -195,7 +196,7 @@ public class ServiceTaskManager {
 		// Send the Update to Kafka
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
+			statusUpdateRecord = new ProducerRecord<String, String>(String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
 					jobId, objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
@@ -247,7 +248,7 @@ public class ServiceTaskManager {
 		statusUpdate.setStatus(StatusUpdate.STATUS_RUNNING);
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
+			statusUpdateRecord = new ProducerRecord<String, String>(String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
 					jobId, objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
@@ -300,7 +301,7 @@ public class ServiceTaskManager {
 			ProducerRecord<String, String> statusUpdateRecord;
 			try {
 				statusUpdateRecord = new ProducerRecord<String, String>(
-						String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), serviceJob.getJobId(),
+						String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), serviceJob.getJobId(),
 						objectMapper.writeValueAsString(statusUpdate));
 				producer.send(statusUpdateRecord);
 			} catch (JsonProcessingException exception) {

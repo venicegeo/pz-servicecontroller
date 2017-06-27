@@ -378,39 +378,43 @@ public class MongoAccessor {
 	 * @return List of matching services that match the search criteria
 	 */
 	public List<Service> search(SearchCriteria criteria) {
-		List<Service> results = new ArrayList<Service>();
-		if (criteria != null) {
-
-			LOG.debug("Criteria field=" + criteria.getField());
-			LOG.debug("Criteria field=" + criteria.getPattern());
-
-			Pattern pattern = Pattern.compile(criteria.getPattern());
-			BasicDBObject query = new BasicDBObject(criteria.getField(), pattern);
-
-			try {
-
-				DBCursor<Service> cursor = getServiceCollection().find(query);
-				while (cursor.hasNext()) {
-					results.add(cursor.next());
-				}
-
-				// Now try to look for the field in the resourceMetadata just to make sure
-
-				query = new BasicDBObject("resourceMetadata." + criteria.getField(), pattern);
-				cursor = getServiceCollection().find(query);
-				while (cursor.hasNext()) {
-					Service serviceItem = cursor.next();
-					if (!exists(results, serviceItem.getServiceId()))
-						results.add(serviceItem);
-				}
-
-			} catch (MongoTimeoutException mte) {
-				LOG.error("MongoDB instance not available", mte);
-				throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
-			}
+		final List<Service> results = new ArrayList<Service>();
+		
+		if( criteria == null ) {
+			return results;
 		}
+		
+		LOG.debug("Criteria field=" + criteria.getField());
+		LOG.debug("Criteria field=" + criteria.getPattern());
 
-		return results;
+		Pattern pattern = Pattern.compile(criteria.getPattern());
+		BasicDBObject query = new BasicDBObject(criteria.getField(), pattern);
+
+		try {
+
+			DBCursor<Service> cursor = getServiceCollection().find(query);
+			while (cursor.hasNext()) {
+				results.add(cursor.next());
+			}
+
+			// Now try to look for the field in the resourceMetadata just to make sure
+			query = new BasicDBObject("resourceMetadata." + criteria.getField(), pattern);
+			cursor = getServiceCollection().find(query);
+			
+			while (cursor.hasNext()) {
+				final Service serviceItem = cursor.next();
+				
+				if (!exists(results, serviceItem.getServiceId())) {
+					results.add(serviceItem);
+				}
+			}	
+			
+			return results;
+		} 
+		catch (MongoTimeoutException mte) {
+			LOG.error("MongoDB instance not available", mte);
+			throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
+		}
 	}
 
 	/**

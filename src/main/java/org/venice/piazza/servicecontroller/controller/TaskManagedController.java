@@ -64,6 +64,7 @@ public class TaskManagedController {
 	private MongoAccessor mongoAccessor;
 
 	private static final String NO_ACCESS_MSG = "Service does not allow this user to access.";
+	private static final String SERVICE_CONTROLLER = "ServiceController";
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
 
 	/**
@@ -111,7 +112,7 @@ public class TaskManagedController {
 			} else if (exception instanceof InvalidInputException) {
 				status = HttpStatus.NOT_FOUND;
 			}
-			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), status);
+			return new ResponseEntity<>(new ErrorResponse(error, SERVICE_CONTROLLER), status);
 		}
 	}
 
@@ -152,7 +153,7 @@ public class TaskManagedController {
 			// Process the Update
 			serviceTaskManager.processStatusUpdate(serviceId, jobId, statusUpdate);
 			// Return Success
-			return new ResponseEntity<>(new SuccessResponse("OK", "ServiceController"), HttpStatus.OK);
+			return new ResponseEntity<>(new SuccessResponse("OK", SERVICE_CONTROLLER), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Could not Update status for Job %s for Service %s : %s", jobId, serviceId,
 					exception.getMessage());
@@ -166,7 +167,7 @@ public class TaskManagedController {
 			} else if (exception instanceof HttpServerErrorException) {
 				status = ((HttpServerErrorException) exception).getStatusCode();
 			}
-			return new ResponseEntity<>(new ErrorResponse(error, "ServiceController"), status);
+			return new ResponseEntity<>(new ErrorResponse(error, SERVICE_CONTROLLER), status);
 		}
 	}
 

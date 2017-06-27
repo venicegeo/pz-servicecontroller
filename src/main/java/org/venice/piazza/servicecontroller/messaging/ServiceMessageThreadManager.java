@@ -145,12 +145,9 @@ public class ServiceMessageThreadManager {
 	 */
 	public void pollServiceJobs() {
 
-		ObjectMapper mapper = makeObjectMapper();
 		try {
-			Job job;
 
 			// Create a Callback that will be invoked when a Worker completes.
-			// This will
 			WorkerCallback callback = new WorkerCallback() {
 				@Override
 				public void onComplete(String jobId) {
@@ -158,33 +155,40 @@ public class ServiceMessageThreadManager {
 				}
 			};
 			while (!closed.get()) {
-				ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
+				final ConsumerRecords<String, String> consumerRecords = consumer.poll(1000);
+				
 				// Handle new Messages on this topic.
-				for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
-					try {
-						job = mapper.readValue(consumerRecord.value(), Job.class);
-
-						if (job != null) {
-							// Log the request.
-							coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(),
-									consumerRecord.key()), Severity.INFORMATIONAL);
-
-							// start a new thread
-							Future<?> workerFuture = serviceMessageWorker.run(consumerRecord, producer, job, callback);
-
-							runningServiceRequests.put(consumerRecord.key(), workerFuture);
-						}
-
-					} catch (Exception ex) {
-						coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), Severity.CRITICAL);
-					}
-				} // for loop
-			} // while loop
-		} catch (Exception ex) {
+				handleNewMessage(consumerRecords, callback);
+			}
+		} 
+		catch (Exception ex) {
 			coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), Severity.CRITICAL);
-
 		}
+	}
 
+	private void handleNewMessage(final ConsumerRecords<String,String> consumerRecords, final WorkerCallback callback) {
+		Job job;
+		ObjectMapper mapper = makeObjectMapper();
+
+		for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
+			try {
+				job = mapper.readValue(consumerRecord.value(), Job.class);
+
+				if (job != null) {
+					// Log the request.
+					coreLogger.log(String.format("Received Job Request to process Topic %s with Job Id %s", consumerRecord.topic(),
+							consumerRecord.key()), Severity.INFORMATIONAL);
+
+					// start a new thread
+					Future<?> workerFuture = serviceMessageWorker.run(consumerRecord, producer, job, callback);
+
+					runningServiceRequests.put(consumerRecord.key(), workerFuture);
+				}
+
+			} catch (Exception ex) {
+				coreLogger.log(String.format("The item received did not marshal to a job: %s", ex), Severity.CRITICAL);
+			}
+		}
 	}
 
 	/**

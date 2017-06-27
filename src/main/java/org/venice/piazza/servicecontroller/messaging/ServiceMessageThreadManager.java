@@ -197,7 +197,6 @@ public class ServiceMessageThreadManager {
 	public void pollAbortServiceJobs() {
 		Consumer<String, String> uniqueConsumer = KafkaClientFactory.getConsumer(KAFKA_HOSTS,
 				String.format(TOPIC_FORMAT, KAFKA_GROUP, UUID.randomUUID().toString()));
-		ObjectMapper mapper = new ObjectMapper();
 
 		try {
 			// Create the Unique Consumer
@@ -207,44 +206,10 @@ public class ServiceMessageThreadManager {
 			// Poll
 			while (!closed.get()) {
 				ConsumerRecords<String, String> consumerRecords = uniqueConsumer.poll(1000);
+				
 				// Handle new Messages on this topic.
 				for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
-					// Determine if this Job Id is being processed by this
-					// component.
-					String jobId = null;
-					try {
-						PiazzaJobRequest request = mapper.readValue(consumerRecord.value(), PiazzaJobRequest.class);
-						jobId = ((AbortJob) request.jobType).getJobId();
-					} catch (Exception exception) {
-						String error = String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
-								exception.getMessage());
-						LOG.error(error, exception);
-						coreLogger.log(error, Severity.ERROR);
-						continue;
-					}
-
-					// Determine if this a Sync or Async job
-					if (runningServiceRequests.containsKey(jobId)) {
-						// Cancel the Running Synchronous Job by terminating its thread
-						boolean cancelled = runningServiceRequests.get(jobId).cancel(true);
-						if (cancelled) {
-							// Log the cancellation has occurred
-							coreLogger.log(String.format("Successfully requested termination of Job thread for Job ID %s", jobId),
-									Severity.INFORMATIONAL);
-						} else {
-							coreLogger.log(String.format(
-									"Attempted to Cancel running job thread for ID %s, but the thread could not be forcefully cancelled.",
-									jobId), Severity.ERROR);
-						}
-						// Remove it from the list of Running Jobs
-						runningServiceRequests.remove(jobId);
-					} else {
-						// Is this a Task Managed Job? Remove it from the Jobs queue if it is pending.
-						serviceTaskManager.cancelJob(jobId);
-						// Is this an Async Job? Send a cancellation to the running service.
-						asyncServiceInstanceManager.cancelInstance(jobId);
-					}
-
+					handleNewMessage(consumerRecord);
 				}
 			}
 			uniqueConsumer.close();
@@ -259,6 +224,45 @@ public class ServiceMessageThreadManager {
 		}
 	}
 
+	private void handleNewMessage(final ConsumerRecord<String,String> consumerRecord) {
+		String jobId = null;
+		ObjectMapper mapper = new ObjectMapper();
+
+		// Determine if this Job Id is being processed by this component.
+		try {
+			PiazzaJobRequest request = mapper.readValue(consumerRecord.value(), PiazzaJobRequest.class);
+			jobId = ((AbortJob) request.jobType).getJobId();
+		} catch (Exception exception) {
+			String error = String.format("Error Aborting Job. Could not get the Job ID from the Kafka Message with error:  %s",
+					exception.getMessage());
+			LOG.error(error, exception);
+			coreLogger.log(error, Severity.ERROR);
+			return;
+		}
+
+		// Determine if this a Sync or Async job
+		if (runningServiceRequests.containsKey(jobId)) {
+			// Cancel the Running Synchronous Job by terminating its thread
+			boolean cancelled = runningServiceRequests.get(jobId).cancel(true);
+			if (cancelled) {
+				// Log the cancellation has occurred
+				coreLogger.log(String.format("Successfully requested termination of Job thread for Job ID %s", jobId),
+						Severity.INFORMATIONAL);
+			} else {
+				coreLogger.log(String.format(
+						"Attempted to Cancel running job thread for ID %s, but the thread could not be forcefully cancelled.",
+						jobId), Severity.ERROR);
+			}
+			// Remove it from the list of Running Jobs
+			runningServiceRequests.remove(jobId);
+		} else {
+			// Is this a Task Managed Job? Remove it from the Jobs queue if it is pending.
+			serviceTaskManager.cancelJob(jobId);
+			// Is this an Async Job? Send a cancellation to the running service.
+			asyncServiceInstanceManager.cancelInstance(jobId);
+		}
+	}
+	
 	public ObjectMapper makeObjectMapper() {
 		return new ObjectMapper();
 	}

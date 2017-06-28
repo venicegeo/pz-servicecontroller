@@ -108,7 +108,7 @@ public class ServiceMessageWorker {
 	private MongoAccessor accessor;
 
 	@Autowired
-	private PiazzaLogger coreLogger;
+	private PiazzaLogger logger;
 
 	@Autowired
 	private ExecuteServiceHandler esHandler;
@@ -131,195 +131,226 @@ public class ServiceMessageWorker {
 	@Async
 	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job,
 			WorkerCallback callback) {
+		
 		try {
-			String executeJobStatus = StatusUpdate.STATUS_SUCCESS;
-			String handleTextUpdate = "";
-			ResponseEntity<String> externalServiceResponse = null;
-			int statusCode = 400;
-
-			// Ensure a valid Job has been received through Kafka
-			if (job == null) {
-				throw new DataInspectException("A Null Job has been received by the Service Controller Worker.");
-			}
-
-			// Ensure the Job Type is of Execute Service Job
-			if ((job.getJobType() == null) || (job.getJobType() instanceof ExecuteServiceJob == false)) {
-				throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.",
-						HttpStatus.BAD_REQUEST.value());
-			}
+			validateJob(job);
 
 			// Process the Execution of the External Service
-			try {
-				PiazzaJobType jobType = job.getJobType();
-
-				coreLogger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), Severity.DEBUG, new AuditElement(job.getJobId(), "executeService", ""));
-
-				// Get the Job Data and Service information.
-				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
-				jobItem.setJobId(consumerRecord.key());
-				ExecuteServiceData esData = jobItem.data;
-				Service service = accessor.getServiceById(esData.getServiceId());
-
-				// Send the Job Status that this Job has been handled. If this is a typical sync/async service, then the
-				// request will be made directly to the Service URL. If this is a Task-Managed Service, then the Job
-				// will be put into the Jobs queue.
-				StatusUpdate su = new StatusUpdate();
-				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
-					su.setStatus(StatusUpdate.STATUS_PENDING);
-				} else {
-					su.setStatus(StatusUpdate.STATUS_RUNNING);
-				}
-				ProducerRecord<String, String> statusUpdateRecord = new ProducerRecord<String, String>(
-						String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
-						objectMapper.writeValueAsString(su));
-				producer.send(statusUpdateRecord);
-
-				if (esData.dataOutput != null) {
-
-					if (Thread.interrupted()) {
-						throw new InterruptedException();
-					}
-					// First check to see if the service is OFFLINE, if so
-					// do not execute a thing
-					ResourceMetadata rMetadata = service.getResourceMetadata();
-					if ((rMetadata != null) && (rMetadata.getAvailability() != null)
-							&& (rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE.toString()))) {
-						throw new DataInspectException(
-								"The service " + esData.getServiceId() + " is " + ResourceMetadata.STATUS_TYPE.OFFLINE.toString());
-
-					}
-					// Determine if this is a Service that is processed Asynchronously, or is Task Managed. If so, then
-					// branch here.
-					if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().booleanValue())) {
-						// Perform Asynchronous Logic
-						asynchronousServiceWorker.executeService(jobItem);
-						// Return null. This future will not be tracked by the Service Thread Manager.
-						// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
-						// we don't have to scatter return statements throughout this method.
-						callback.onComplete(consumerRecord.key());
-						return null;
-					} else if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
-						// If this is a Task Managed service, then insert this Job into the Task Management queue.
-						serviceTaskManager.addJobToQueue(jobItem);
-						callback.onComplete(consumerRecord.key());
-						return null;
-					}
-
-					// If the Service is neither Asynchronous or Task Managed, then process it in the normal Synchronous
-					// manner.
-
-					coreLogger.log("ExecuteServiceJob Original Way", Severity.DEBUG);
-					// Execute the external Service and get the Response Entity
-					try {
-						externalServiceResponse = esHandler.handle(jobType);
-					} catch (Exception exception) {
-						// InterruptedException to ensure a common handled exception type.
-						LOG.info("Exception occurred", exception);
-						throw new InterruptedException(exception.getMessage());
-					}
-
-					if (Thread.interrupted()) {
-						throw new InterruptedException();
-					}
-
-					// If an internal error occurred during Service Handling, then throw an exception.
-					if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
-						throw new PiazzaJobException(
-								String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
-										externalServiceResponse.getStatusCode().toString()),
-								externalServiceResponse.getStatusCode().value());
-					}
-
-					// Process the Response and handle any Ingest that may result
-					String dataId = uuidFactory.getUUID();
-					String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
-
-					DataResult result = esHandler.processExecutionResult(service, outputType, producer, executeJobStatus,
-							externalServiceResponse, dataId);
-
-					if (Thread.interrupted()) {
-						throw new InterruptedException();
-					}
-
-					// If there is a Result, Send the Status Update with Result to the Job Manager component
-					if (result != null) {
-						StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
-						statusUpdate.setResult(result);
-						ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate,
-								SPACE);
-						producer.send(prodRecord);
-					}
-
-					// Fire Event to Workflow
-					fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");
-
-					// Return.
-					callback.onComplete(consumerRecord.key());
-					return new AsyncResult<String>("ServiceMessageWorker_Thread");
-				} else {
-					externalServiceResponse = new ResponseEntity<>(
-							"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
-				}
-			} catch (IOException | ResourceAccessException ex) {
-				LOG.error("Exception occurred", ex);
-				coreLogger.log(ex.getMessage(), Severity.ERROR);
-				executeJobStatus = StatusUpdate.STATUS_ERROR;
-				handleTextUpdate = ex.getMessage();
-			} catch (HttpClientErrorException | HttpServerErrorException hex) {
-				LOG.error("HttpException occurred", hex);
-				coreLogger.log(hex.getMessage(), Severity.ERROR);
-				executeJobStatus = StatusUpdate.STATUS_ERROR;
-				handleTextUpdate = hex.getResponseBodyAsString();
-				statusCode = hex.getStatusCode().value();
-			} catch (PiazzaJobException pex) {
-				LOG.error("PiazzaJobException occurred", pex);
-				coreLogger.log(pex.getMessage(), Severity.ERROR);
-				executeJobStatus = StatusUpdate.STATUS_ERROR;
-				handleTextUpdate = pex.getMessage();
-				statusCode = pex.getStatusCode();
-			}
-
-			if (Thread.interrupted()) {
-				throw new InterruptedException();
-			}
-
-			// If there was no result set then use the default error messages set.
-			if (externalServiceResponse == null) {
-				sendErrorStatus(executeJobStatus, handleTextUpdate, statusCode, producer, job.getJobId());
-			} else {
-				// If the status is not OK and the job is not null
-				// then send an update to the job manager that there was some failure
-				boolean eResult = (externalServiceResponse.getStatusCode() != HttpStatus.OK) ? true : false;
-				if (eResult) {
-					sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse,
-							new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
-				}
-			}
-		} catch (InterruptedException ex) { // NOSONAR normal handling of InterruptedException
-			coreLogger.log(String.format("Thread for Job %s was interrupted.", job.getJobId()), Severity.INFORMATIONAL);
-			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
-			TextResult result = new TextResult(ex.toString());
-			statusUpdate.setResult(result);
-
-			try {
-				producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecord.key(), statusUpdate, SPACE));
-			} catch (JsonProcessingException jsonException) {
-				LOG.error(JSON_ERR, jsonException);
-				coreLogger.log(String.format(
-						"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
-						consumerRecord.key(), jsonException.getMessage()), Severity.ERROR);
-			}
-		} catch (Exception ex) {
+			return processExernalServiceExecution(consumerRecord, producer, job, callback);
+		} 
+		catch (InterruptedException ex) { // NOSONAR normal handling of InterruptedException
+			interruptJob(consumerRecord.key(), producer, job.getJobId(), ex.toString());
+		} 
+		catch (Exception ex) {
 			LOG.error("Unexpected Error in processing External Service", ex);
 			// Catch any General Exceptions that occur during runtime.
-			coreLogger.log(ex.getMessage(), Severity.ERROR);
+			logger.log(ex.getMessage(), Severity.ERROR);
 			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),
 					HttpStatus.INTERNAL_SERVER_ERROR.value(), producer, job.getJobId());
 		}
 
 		// Return Future
 		callback.onComplete(consumerRecord.key());
+		
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
+	}
+	
+	private void validateJob(final Job job) throws PiazzaJobException, DataInspectException {
+		// Ensure a valid Job has been received through Kafka
+		if (job == null) {
+			throw new DataInspectException("A Null Job has been received by the Service Controller Worker.");
+		}
+
+		// Ensure the Job Type is of Execute Service Job
+		if ((job.getJobType() == null) || (job.getJobType() instanceof ExecuteServiceJob == false)) {
+			throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.",
+					HttpStatus.BAD_REQUEST.value());
+		}
+	}
+	
+	private void validateResourceMetadata(final ResourceMetadata rMetadata, final String serviceId) throws DataInspectException {
+		if ((rMetadata != null) && (rMetadata.getAvailability() != null)
+				&& (rMetadata.getAvailability().equals(ResourceMetadata.STATUS_TYPE.OFFLINE.toString()))) {
+			throw new DataInspectException(
+					"The service " + serviceId + " is " + ResourceMetadata.STATUS_TYPE.OFFLINE.toString());
+
+		}	}
+	
+	private void checkThreadInterrupted() throws InterruptedException {
+		if (Thread.interrupted()) {
+			throw new InterruptedException();
+		}
+	}
+	
+	private void sendJobStatusInfo(final Service service, final Producer<String,String> producer, final String jobId) throws JsonProcessingException {
+		StatusUpdate su = new StatusUpdate();
+		if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
+			su.setStatus(StatusUpdate.STATUS_PENDING);
+		} 
+		else {
+			su.setStatus(StatusUpdate.STATUS_RUNNING);
+		}
+		ProducerRecord<String, String> statusUpdateRecord = new ProducerRecord<String, String>(
+				String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+				objectMapper.writeValueAsString(su));
+		producer.send(statusUpdateRecord);
+	}
+	
+	private boolean isAsynOrTaskManagedService(final Service service, final WorkerCallback callback, final String consumerRecordKey, final ExecuteServiceJob jobItem) throws InterruptedException {
+		if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().booleanValue())) {
+			// Perform Asynchronous Logic
+			asynchronousServiceWorker.executeService(jobItem);
+			// Return null. This future will not be tracked by the Service Thread Manager.
+			// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
+			// we don't have to scatter return statements throughout this method.
+			callback.onComplete(consumerRecordKey);
+			return true;
+		} 
+		else if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
+			// If this is a Task Managed service, then insert this Job into the Task Management queue.
+			serviceTaskManager.addJobToQueue(jobItem);
+			callback.onComplete(consumerRecordKey);
+			return true;
+		}
+		
+		return false;
+	}
+	private void interruptJob(final String consumerRecordKey, final Producer<String, String> producer, final String jobId, final String exception) {
+		logger.log(String.format("Thread for Job %s was interrupted.", jobId), Severity.INFORMATIONAL);
+		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
+		TextResult result = new TextResult(exception);
+		statusUpdate.setResult(result);
+
+		try {
+			producer.send(JobMessageFactory.getUpdateStatusMessage(consumerRecordKey, statusUpdate, SPACE));
+		} 
+		catch (JsonProcessingException jsonException) {
+			LOG.error(JSON_ERR, jsonException);
+			logger.log(String.format(
+					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
+					consumerRecordKey, jsonException.getMessage()), Severity.ERROR);
+		}
+	}
+	
+	private void checkServiceResponseCode(final ResponseEntity<String> externalServiceResponse) throws PiazzaJobException {
+		if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
+			throw new PiazzaJobException(
+					String.format("Error %s with Status Code %s", externalServiceResponse.getBody(), externalServiceResponse.getStatusCode().toString()), externalServiceResponse.getStatusCode().value());
+		}
+	}
+	
+	private void sendJobStatusResultUpdate(final DataResult result, final Producer<String, String> producer, final String jobId) throws JsonProcessingException {
+		if (result != null) {
+			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
+			statusUpdate.setResult(result);
+			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(jobId, statusUpdate,
+					SPACE);
+			producer.send(prodRecord);
+		}
+	}
+	
+	private void executeExternalService(ResponseEntity<String> externalServiceResponse, final PiazzaJobType jobType) throws InterruptedException {
+		try {
+			externalServiceResponse = esHandler.handle(jobType);
+		} 
+		catch (Exception exception) {
+			// InterruptedException to ensure a common handled exception type.
+			LOG.info("Exception occurred", exception);
+			throw new InterruptedException(exception.getMessage());
+		}
+	}
+	
+	private AsyncResult<String> processExernalServiceExecution(final ConsumerRecord<String, String> consumerRecord, 
+			final Producer<String, String> producer, final Job job, WorkerCallback callback) throws InterruptedException, DataInspectException {
+		
+		logger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), Severity.DEBUG, new AuditElement(job.getJobId(), "executeService", ""));
+
+		ResponseEntity<String> externalServiceResponse = null;
+		
+			try {
+				// Get the Job Data and Service information.
+				final PiazzaJobType jobType = job.getJobType();
+				final ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
+				jobItem.setJobId(consumerRecord.key());
+				final ExecuteServiceData esData = jobItem.data;
+				final Service service = accessor.getServiceById(esData.getServiceId());
+
+				// Send the Job Status that this Job has been handled. If this is a typical sync/async service, then the
+				// request will be made directly to the Service URL. If this is a Task-Managed Service, then the Job
+				// will be put into the Jobs queue.
+				sendJobStatusInfo(service, producer, job.getJobId());
+
+				if (esData.dataOutput != null) {
+
+					checkThreadInterrupted();
+					
+					// First check to see if the service is OFFLINE, if so
+					// do not execute a thing
+					validateResourceMetadata(service.getResourceMetadata(), esData.getServiceId());
+
+					// Determine if this is a Service that is processed Asynchronously, or is Task Managed. If so, then
+					// branch here.					
+					if( isAsynOrTaskManagedService(service, callback, consumerRecord.key(), jobItem) ) {
+						return null;
+					}
+
+					// If Service is neither Asynchronous nor Task Managed, process it synchronously
+					logger.log("ExecuteServiceJob Original Way", Severity.DEBUG);
+					
+					// Execute the external Service and get the Response Entity
+					executeExternalService(externalServiceResponse, jobType);
+
+					checkThreadInterrupted();
+
+					// If an internal error occurred during Service Handling, then throw an exception.
+					checkServiceResponseCode(externalServiceResponse);
+
+					// Process the Response and handle any Ingest that may result
+					final String dataId = uuidFactory.getUUID();
+					final String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
+					final DataResult result = esHandler.processExecutionResult(service, outputType, producer, StatusUpdate.STATUS_SUCCESS,
+							externalServiceResponse, dataId);
+
+					checkThreadInterrupted();
+
+					// If there is a Result, Send the Status Update with Result to the Job Manager component
+					sendJobStatusResultUpdate(result, producer, job.getJobId());
+
+					// Fire Event to Workflow
+					fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataId, "Service completed successfully.");
+				} 
+				else {
+					externalServiceResponse = new ResponseEntity<>(
+							"DataOuptut mimeType was not specified.  Please refer to the API for details.", HttpStatus.BAD_REQUEST);
+				}
+			} 
+			catch (IOException | ResourceAccessException ex) {
+				LOG.error("Exception occurred", ex);
+				logger.log(ex.getMessage(), Severity.ERROR);	
+				sendErrorStatus(StatusUpdate.STATUS_ERROR, ex.getMessage(), 400, producer, job.getJobId());
+			} 
+			catch (HttpClientErrorException | HttpServerErrorException hex) {
+				LOG.error("HttpException occurred", hex);
+				logger.log(hex.getMessage(), Severity.ERROR);
+				sendErrorStatus(StatusUpdate.STATUS_ERROR, hex.getResponseBodyAsString(), hex.getStatusCode().value(), producer, job.getJobId());
+			} 
+			catch (PiazzaJobException pex) {
+				LOG.error("PiazzaJobException occurred", pex);
+				logger.log(pex.getMessage(), Severity.ERROR);
+				sendErrorStatus(StatusUpdate.STATUS_ERROR, pex.getMessage(), pex.getStatusCode(), producer, job.getJobId());
+			}
+
+			checkThreadInterrupted();
+
+			if (externalServiceResponse.getStatusCode() != HttpStatus.OK) {
+				sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse,
+						new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
+			}
+			
+			// Return Future
+			callback.onComplete(consumerRecord.key());
+			
+			return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}
 
 	/**
@@ -349,7 +380,7 @@ public class ServiceMessageWorker {
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
 			LOG.error(JSON_ERR, exception);
-			coreLogger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
+			logger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(),
 					Severity.ERROR);
 		}
 	}
@@ -358,7 +389,7 @@ public class ServiceMessageWorker {
 	 * Fires the event to the Workflow service that a Service has completed execution.
 	 */
 	private void fireWorkflowEvent(String user, String jobId, String dataId, String message) {
-		coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", Severity.DEBUG, new AuditElement(jobId, "executeServiceWorkflowEventCreated", dataId));
+		logger.log("Firing Event for Completion of ExecuteServiceJob execution", Severity.DEBUG, new AuditElement(jobId, "executeServiceWorkflowEventCreated", dataId));
 		try {
 			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.
 			String url = String.format("%s/%s?name=%s", WORKFLOW_URL, "eventType", "piazza:executionComplete");
@@ -381,16 +412,29 @@ public class ServiceMessageWorker {
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
 			String error = String.format("Could not successfully send Event to Workflow Service. Returned with code %s and message %s",
 					exception.getStatusCode().toString(), exception.getResponseBodyAsString());
-			coreLogger.log(error, Severity.ERROR);
+			logger.log(error, Severity.ERROR);
 			LOG.error(error, exception);
 		} catch (IOException exception) {
 			String error = String.format("Could not send Event to Workflow Service. Serialization of Event failed with Error: %s",
 					exception.getMessage());
 			LOG.error(error, exception);
-			coreLogger.log(error, Severity.ERROR);
+			logger.log(error, Severity.ERROR);
 		}
 	}
 
+	private void processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, UriComponentsBuilder builder) {
+		
+		if (inputName.length() == 0) {
+			logger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
+			builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
+			logger.log("Builder URL is " + builder.toUriString(), Severity.DEBUG);
+		} 
+		else {
+			builder.queryParam(inputName, paramValue);
+			logger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
+		}
+	}
+	
 	/**
 	 * This method is for demonstrating ingest of raster data This will be refactored once the API changes have been
 	 * communicated to other team members
@@ -402,11 +446,14 @@ public class ServiceMessageWorker {
 	 */
 	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer)
 			throws InterruptedException, JsonParseException, JsonMappingException, IOException {
+		
 		RestTemplate restTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;
+		
 		// Get the id from the data
 		String serviceId = data.getServiceId();
 		Service sMetadata = accessor.getServiceById(serviceId);
+		
 		// Default request mimeType application/json
 		String requestMimeType = "application/json";
 
@@ -421,16 +468,15 @@ public class ServiceMessageWorker {
 
 			if (entry.getValue() instanceof URLParameterDataType) {
 				String paramValue = ((TextDataType) entry.getValue()).getContent();
-				if (inputName.length() == 0) {
-					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
-				} else {
-					builder.queryParam(inputName, paramValue);
-				}
-			} else if (entry.getValue() instanceof BodyDataType) {
+				
+				processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
+			}
+			else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
 			}
+			
 			// Default behavior for other inputs, put them in list of objects
 			// which are transformed into JSON consistent with default
 			// requestMimeType
@@ -438,9 +484,11 @@ public class ServiceMessageWorker {
 				postObjects.put(inputName, entry.getValue());
 			}
 		}
+		
 		if (postString.length() > 0 && postObjects.size() > 0) {
 			return;
-		} else if (postObjects.size() > 0) {
+		} 
+		else if (postObjects.size() > 0) {
 			try {
 				postString = objectMapper.writeValueAsString(postObjects);
 			} catch (JsonProcessingException e) {
@@ -448,6 +496,7 @@ public class ServiceMessageWorker {
 				LOG.error(JSON_ERR, e);
 			}
 		}
+		
 		URI url = URI.create(builder.toUriString());
 		HttpHeaders headers = new HttpHeaders();
 
@@ -460,7 +509,7 @@ public class ServiceMessageWorker {
 
 		if (postString.length() > 0) {
 
-			coreLogger.log("The postString is " + postString, Severity.DEBUG);
+			logger.log("The postString is " + postString, Severity.DEBUG);
 
 			HttpHeaders theHeaders = new HttpHeaders();
 			// headers.add("Authorization", "Basic " + credentials);
@@ -469,7 +518,7 @@ public class ServiceMessageWorker {
 			// Create the Request template and execute
 			HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
 
-			coreLogger.log("About to call special service " + url, Severity.DEBUG);
+			logger.log("About to call special service " + url, Severity.DEBUG);
 
 			if (null != sMetadata.getTimeout()) {
 				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
@@ -477,22 +526,21 @@ public class ServiceMessageWorker {
 				factory.setConnectTimeout(sMetadata.getTimeout().intValue() * 1000);
 				restTemplate = new RestTemplate(factory);
 			}
+			
 			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
-			if (Thread.interrupted()) {
-				throw new InterruptedException();
-			}
+			checkThreadInterrupted();
 
-			coreLogger.log("The Response is " + response.getBody(), Severity.DEBUG);
+			logger.log("The Response is " + response.getBody(), Severity.DEBUG);
 
 			String serviceControlString = response.getBody();
-			coreLogger.log("Service Control String " + serviceControlString, Severity.DEBUG);
+			logger.log("Service Control String " + serviceControlString, Severity.DEBUG);
 
 			DataResource dataResource = objectMapper.readValue(serviceControlString, DataResource.class);
-			coreLogger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), Severity.DEBUG);
+			logger.log("dataResource type is " + dataResource.getDataType().getClass().getSimpleName(), Severity.DEBUG);
 
 			dataResource.dataId = uuidFactory.getUUID();
-			coreLogger.log("dataId " + dataResource.dataId, Severity.DEBUG);
+			logger.log("dataId " + dataResource.dataId, Severity.DEBUG);
 
 			PiazzaJobRequest pjr = new PiazzaJobRequest();
 			pjr.createdBy = "pz-sc-ingest-raster-test";
@@ -505,12 +553,10 @@ public class ServiceMessageWorker {
 			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
 			producer.send(newProdRecord);
 
-			coreLogger.log("newProdRecord sent " + newProdRecord.toString(), Severity.DEBUG);
+			logger.log("newProdRecord sent " + newProdRecord.toString(), Severity.DEBUG);
 
-			if (Thread.interrupted()) {
-				throw new InterruptedException();
-			}
-
+			checkThreadInterrupted();
+			
 			fireWorkflowEvent(job.getCreatedBy(), job.getJobId(), dataResource.dataId, "Service completed successfully.");
 
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
@@ -521,7 +567,7 @@ public class ServiceMessageWorker {
 			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
 
 			producer.send(prodRecord);
-			coreLogger.log("prodRecord sent " + prodRecord.toString(), Severity.DEBUG);
+			logger.log("prodRecord sent " + prodRecord.toString(), Severity.DEBUG);
 		}
 	}
 
@@ -536,8 +582,8 @@ public class ServiceMessageWorker {
 
 			subtype = sb.substring(index + 1, mimeType.length());
 			mediaType = new MediaType(type, subtype);
-			coreLogger.log("The type is=" + type, Severity.DEBUG);
-			coreLogger.log("The subtype is=" + subtype, Severity.DEBUG);
+			logger.log("The type is=" + type, Severity.DEBUG);
+			logger.log("The subtype is=" + subtype, Severity.DEBUG);
 
 		} else {
 			// Assume there is just a type for the mime, no subtype

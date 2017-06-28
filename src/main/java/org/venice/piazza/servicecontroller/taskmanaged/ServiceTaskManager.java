@@ -132,21 +132,23 @@ public class ServiceTaskManager {
 		try {
 			// Attempt to get the Service that executed this Job
 			Job job = mongoAccessor.getJobById(jobId);
-			if (job != null) {
-				// If this was an Execute Service Job
-				if (job.getJobType() instanceof ExecuteServiceJob) {
-					ExecuteServiceJob executeJob = (ExecuteServiceJob) job.getJobType();
-					String serviceId = executeJob.getData().getServiceId();
+			if( job == null ) {
+				return;
+			}
+			
+			// If this was an Execute Service Job
+			if (job.getJobType() instanceof ExecuteServiceJob) {
+				ExecuteServiceJob executeJob = (ExecuteServiceJob) job.getJobType();
+				String serviceId = executeJob.getData().getServiceId();
 
-					// Log the cancellation
-					piazzaLogger.log(String.format("Removing Service Job %s from Service Queue for %s", jobId, serviceId),
-							Severity.INFORMATIONAL);
+				// Log the cancellation
+				piazzaLogger.log(String.format("Removing Service Job %s from Service Queue for %s", jobId, serviceId),
+						Severity.INFORMATIONAL);
 
-					// Determine if the Service ID is Task-Managed
-					Service service = mongoAccessor.getServiceById(serviceId);
-					if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
-						handleTaskManagedJob(serviceId, jobId);
-					}
+				// Determine if the Service ID is Task-Managed
+				Service service = mongoAccessor.getServiceById(serviceId);
+				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
+					handleTaskManagedJob(serviceId, jobId);
 				}
 			}
 		} catch (Exception exception) {

@@ -152,7 +152,7 @@ public class ServiceMessageWorker {
 			try {
 				PiazzaJobType jobType = job.getJobType();
 
-				coreLogger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), Severity.DEBUG, new AuditElement(job.getJobId(), "executeService", "")));
+				coreLogger.log("ExecuteServiceJob Detected with ID " + job.getJobId(), Severity.DEBUG, new AuditElement(job.getJobId(), "executeService", ""));
 
 				// Get the Job Data and Service information.
 				ExecuteServiceJob jobItem = (ExecuteServiceJob) jobType;
@@ -358,7 +358,7 @@ public class ServiceMessageWorker {
 	 * Fires the event to the Workflow service that a Service has completed execution.
 	 */
 	private void fireWorkflowEvent(String user, String jobId, String dataId, String message) {
-		coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", Severity.DEBUG, new AuditElement(job.getJobId(), "executeServiceWorkflowEventCreated", "")));
+		coreLogger.log("Firing Event for Completion of ExecuteServiceJob execution", Severity.DEBUG, new AuditElement(job.getJobId(), "executeServiceWorkflowEventCreated", ""));
 		try {
 			// Retrieve piazza:executionCompletion EventTypeId from pz-workflow.
 			String url = String.format("%s/%s?name=%s", WORKFLOW_URL, "eventType", "piazza:executionComplete");

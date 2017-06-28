@@ -170,16 +170,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 			if (entry.getValue() instanceof URLParameterDataType) {
 				String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
-				
-				if (inputName.length() == 0) {
-					logger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
-					builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
-					logger.log("Builder URL is " + builder.toUriString(), Severity.DEBUG);
-				} 
-				else {
-					builder.queryParam(inputName, paramValue);
-					logger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
-				}
+
+				processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
 			} 
 			else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
@@ -199,12 +191,13 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		}
 
 		logger.log("Final Builder URL" + builder.toUriString(), Severity.INFORMATIONAL);
-		if (postString.length() > 0 && postObjects.size() > 0) {
-			logger.log("String Input not consistent with other Inputs", Severity.ERROR);
-			return new ResponseEntity<>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
-		}
-		
 		if (postObjects.size() > 0) {
+			
+			if (postString.length() > 0) {
+				logger.log("String Input not consistent with other Inputs", Severity.ERROR);
+				return new ResponseEntity<>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
+			}
+			
 			try {
 				postString = objectMapper.writeValueAsString(postObjects);
 			} 
@@ -219,6 +212,19 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				new AuditElement("serviceController", "executingExternalService", sMetadata.getServiceId()));
 		
 		return executeJob(sMetadata.getMethod(), requestMimeType, builder.toUriString(), postString);
+	}
+	
+	private void processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, UriComponentsBuilder builder) {
+		
+		if (inputName.length() == 0) {
+			logger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
+			builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
+			logger.log("Builder URL is " + builder.toUriString(), Severity.DEBUG);
+		} 
+		else {
+			builder.queryParam(inputName, paramValue);
+			logger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
+		}
 	}
 	
 	private ResponseEntity<String> executeJob(final String method, final String requestMimeType, final String uri, final String postString) throws InterruptedException {

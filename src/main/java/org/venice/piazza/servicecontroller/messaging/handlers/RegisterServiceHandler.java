@@ -100,48 +100,48 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	 * @return resourceId of the registered service
 	 */
 	public String handle(Service service) {
-		String resultServiceId = "";
-		if (service != null) {
-			resultServiceId = uuidFactory.getUUID();
-			service.setServiceId(resultServiceId);
+		
+		if( service == null ) {
+			return "";
+		}
+		
+		String resultServiceId = uuidFactory.getUUID();
+		service.setServiceId(resultServiceId);
 
-			// Set default request timeout
-			if (null == service.getTimeout()) {
-				service.setTimeout(HTTP_REQUEST_TIMEOUT);
+		// Set default request timeout
+		if (null == service.getTimeout()) {
+			service.setTimeout(HTTP_REQUEST_TIMEOUT);
+		}
+
+		// Set the Administrators of the service, if none have been specified.
+		if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
+			
+			String createdBy = service.getResourceMetadata().getCreatedBy();
+			
+			if (service.getTaskAdministrators() == null) {
+				// If no administration list has been specified, then create one by default.
+				service.setTaskAdministrators(new ArrayList<String>());
+				service.getTaskAdministrators().add(createdBy);
+			} 
+			else if (service.getTaskAdministrators().contains(createdBy) == false) {
+				service.getTaskAdministrators().add(createdBy);
 			}
 
-			// Set the Administrators of the service, if none have been specified.
-			if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
-				String createdBy = service.getResourceMetadata().getCreatedBy();
-				if (service.getTaskAdministrators() == null) {
-					// If no administration list has been specified, then create one by default.
-					service.setTaskAdministrators(new ArrayList<String>());
-					service.getTaskAdministrators().add(createdBy);
-				} else {
-					// Ensure that the service creator is included in the list of administrators.
-					if (service.getTaskAdministrators().contains(createdBy) == false) {
-						service.getTaskAdministrators().add(createdBy);
-					}
-				}
+			// Create the Task Management Service Queue for this Service
+			serviceTaskManager.createServiceQueue(resultServiceId);
+		}
 
-				// Create the Task Management Service Queue for this Service
-				serviceTaskManager.createServiceQueue(resultServiceId);
-			}
+		// Commit
+		resultServiceId = mongoAccessor.save(service);
+		coreLogger.log("The result of the save is " + resultServiceId, Severity.DEBUG);
 
-			// Commit
-			resultServiceId = mongoAccessor.save(service);
-			coreLogger.log("The result of the save is " + resultServiceId, Severity.DEBUG);
+		PiazzaResponse response = elasticAccessor.save(service);
 
-			PiazzaResponse response = elasticAccessor.save(service);
-
-			if (ErrorResponse.class.isInstance(response)) {
-				ErrorResponse errResponse = (ErrorResponse) response;
-				coreLogger.log("The result of the save is " + errResponse.message, Severity.DEBUG);
-
-			} else {
-				coreLogger.log("Successfully stored service " + service.getServiceId(), Severity.DEBUG);
-
-			}
+		if (ErrorResponse.class.isInstance(response)) {
+			coreLogger.log("The result of the save is " + ((ErrorResponse) response).message, Severity.DEBUG);
+		} 
+		else {
+			coreLogger.log("Successfully stored service " + service.getServiceId(), Severity.DEBUG);
 		}
 
 		return resultServiceId;

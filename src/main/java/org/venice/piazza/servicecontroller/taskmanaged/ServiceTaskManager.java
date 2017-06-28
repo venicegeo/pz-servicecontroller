@@ -145,27 +145,7 @@ public class ServiceTaskManager {
 					// Determine if the Service ID is Task-Managed
 					Service service = mongoAccessor.getServiceById(serviceId);
 					if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
-						// If this is a Task Managed Service, then remove the Job from the Queue.
-						mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
-						// Send the Kafka Message that this Job has been cancelled
-						StatusUpdate statusUpdate = new StatusUpdate();
-						statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
-						ProducerRecord<String, String> statusUpdateRecord;
-						try {
-							statusUpdateRecord = new ProducerRecord<String, String>(
-									String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
-									objectMapper.writeValueAsString(statusUpdate));
-							producer.send(statusUpdateRecord);
-						} catch (JsonProcessingException exception) {
-							String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId,
-									exception.getMessage());
-							LOG.error(error, exception);
-							piazzaLogger.log(error, Severity.ERROR);
-						}
-
-						// Log the success
-						piazzaLogger.log(String.format("Successfully removed Service Job %s from Service Queue for %s", jobId, serviceId),
-								Severity.INFORMATIONAL);
+						handleTaskManagedJob(serviceId, jobId);
 					}
 				}
 			}
@@ -174,6 +154,30 @@ public class ServiceTaskManager {
 			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
+	}
+	
+	private void handleTaskManagedJob(final String serviceId, final String jobId) {
+		// If this is a Task Managed Service, then remove the Job from the Queue.
+		mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
+		// Send the Kafka Message that this Job has been cancelled
+		StatusUpdate statusUpdate = new StatusUpdate();
+		statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
+		ProducerRecord<String, String> statusUpdateRecord;
+		try {
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+					objectMapper.writeValueAsString(statusUpdate));
+			producer.send(statusUpdateRecord);
+		} catch (JsonProcessingException exception) {
+			String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId,
+					exception.getMessage());
+			LOG.error(error, exception);
+			piazzaLogger.log(error, Severity.ERROR);
+		}
+
+		// Log the success
+		piazzaLogger.log(String.format("Successfully removed Service Job %s from Service Queue for %s", jobId, serviceId),
+				Severity.INFORMATIONAL);
 	}
 
 	/**

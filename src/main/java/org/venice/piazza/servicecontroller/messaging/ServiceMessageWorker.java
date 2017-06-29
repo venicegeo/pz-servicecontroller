@@ -249,9 +249,9 @@ public class ServiceMessageWorker {
 		}
 	}
 	
-	private void executeExternalService(ResponseEntity<String> externalServiceResponse, final PiazzaJobType jobType) throws InterruptedException {
+	private ResponseEntity<String> executeExternalService(final PiazzaJobType jobType) throws InterruptedException {
 		try {
-			externalServiceResponse = esHandler.handle(jobType);
+			return esHandler.handle(jobType);
 		} 
 		catch (Exception exception) {
 			// InterruptedException to ensure a common handled exception type.
@@ -298,7 +298,7 @@ public class ServiceMessageWorker {
 					logger.log("ExecuteServiceJob Original Way", Severity.DEBUG);
 					
 					// Execute the external Service and get the Response Entity
-					executeExternalService(externalServiceResponse, jobType);
+					externalServiceResponse = executeExternalService(jobType);
 
 					checkThreadInterrupted();
 
@@ -342,7 +342,7 @@ public class ServiceMessageWorker {
 
 			checkThreadInterrupted();
 
-			if (externalServiceResponse.getStatusCode() != HttpStatus.OK) {
+			if (externalServiceResponse != null && externalServiceResponse.getStatusCode() != HttpStatus.OK) {
 				sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse,
 						new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
 			}

@@ -422,17 +422,21 @@ public class ServiceMessageWorker {
 		}
 	}
 
-	private void processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, UriComponentsBuilder builder) {
+	private UriComponentsBuilder processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, final UriComponentsBuilder builder) {
+		
+		UriComponentsBuilder localBuilder = builder;
 		
 		if (inputName.length() == 0) {
 			logger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
-			builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
-			logger.log("Builder URL is " + builder.toUriString(), Severity.DEBUG);
+			localBuilder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
+			logger.log("Builder URL is " + localBuilder.toUriString(), Severity.DEBUG);
 		} 
 		else {
-			builder.queryParam(inputName, paramValue);
+			localBuilder.queryParam(inputName, paramValue);
 			logger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
 		}
+		
+		return localBuilder;
 	}
 	
 	/**
@@ -469,7 +473,7 @@ public class ServiceMessageWorker {
 			if (entry.getValue() instanceof URLParameterDataType) {
 				String paramValue = ((TextDataType) entry.getValue()).getContent();
 				
-				processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
+				builder = processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
 			}
 			else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();

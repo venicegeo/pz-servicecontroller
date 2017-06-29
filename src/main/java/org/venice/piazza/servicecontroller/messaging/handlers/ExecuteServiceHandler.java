@@ -171,7 +171,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			if (entry.getValue() instanceof URLParameterDataType) {
 				String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
 
-				processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
+				builder = processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
 			} 
 			else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
@@ -214,17 +214,21 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		return executeJob(sMetadata.getMethod(), requestMimeType, builder.toUriString(), postString);
 	}
 	
-	private void processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, UriComponentsBuilder builder) {
+	private UriComponentsBuilder processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, final UriComponentsBuilder builder) {
+		
+		UriComponentsBuilder localBuilder = builder;
 		
 		if (inputName.length() == 0) {
 			logger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
-			builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
-			logger.log("Builder URL is " + builder.toUriString(), Severity.DEBUG);
+			localBuilder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
+			logger.log("Builder URL is " + localBuilder.toUriString(), Severity.DEBUG);
 		} 
 		else {
-			builder.queryParam(inputName, paramValue);
+			localBuilder.queryParam(inputName, paramValue);
 			logger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
 		}
+		
+		return localBuilder;
 	}
 	
 	private ResponseEntity<String> executeJob(final String method, final String requestMimeType, final String uri, final String postString) throws InterruptedException {

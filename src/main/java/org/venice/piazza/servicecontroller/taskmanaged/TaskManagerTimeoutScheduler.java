@@ -24,7 +24,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
 import model.logger.Severity;
 import model.service.metadata.Service;

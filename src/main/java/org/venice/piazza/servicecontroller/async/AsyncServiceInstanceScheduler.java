@@ -24,7 +24,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
 /**
  * This component manages the polling cycle of Asynchronous Service Instances.

@@ -46,7 +46,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 

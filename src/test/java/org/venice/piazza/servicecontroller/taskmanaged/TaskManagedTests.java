@@ -25,7 +25,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.Assert;
 import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -51,7 +51,7 @@ public class TaskManagedTests {
 	@Mock
 	private ObjectMapper objectMapper;
 	@Mock
-	private MongoAccessor mongoAccessor;
+	private DatabaseAccessor mongoAccessor;
 	@Mock
 	private PiazzaLogger piazzaLogger;
 	@Mock

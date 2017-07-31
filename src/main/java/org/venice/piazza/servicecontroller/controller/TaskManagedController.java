@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
 import exception.InvalidInputException;
@@ -61,7 +61,7 @@ public class TaskManagedController {
 	@Autowired
 	private ServiceTaskManager serviceTaskManager;
 	@Autowired
-	private MongoAccessor mongoAccessor;
+	private DatabaseAccessor mongoAccessor;
 
 	private static final String NO_ACCESS_MSG = "Service does not allow this user to access.";
 	private static final String SERVICE_CONTROLLER = "ServiceController";

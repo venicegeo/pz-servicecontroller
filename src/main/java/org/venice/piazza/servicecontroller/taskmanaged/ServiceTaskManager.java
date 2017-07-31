@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,7 +72,7 @@ public class ServiceTaskManager {
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
-	private MongoAccessor mongoAccessor;
+	private DatabaseAccessor mongoAccessor;
 	@Autowired
 	private PiazzaLogger piazzaLogger;
 

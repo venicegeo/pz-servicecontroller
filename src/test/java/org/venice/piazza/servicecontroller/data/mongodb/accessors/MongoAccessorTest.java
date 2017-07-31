@@ -28,7 +28,7 @@ import model.service.metadata.Service;
 public class MongoAccessorTest {
 	
 	@InjectMocks
-	private MongoAccessor mongoAccessor;
+	private DatabaseAccessor mongoAccessor;
 
 	/**
 	 * Setup

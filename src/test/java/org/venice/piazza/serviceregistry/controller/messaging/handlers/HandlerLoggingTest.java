@@ -37,7 +37,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -83,7 +83,7 @@ public class HandlerLoggingTest {
 	ResourceMetadata rm = null;
 	Service service = null;
 	RestTemplate template = null;
-	MongoAccessor mockMongo = null;
+	DatabaseAccessor mockMongo = null;
 	ElasticSearchAccessor mockElasticAccessor = null;
 	PiazzaLogger logger = null;
 	CoreServiceProperties props = null;
@@ -105,7 +105,7 @@ public class HandlerLoggingTest {
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8085/string/toUpper");
 		
-		mockMongo = mock(MongoAccessor.class);
+		mockMongo = mock(DatabaseAccessor.class);
 		when(mockMongo.save(service)).thenReturn("8");
 		when(mockMongo.getServiceById("8")).thenReturn(service);
 		logger = mock(PiazzaLogger.class);

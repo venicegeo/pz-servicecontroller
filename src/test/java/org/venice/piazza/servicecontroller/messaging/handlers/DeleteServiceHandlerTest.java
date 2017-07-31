@@ -32,7 +32,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
@@ -61,7 +61,7 @@ public class DeleteServiceHandlerTest {
 	
 	// Create some mocks
 	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 	@Mock 
 	private ElasticSearchAccessor elasticAccessorMock;
 	@Mock

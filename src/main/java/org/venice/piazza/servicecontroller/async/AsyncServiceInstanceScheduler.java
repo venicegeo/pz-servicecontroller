@@ -24,7 +24,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
 
 /**
  * This component manages the polling cycle of Asynchronous Service Instances.
@@ -40,7 +40,7 @@ public class AsyncServiceInstanceScheduler {
 	private int POLL_FREQUENCY_SECONDS;
 
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private AsynchronousServiceWorker worker;
 

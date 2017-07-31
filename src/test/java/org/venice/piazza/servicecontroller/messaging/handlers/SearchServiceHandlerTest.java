@@ -29,7 +29,7 @@ import org.mockito.MockitoAnnotations;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.mongodb.accessors.DatabaseAccessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -52,7 +52,7 @@ public class SearchServiceHandlerTest {
 	@Mock 
 	private PiazzaLogger loggerMock;
 	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 
 	@Mock
 	private ObjectMapper omMock;

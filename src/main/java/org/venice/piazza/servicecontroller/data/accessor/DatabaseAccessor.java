@@ -29,6 +29,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.common.hibernate.dao.AsyncServiceInstanceDao;
 import org.venice.piazza.common.hibernate.dao.ServiceJobDao;
 import org.venice.piazza.common.hibernate.dao.service.ServiceDao;
+import org.venice.piazza.common.hibernate.entity.AsyncServiceInstanceEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceEntity;
 
 import exception.InvalidInputException;
@@ -39,7 +40,6 @@ import model.logger.Severity;
 import model.response.Pagination;
 import model.response.PiazzaResponse;
 import model.response.ServiceListResponse;
-import model.service.SearchCriteria;
 import model.service.async.AsyncServiceInstance;
 import model.service.metadata.Service;
 import model.service.taskmanaged.ServiceJob;
@@ -182,7 +182,45 @@ public class DatabaseAccessor {
 	 *            The instance
 	 */
 	public void addAsyncServiceInstance(AsyncServiceInstance instance) {
-		// getAsyncServiceInstancesCollection().insert(instance);
+		asyncServiceInstanceDao.save(new AsyncServiceInstanceEntity(instance));
+	}
+
+	/**
+	 * Gets the Async Service Instance for the Piazza Job ID
+	 * 
+	 * @param jobId
+	 *            The piazza Job ID
+	 * @return The async service instance
+	 */
+	public AsyncServiceInstance getInstanceByJobId(String jobId) {
+		AsyncServiceInstanceEntity entity = asyncServiceInstanceDao.getInstanceByJobId(jobId);
+		if (entity == null) {
+			return null;
+		} else {
+			return entity.getAsyncServiceInstance();
+		}
+	}
+
+	/**
+	 * Updates an Async Service instance. Uses the Job ID as the key to find the Instance.
+	 */
+	public void updateAsyncServiceInstance(AsyncServiceInstance instance) {
+		AsyncServiceInstanceEntity entity = asyncServiceInstanceDao.getInstanceByJobId(instance.getJobId());
+		if (entity != null) {
+			entity.setAsyncServiceInstance(instance);
+			asyncServiceInstanceDao.save(entity);
+		}
+	}
+
+	/**
+	 * Deletes an Async Service Instance by Job ID. This is done when the Service has been processed to completion and
+	 * the instance is no longer needed.
+	 * 
+	 * @param id
+	 *            The Job ID of the Async Service Instance.
+	 */
+	public void deleteAsyncServiceInstance(String jobId) {
+		asyncServiceInstanceDao.deleteInstanceByJobId(jobId);
 	}
 
 	/**
@@ -196,38 +234,6 @@ public class DatabaseAccessor {
 		// DBCursor<AsyncServiceInstance> cursor = getAsyncServiceInstancesCollection()
 		// .find(DBQuery.lessThan("lastCheckedOn", thresholdEpoch));
 		// return cursor.toArray();
-	}
-
-	/**
-	 * Gets the Async Service Instance for the Piazza Job ID
-	 * 
-	 * @param jobId
-	 *            The piazza Job ID
-	 * @return The async service instance
-	 */
-	public AsyncServiceInstance getInstanceByJobId(String jobId) {
-		return null;
-		// BasicDBObject query = new BasicDBObject(JOB_ID, jobId);
-		// AsyncServiceInstance instance = getAsyncServiceInstancesCollection().findOne(query);
-		// return instance;
-	}
-
-	/**
-	 * Updates an Async Service instance.
-	 */
-	public void updateAsyncServiceInstance(AsyncServiceInstance instance) {
-		// getAsyncServiceInstancesCollection().update(DBQuery.is(JOB_ID, instance.getJobId()), instance);
-	}
-
-	/**
-	 * Deletes an Async Service Instance by Job ID. This is done when the Service has been processed to completion and
-	 * the instance is no longer needed.
-	 * 
-	 * @param id
-	 *            The Job ID of the Async Service Instance.
-	 */
-	public void deleteAsyncServiceInstance(String jobId) {
-		// getAsyncServiceInstancesCollection().remove(DBQuery.is(JOB_ID, jobId));
 	}
 
 	/**

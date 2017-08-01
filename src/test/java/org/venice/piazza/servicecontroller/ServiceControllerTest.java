@@ -239,34 +239,6 @@ public class ServiceControllerTest {
 		assertThat("The unregistration  should be successful",piazzaResponse, instanceOf(SuccessResponse.class));
 
 	}
-	
-	@Test
-	/**
-	 * Test unsuccessful un-registration
-	 */
-	public void testUnregisterServiceServiceId() {
-		
-		// Should check to make sure each of the handlers are not null
-		Mockito.doThrow(new Exception("Error")).when(dlHandlerMock).handle(null, false);
-
-		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(null, false).getBody();
-		
-		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
-	}
-	
-	@Test
-	/**
-	 * Test unsuccessful un-registration soft delete
-	 */
-	public void testUnregisterServiceServiceIdSD() {
-		// Should check to make sure each of the handlers are not null
-		Mockito.doThrow(new Exception("Error")).when(dlHandlerMock).handle(null, true);
-
-		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(null, true).getBody();
-		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
-	}
 
 	@Test
 	public void testUpdateServiceMetadata() throws Exception{
@@ -318,7 +290,7 @@ public class ServiceControllerTest {
 
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
-		Mockito.doThrow(new Exception("There was an error")).when(usHandlerMock).handle(service);
+		Mockito.doThrow(new ResourceAccessException("There was an error")).when(usHandlerMock).handle(service);
 		Mockito.doReturn(service).when(accessorMock).getServiceById(Mockito.eq(testServiceId));
 
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
@@ -365,7 +337,7 @@ public class ServiceControllerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-        Mockito.doThrow(new Exception("An error occured")).when(esHandlerMock).handle(edata);
+        Mockito.doThrow(new InterruptedException("An error occured")).when(esHandlerMock).handle(edata);
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);
         assertEquals("The response should be a null", retVal, null);

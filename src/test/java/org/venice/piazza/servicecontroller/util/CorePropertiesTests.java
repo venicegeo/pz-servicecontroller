@@ -95,64 +95,7 @@ public class CorePropertiesTests {
 		String hostName = coreServiceProps.getHost();
 		assertEquals("The service controller host was been set correctly.", hostName, SC_HOST + "2");
 	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB Collection Name is read correctly and populated
-	 */
-	public void testMongoCollectionNameRUI() {
-		String collectionName = coreServiceProps.getMongoCollectionName();
-		assertEquals("The MongoDB host was autowired properly.", collectionName, MONGO_COLLECTION_NAME);
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB URI is read correctly and populated
-	 */
-	public void testSetMongoCollectionName() {
-		coreServiceProps.setMongoCollectionName(MONGO_COLLECTION_NAME + "2");
-		String collectionName = coreServiceProps.getMongoCollectionName();
-		assertEquals("The MongoDB host was autowired properly.", collectionName, MONGO_COLLECTION_NAME + "2");
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB URI is read correctly and populated
-	 */
-	public void testMongoDBRUI() {
-		String hostResult = coreServiceProps.getMongoHost();
-		assertEquals("The MongoDB URI was autowired properly.", hostResult, MONGO_URI);
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB URI is read correctly and populated
-	 */
-	public void testSetMongoDBRUI() {
-		coreServiceProps.setMongoHost(MONGO_URI + "2");
-		String hostResult = coreServiceProps.getMongoHost();
-		assertEquals("The MongoDB URI was autowired properly.", hostResult, MONGO_URI + "2");
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB Name is autowired properly.
-	 */
-	public void testMongoDBName() {
-		String hostResult = coreServiceProps.getMongoDBName();
-		assertEquals("The MongoDB DB Name was autowired properly.", hostResult, MONGO_DB);
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB Name is set properly.
-	 */
-	public void testSetMongoDBName() {
-		coreServiceProps.setMongoDBName(MONGO_DB + "2");
-		String hostResult = coreServiceProps.getMongoDBName();
-		assertEquals("The MongoDB DB Name was autowired properly.", hostResult, MONGO_DB + "2");
-	}
-
+	
 	@Ignore
 	@Test
 	/** 

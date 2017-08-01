@@ -103,7 +103,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	        if (sMetadata != null) {
 	        	coreLogger.log(String.format("Updating a registered service with ID %s", sMetadata.getServiceId()), Severity.INFORMATIONAL);
 
-				result = accessor.update(sMetadata);
+				result = accessor.save(sMetadata);
 				
 				if (result.length() > 0) {
 				   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, Severity.INFORMATIONAL);

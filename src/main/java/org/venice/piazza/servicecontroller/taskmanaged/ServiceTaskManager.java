@@ -29,7 +29,6 @@ import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.MongoException;
 
 import exception.InvalidInputException;
 import messaging.job.JobMessageFactory;
@@ -79,7 +78,7 @@ public class ServiceTaskManager {
 	private Producer<String, String> producer;
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceTaskManager.class);
 	private static final String TOPIC_FORMAT = "%s-%s";
-	
+
 	@PostConstruct
 	public void initialize() {
 		producer = KafkaClientFactory.getProducer(KAFKA_HOSTS);
@@ -111,8 +110,9 @@ public class ServiceTaskManager {
 		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
-					job.getJobId(), objectMapper.writeValueAsString(statusUpdate));
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
+					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: " + exception.getMessage();
@@ -132,10 +132,10 @@ public class ServiceTaskManager {
 		try {
 			// Attempt to get the Service that executed this Job
 			Job job = mongoAccessor.getJobById(jobId);
-			if( job == null ) {
+			if (job == null) {
 				return;
 			}
-			
+
 			// If this was an Execute Service Job
 			if (job.getJobType() instanceof ExecuteServiceJob) {
 				ExecuteServiceJob executeJob = (ExecuteServiceJob) job.getJobType();
@@ -157,7 +157,7 @@ public class ServiceTaskManager {
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 	}
-	
+
 	private void handleTaskManagedJob(final String serviceId, final String jobId) {
 		// If this is a Task Managed Service, then remove the Job from the Queue.
 		mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
@@ -171,8 +171,7 @@ public class ServiceTaskManager {
 					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
-			String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId,
-					exception.getMessage());
+			String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId, exception.getMessage());
 			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
@@ -192,8 +191,7 @@ public class ServiceTaskManager {
 	 * @param statusUpdate
 	 *            The Status of the Job
 	 */
-	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate)
-			throws MongoException, InvalidInputException {
+	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate) throws InvalidInputException {
 		// Validate the Service ID exists, and contains the Job ID
 		ServiceJob serviceJob = mongoAccessor.getServiceJob(serviceId, jobId);
 		if (serviceJob == null) {
@@ -202,8 +200,9 @@ public class ServiceTaskManager {
 		// Send the Update to Kafka
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
-					jobId, objectMapper.writeValueAsString(statusUpdate));
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Job Status from External Service to Job Manager: " + exception.getMessage();
@@ -254,8 +253,9 @@ public class ServiceTaskManager {
 		statusUpdate.setStatus(StatusUpdate.STATUS_RUNNING);
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
-					jobId, objectMapper.writeValueAsString(statusUpdate));
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: ";

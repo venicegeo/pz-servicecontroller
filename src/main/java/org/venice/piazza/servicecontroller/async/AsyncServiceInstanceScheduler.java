@@ -26,6 +26,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
+import model.service.async.AsyncServiceInstance;
+
 /**
  * This component manages the polling cycle of Asynchronous Service Instances.
  * 

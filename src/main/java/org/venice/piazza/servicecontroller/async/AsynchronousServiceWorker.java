@@ -16,7 +16,6 @@
 package org.venice.piazza.servicecontroller.async;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import javax.annotation.PostConstruct;
 
@@ -47,6 +46,7 @@ import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.logger.Severity;
 import model.response.JobResponse;
+import model.service.async.AsyncServiceInstance;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;

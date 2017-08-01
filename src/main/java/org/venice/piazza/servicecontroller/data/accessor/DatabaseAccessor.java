@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -31,7 +30,6 @@ import org.venice.piazza.common.hibernate.dao.AsyncServiceInstanceDao;
 import org.venice.piazza.common.hibernate.dao.ServiceJobDao;
 import org.venice.piazza.common.hibernate.dao.service.ServiceDao;
 import org.venice.piazza.common.hibernate.entity.ServiceEntity;
-import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import exception.InvalidInputException;
 import model.job.Job;
@@ -59,10 +57,6 @@ public class DatabaseAccessor {
 	private int STALE_INSTANCE_THRESHOLD_SECONDS;
 	@Autowired
 	private PiazzaLogger logger;
-	@Autowired
-	private CoreServiceProperties coreServiceProperties;
-	@Autowired
-	private Environment environment;
 
 	@Autowired
 	private ServiceDao serviceDao;
@@ -173,83 +167,12 @@ public class DatabaseAccessor {
 	 * @return The Job with the specified Id
 	 */
 	public Service getServiceById(String serviceId) throws ResourceAccessException {
-		return null;
-		// BasicDBObject query = new BasicDBObject(SERVICE_ID, serviceId);
-		// Service service;
-		//
-		// try {
-		// if ((service = getServiceCollection().findOne(query)) == null) {
-		// throw new ResourceAccessException(String.format("Service not found : %s", serviceId));
-		// }
-		// } catch (MongoTimeoutException mte) {
-		// LOG.error("MongoDB instance not available", mte);
-		// throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
-		// }
-		//
-		// return service;
-	}
-
-	/**
-	 * Returns a list of ResourceMetadata based on the criteria provided
-	 * 
-	 * @return List of matching services that match the search criteria
-	 */
-	public List<Service> search(SearchCriteria criteria) {
-		return null;
-		// final List<Service> results = new ArrayList<Service>();
-		//
-		// if (criteria == null) {
-		// return results;
-		// }
-		//
-		// LOG.debug("Criteria field=" + criteria.getField());
-		// LOG.debug("Criteria field=" + criteria.getPattern());
-		//
-		// Pattern pattern = Pattern.compile(criteria.getPattern());
-		// BasicDBObject query = new BasicDBObject(criteria.getField(), pattern);
-		//
-		// try {
-		//
-		// DBCursor<Service> cursor = getServiceCollection().find(query);
-		// while (cursor.hasNext()) {
-		// results.add(cursor.next());
-		// }
-		//
-		// // Now try to look for the field in the resourceMetadata just to make sure
-		// query = new BasicDBObject("resourceMetadata." + criteria.getField(), pattern);
-		// cursor = getServiceCollection().find(query);
-		//
-		// while (cursor.hasNext()) {
-		// final Service serviceItem = cursor.next();
-		//
-		// if (!exists(results, serviceItem.getServiceId())) {
-		// results.add(serviceItem);
-		// }
-		// }
-		//
-		// return results;
-		// } catch (MongoTimeoutException mte) {
-		// LOG.error("MongoDB instance not available", mte);
-		// throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
-		// }
-	}
-
-	/**
-	 * Checks to see if the result was already found
-	 * 
-	 * @return true - result is already there false - result has not been found
-	 */
-	private boolean exists(List<Service> serviceResults, String id) {
-		return false;
-		// boolean doesExist = false;
-		//
-		// for (int i = 0; i < serviceResults.size(); i++) {
-		// String serviceItemId = serviceResults.get(i).getServiceId();
-		// if (serviceItemId.equals(id))
-		// doesExist = true;
-		// }
-		// return doesExist;
-
+		ServiceEntity serviceEntity = serviceDao.getServiceById(serviceId);
+		if (serviceEntity == null) {
+			throw new ResourceAccessException(String.format("Service not found : %s", serviceId));
+		} else {
+			return serviceEntity.getService();
+		}
 	}
 
 	/**
@@ -330,7 +253,7 @@ public class DatabaseAccessor {
 	 *         processed.
 	 */
 	public synchronized ServiceJob getNextJobInServiceQueue(String serviceId) {
-		
+
 		return null;
 		// Query for Service Jobs, sort by Queue Time, so that we get the single most stale Job. Ignore Jobs that have
 		// already been started. Find the latest.

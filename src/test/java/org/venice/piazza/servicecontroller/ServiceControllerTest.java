@@ -48,7 +48,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.TestUtilities;
@@ -65,7 +64,6 @@ import model.response.ServiceIdResponse;
 import model.response.ServiceListResponse;
 import model.response.ServiceResponse;
 import model.response.SuccessResponse;
-import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -88,8 +86,6 @@ public class ServiceControllerTest {
 	private ListServiceHandler lsHandlerMock;
 	@Mock
 	private DeleteServiceHandler dlHandlerMock;
-	@Mock
-	private SearchServiceHandler ssHandlerMock;
 	@Mock
 	private DatabaseAccessor accessorMock;
 	@Mock 
@@ -379,21 +375,6 @@ public class ServiceControllerTest {
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to list", HttpStatus.OK); 
         Mockito.doReturn(responseEntity ).when(lsHandlerMock).handle();
         ResponseEntity<String> result = sc.listService();
-        assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
-	}
-	
-	@Test
-	/**
-	 * tests the search.  This is called internally for testing
-	 */
-	public void testSearch() {
-		SearchCriteria criteria = new SearchCriteria();
-		criteria.setField("name");
-		criteria.setPattern("M*");
-		
-		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to search", HttpStatus.OK); 
-        Mockito.doReturn(responseEntity ).when(ssHandlerMock).handle(criteria);
-        ResponseEntity<String> result = sc.search(criteria);
         assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
 	}
 

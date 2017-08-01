@@ -39,7 +39,6 @@ import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
@@ -47,7 +46,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -62,7 +60,6 @@ import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
-import model.logger.Severity;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -101,9 +98,6 @@ public class ServiceMessageWorkerTest {
 
 	@Mock
 	private DeleteServiceHandler dlHandlerMock;
-
-	@Mock
-	private SearchServiceHandler ssHandlerMock;
 
 	@Mock
 	private CoreServiceProperties coreServicePropMock;

@@ -45,7 +45,6 @@ import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHan
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 
 import exception.DataInspectException;
@@ -60,7 +59,6 @@ import model.response.PiazzaResponse;
 import model.response.ServiceIdResponse;
 import model.response.ServiceResponse;
 import model.response.SuccessResponse;
-import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -93,8 +91,6 @@ public class ServiceController {
 	private PiazzaLogger logger;
 	@Autowired
 	private RegisterServiceHandler rsHandler;
-	@Autowired
-	private SearchServiceHandler ssHandler;
 
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
@@ -392,23 +388,6 @@ public class ServiceController {
 	public ResponseEntity<String> listService() {
 		logger.log("listService", Severity.INFORMATIONAL);
 		ResponseEntity<String> result = lsHandler.handle();
-		logger.log(RESULT_IS + result, Severity.DEBUG);
-		return result;
-	}
-
-	/**
-	 * Searches for registered services. This service is meant for internal Piazza use, Swiss-Army-Knife (SAK)
-	 * administration and for testing of the serviceController.
-	 * 
-	 * @param SearchCriteria
-	 *            The criteria to search with (specify field and regular expression
-	 * 
-	 * @return Json list o resourceMetadata items (Metadata about the service)
-	 */
-	@RequestMapping(value = "/search", method = RequestMethod.POST, headers = "Accept=application/json")
-	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
-		logger.log("search " + " " + criteria.getField() + "->" + criteria.getPattern(), Severity.INFORMATIONAL);
-		ResponseEntity<String> result = ssHandler.handle(criteria);
 		logger.log(RESULT_IS + result, Severity.DEBUG);
 		return result;
 	}

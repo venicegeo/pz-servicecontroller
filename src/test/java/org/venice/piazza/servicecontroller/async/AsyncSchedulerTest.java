@@ -27,6 +27,8 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
+import model.service.async.AsyncServiceInstance;
+
 /**
  * Tests Async Scheduler
  * 

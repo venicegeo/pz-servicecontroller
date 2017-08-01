@@ -44,6 +44,7 @@ import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.response.JobResponse;
+import model.service.async.AsyncServiceInstance;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;

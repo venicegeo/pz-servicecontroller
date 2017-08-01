@@ -266,7 +266,7 @@ public class HandlerLoggingTest {
 
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.setData(service);
-		when(mockMongo.update(service)).thenReturn("8");
+		when(mockMongo.save(service)).thenReturn("8");
 		when(mockElasticAccessor.update(service)).thenReturn(new ServiceResponse());
 		usHandler.handle(rjob);
 		assertTrue(logString.contains("was updated"));
@@ -294,7 +294,7 @@ public class HandlerLoggingTest {
 
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.setData(service);
-		when(mockMongo.update(service)).thenReturn("");
+		when(mockMongo.save(service)).thenReturn("");
 		usHandler.handle(rjob);
 		assertTrue(logString.contains("something went wrong"));
 	}

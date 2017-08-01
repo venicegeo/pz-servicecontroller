@@ -30,7 +30,6 @@ import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.MongoException;
 
 import exception.InvalidInputException;
 import model.job.Job;
@@ -93,7 +92,7 @@ public class TaskManagedTests {
 	 * Tests updating Status for a Job, with a null Service found
 	 */
 	@Test(expected = InvalidInputException.class)
-	public void testStatusUpdateError() throws MongoException, InvalidInputException {
+	public void testStatusUpdateError() throws InvalidInputException {
 		serviceTaskManager.processStatusUpdate("noServiceHere", "123456", new StatusUpdate());
 	}
 
@@ -101,7 +100,7 @@ public class TaskManagedTests {
 	 * Tests updating a Status
 	 */
 	@Test
-	public void testStatusUpdate() throws JsonProcessingException, MongoException, InvalidInputException {
+	public void testStatusUpdate() throws JsonProcessingException, InvalidInputException {
 		// Mock
 		StatusUpdate mockUpdate = new StatusUpdate(StatusUpdate.STATUS_RUNNING);
 		ServiceJob mockJob = new ServiceJob("job123", "service123");

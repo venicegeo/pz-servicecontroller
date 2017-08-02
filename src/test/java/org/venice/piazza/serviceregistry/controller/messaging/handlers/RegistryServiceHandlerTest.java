@@ -96,8 +96,8 @@ public class RegistryServiceHandlerTest {
 	public void testHandleWithData() {
 		ElasticSearchAccessor mockElasticAccessor = mock(ElasticSearchAccessor.class);
 		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
-		DatabaseAccessor mockMongo = mock(DatabaseAccessor.class);
-		when(mockMongo.save(service)).thenReturn("8");
+		DatabaseAccessor mockAccessor = mock(DatabaseAccessor.class);
+		when(mockAccessor.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		//when(props.getUuidservicehost().thenReturn("Nothing");
 		PiazzaLogger logger = mock(PiazzaLogger.class);
@@ -112,8 +112,8 @@ public class RegistryServiceHandlerTest {
 	public void testHandleWithoutData() {
 		ElasticSearchAccessor mockElasticAccessor = mock(ElasticSearchAccessor.class);
 		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
-		DatabaseAccessor mockMongo = mock(DatabaseAccessor.class);
-		when(mockMongo.save(service)).thenReturn("8");
+		DatabaseAccessor mockAccessor = mock(DatabaseAccessor.class);
+		when(mockAccessor.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		Service nullService = null;

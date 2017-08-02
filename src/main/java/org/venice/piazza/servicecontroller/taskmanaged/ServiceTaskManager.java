@@ -71,7 +71,7 @@ public class ServiceTaskManager {
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
-	private DatabaseAccessor mongoAccessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private PiazzaLogger piazzaLogger;
 
@@ -104,7 +104,7 @@ public class ServiceTaskManager {
 	public void addJobToQueue(ExecuteServiceJob job) {
 		// Add the Job to the Jobs queue
 		ServiceJob serviceJob = new ServiceJob(job.getJobId(), job.getData().getServiceId());
-		mongoAccessor.addJobToServiceQueue(job.getData().getServiceId(), serviceJob);
+		accessor.addJobToServiceQueue(job.getData().getServiceId(), serviceJob);
 		// Update the Job Status as Pending to Kafka
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
@@ -131,7 +131,7 @@ public class ServiceTaskManager {
 	public void cancelJob(String jobId) {
 		try {
 			// Attempt to get the Service that executed this Job
-			Job job = mongoAccessor.getJobById(jobId);
+			Job job = accessor.getJobById(jobId);
 			if (job == null) {
 				return;
 			}
@@ -146,7 +146,7 @@ public class ServiceTaskManager {
 						Severity.INFORMATIONAL);
 
 				// Determine if the Service ID is Task-Managed
-				Service service = mongoAccessor.getServiceById(serviceId);
+				Service service = accessor.getServiceById(serviceId);
 				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
 					handleTaskManagedJob(serviceId, jobId);
 				}
@@ -160,7 +160,7 @@ public class ServiceTaskManager {
 
 	private void handleTaskManagedJob(final String serviceId, final String jobId) {
 		// If this is a Task Managed Service, then remove the Job from the Queue.
-		mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
+		accessor.removeJobFromServiceQueue(serviceId, jobId);
 		// Send the Kafka Message that this Job has been cancelled
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
@@ -193,7 +193,7 @@ public class ServiceTaskManager {
 	 */
 	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate) throws InvalidInputException {
 		// Validate the Service ID exists, and contains the Job ID
-		ServiceJob serviceJob = mongoAccessor.getServiceJob(serviceId, jobId);
+		ServiceJob serviceJob = accessor.getServiceJob(serviceId, jobId);
 		if (serviceJob == null) {
 			throw new InvalidInputException(String.format("Cannot find the specified Job %s for this Service %s", jobId, serviceId));
 		}
@@ -215,7 +215,7 @@ public class ServiceTaskManager {
 				|| (StatusUpdate.STATUS_FAIL.equals(status)) || (StatusUpdate.STATUS_SUCCESS.equals(status))) {
 			piazzaLogger.log(String.format("Job %s For Service %s has reached final state %s. Removing from Service Jobs Queue.", jobId,
 					serviceId, status), Severity.INFORMATIONAL);
-			mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
+			accessor.removeJobFromServiceQueue(serviceId, jobId);
 		}
 	}
 
@@ -229,7 +229,7 @@ public class ServiceTaskManager {
 	public ExecuteServiceJob getNextJobFromQueue(String serviceId)
 			throws ResourceAccessException, InterruptedException, InvalidInputException {
 		// Pull the Job off of the queue.
-		ServiceJob serviceJob = mongoAccessor.getNextJobInServiceQueue(serviceId);
+		ServiceJob serviceJob = accessor.getNextJobInServiceQueue(serviceId);
 
 		// If no Job exists in the Queue, then return null. No work needs to be done.
 		if (serviceJob == null) {
@@ -238,7 +238,7 @@ public class ServiceTaskManager {
 
 		// Read the Jobs collection for the full Job Details
 		String jobId = serviceJob.getJobId();
-		Job job = mongoAccessor.getJobById(jobId);
+		Job job = accessor.getJobById(jobId);
 		// Ensure the Job exists. If it does not, then throw an error.
 		if (job == null) {
 			String error = String.format(
@@ -299,7 +299,7 @@ public class ServiceTaskManager {
 			piazzaLogger.log(error, Severity.INFORMATIONAL,
 					new AuditElement("serviceController", "failTimedOutJob", serviceJob.getJobId()));
 			// If the Job has too many timeouts, then fail the Job.
-			mongoAccessor.removeJobFromServiceQueue(serviceId, serviceJob.getJobId());
+			accessor.removeJobFromServiceQueue(serviceId, serviceJob.getJobId());
 			// Send the Kafka message that this Job has failed.
 			StatusUpdate statusUpdate = new StatusUpdate();
 			statusUpdate.setResult(new ErrorResult("Service Timed Out", error));
@@ -320,7 +320,7 @@ public class ServiceTaskManager {
 			piazzaLogger.log(String.format("Service Job %s for Service %s has timed out for the %s time and will be retried again.",
 					serviceId, serviceJob.getJobId(), serviceJob.getTimeouts() + 1), Severity.INFORMATIONAL);
 			// Increment the failure count and tag for retry
-			mongoAccessor.incrementServiceJobTimeout(serviceId, serviceJob);
+			accessor.incrementServiceJobTimeout(serviceId, serviceJob);
 		}
 
 	}

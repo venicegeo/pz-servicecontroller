@@ -98,7 +98,7 @@ public class DatabaseAccessor {
 				result = " service " + serviceId + " was disabled ";
 			}
 		} else {
-			logger.log(String.format("Deleting resource from MongoDB %s", serviceId), Severity.INFORMATIONAL,
+			logger.log(String.format("Deleting resource from DB %s", serviceId), Severity.INFORMATIONAL,
 					new AuditElement(SERVICE_CTR, "Deleted Service", serviceId));
 			serviceDao.deleteServiceByServiceId(serviceId);
 			// If any Service Queue exists, also delete that here.
@@ -112,7 +112,7 @@ public class DatabaseAccessor {
 	 * Store the new service information
 	 */
 	public String save(Service service) {
-		logger.log(String.format("Saving resource in MongoDB %s", service.getServiceId()), Severity.INFORMATIONAL,
+		logger.log(String.format("Saving resource in DB %s", service.getServiceId()), Severity.INFORMATIONAL,
 				new AuditElement(SERVICE_CTR, "Created Service ", service.getServiceId()));
 		serviceDao.save(new ServiceEntity(service));
 		return service.getServiceId();

@@ -60,7 +60,7 @@ public class TaskManagedController {
 	@Autowired
 	private ServiceTaskManager serviceTaskManager;
 	@Autowired
-	private DatabaseAccessor mongoAccessor;
+	private DatabaseAccessor accessor;
 
 	private static final String NO_ACCESS_MSG = "Service does not allow this user to access.";
 	private static final String SERVICE_CONTROLLER = "ServiceController";
@@ -84,7 +84,7 @@ public class TaskManagedController {
 					Severity.INFORMATIONAL);
 
 			// Check for Access
-			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
+			boolean canAccess = accessor.canUserAccessServiceQueue(serviceId, userName);
 			if (!canAccess) {
 				throw new ResourceAccessException(NO_ACCESS_MSG);
 			}
@@ -139,7 +139,7 @@ public class TaskManagedController {
 					Severity.INFORMATIONAL);
 
 			// Check for Access
-			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
+			boolean canAccess = accessor.canUserAccessServiceQueue(serviceId, userName);
 			if (!canAccess) {
 				throw new ResourceAccessException(NO_ACCESS_MSG);
 			}
@@ -189,18 +189,18 @@ public class TaskManagedController {
 					Severity.INFORMATIONAL);
 
 			// Check for Access
-			boolean canAccess = mongoAccessor.canUserAccessServiceQueue(serviceId, userName);
+			boolean canAccess = accessor.canUserAccessServiceQueue(serviceId, userName);
 			if (!canAccess) {
 				throw new ResourceAccessException(NO_ACCESS_MSG);
 			}
 
 			// Ensure this Service exists and is Task-Managed
-			Service service = mongoAccessor.getServiceById(serviceId);
+			Service service = accessor.getServiceById(serviceId);
 			if ((service.getIsTaskManaged() == null) || (service.getIsTaskManaged() == false)) {
 				throw new InvalidInputException("The specified Service is not a Task-Managed Service.");
 			}
 			// Fill Map with Metadata
-			Map<String, Object> response = mongoAccessor.getServiceQueueCollectionMetadata(serviceId);
+			Map<String, Object> response = accessor.getServiceQueueCollectionMetadata(serviceId);
 			// Respond
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
 		} catch (Exception exception) {

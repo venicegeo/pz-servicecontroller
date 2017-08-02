@@ -188,7 +188,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("service " + serviceId + " deleted").when(accessorMock).delete(serviceId, true);
 
@@ -207,7 +207,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("service " + serviceId + " deleted").when(accessorMock).delete(serviceId, false);
 
@@ -226,7 +226,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn(null).when(accessorMock).delete(serviceId, false);
 
@@ -244,7 +244,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("").when(accessorMock).delete(serviceId, false);
 

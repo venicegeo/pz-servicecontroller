@@ -50,7 +50,7 @@ public class TaskManagedTests {
 	@Mock
 	private ObjectMapper objectMapper;
 	@Mock
-	private DatabaseAccessor mongoAccessor;
+	private DatabaseAccessor accessor;
 	@Mock
 	private PiazzaLogger piazzaLogger;
 	@Mock
@@ -104,7 +104,7 @@ public class TaskManagedTests {
 		// Mock
 		StatusUpdate mockUpdate = new StatusUpdate(StatusUpdate.STATUS_RUNNING);
 		ServiceJob mockJob = new ServiceJob("job123", "service123");
-		Mockito.when(mongoAccessor.getServiceJob(Mockito.eq("service123"), Mockito.eq("job123"))).thenReturn(mockJob);
+		Mockito.when(accessor.getServiceJob(Mockito.eq("service123"), Mockito.eq("job123"))).thenReturn(mockJob);
 
 		// Test - Kafka succeeds
 		serviceTaskManager.processStatusUpdate("service123", "job123", mockUpdate);
@@ -128,7 +128,7 @@ public class TaskManagedTests {
 		Assert.isNull(job);
 
 		// Test - No Piazza Job found. Exception should be thrown.
-		Mockito.when(mongoAccessor.getNextJobInServiceQueue("service123")).thenReturn(new ServiceJob("job123", "service123"));
+		Mockito.when(accessor.getNextJobInServiceQueue("service123")).thenReturn(new ServiceJob("job123", "service123"));
 		serviceTaskManager.getNextJobFromQueue("service123");
 	}
 
@@ -139,13 +139,13 @@ public class TaskManagedTests {
 	public void testGetJob() throws ResourceAccessException, InterruptedException, InvalidInputException, JsonProcessingException {
 		// Mock
 		ServiceJob mockServiceJob = new ServiceJob("job123", "service123");
-		Mockito.when(mongoAccessor.getNextJobInServiceQueue(Mockito.eq("service123"))).thenReturn(mockServiceJob);
+		Mockito.when(accessor.getNextJobInServiceQueue(Mockito.eq("service123"))).thenReturn(mockServiceJob);
 
 		// Test - normal flow, proper Job type
 		Job mockJob = new Job();
 		mockJob.setJobId("job123");
 		mockJob.setJobType(new ExecuteServiceJob("job123"));
-		Mockito.when(mongoAccessor.getJobById(Mockito.eq("job123"))).thenReturn(mockJob);
+		Mockito.when(accessor.getJobById(Mockito.eq("job123"))).thenReturn(mockJob);
 		ExecuteServiceJob result = serviceTaskManager.getNextJobFromQueue("service123");
 
 		// Check not null, and proper Job ID
@@ -168,13 +168,13 @@ public class TaskManagedTests {
 	public void testGetJobTypeError() throws ResourceAccessException, InterruptedException, JsonProcessingException, InvalidInputException {
 		// Mock
 		ServiceJob mockServiceJob = new ServiceJob("job123", "service123");
-		Mockito.when(mongoAccessor.getNextJobInServiceQueue(Mockito.eq("service123"))).thenReturn(mockServiceJob);
+		Mockito.when(accessor.getNextJobInServiceQueue(Mockito.eq("service123"))).thenReturn(mockServiceJob);
 
 		// Test - Handle Kafka Exception, with Improper Job Type
 		Job mockJob = new Job();
 		mockJob.setJobId("job123");
 		mockJob.setJobType(new AbortJob("job321"));
-		Mockito.when(mongoAccessor.getJobById(Mockito.eq("job123"))).thenReturn(mockJob);
+		Mockito.when(accessor.getJobById(Mockito.eq("job123"))).thenReturn(mockJob);
 		Mockito.when(objectMapper.writeValueAsString(Mockito.any())).thenThrow(new JsonMappingException("Oops"));
 		serviceTaskManager.getNextJobFromQueue("service123"); // Should throw
 	}

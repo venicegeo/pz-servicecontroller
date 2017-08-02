@@ -50,9 +50,6 @@ public class CorePropertiesTests {
 	
 	public static String KAFKA_GROUP = "TheKafkaGroup";
 	public static String KAFKA_HOST = "kafkaHost";
-	public static String MONGO_COLLECTION_NAME = "TheServiceCollection";
-	public static String MONGO_DB = "mongoDB";
-	public static String MONGO_URI = "mongoURI";
 	public static String SC_HOST = "scgeointhost";
     public static String SC_PORT="8888";   
     public static String SEARCH_DOMAIN_PREFIX = "pz-search.io";
@@ -299,8 +296,6 @@ public class CorePropertiesTests {
 	        Properties properties = new Properties();
 
 	        properties.setProperty("vcap.services.pz-kafka.credentials.host", KAFKA_HOST);
-	        properties.setProperty("vcap.services.pz-mongodb.credentials.uri", MONGO_URI);
-	        properties.setProperty("vcap.services.pz-mongodb.credentials.database", MONGO_DB);
 
             properties.setProperty("logger.protocol", HTTPS_PROTOCOL);
             properties.setProperty("logger.prefix", "pz-logger");
@@ -312,7 +307,6 @@ public class CorePropertiesTests {
             properties.setProperty("SPACE", SPACE);
             properties.setProperty("kafka.group",  KAFKA_GROUP);
             properties.setProperty("server.port",  new Integer(SERVER_PORT).toString());
-            properties.setProperty("mongo.db.collection.name", MONGO_COLLECTION_NAME);
             properties.setProperty("servicecontroller.host", SC_HOST);
             properties.setProperty("servicecontroller.port", new Integer(SC_PORT).toString());
 //            properties.setProperty("search.protocol", HTTPS_PROTOCOL);

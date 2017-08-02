@@ -74,7 +74,7 @@ public class HandlerLoggingTest {
 	ResourceMetadata rm = null;
 	Service service = null;
 	RestTemplate template = null;
-	DatabaseAccessor mockMongo = null;
+	DatabaseAccessor accessor = null;
 	ElasticSearchAccessor mockElasticAccessor = null;
 	PiazzaLogger logger = null;
 	CoreServiceProperties props = null;
@@ -97,9 +97,9 @@ public class HandlerLoggingTest {
 		service.setServiceId("8");
 		service.setUrl("http://localhost:8085/string/toUpper");
 
-		mockMongo = mock(DatabaseAccessor.class);
-		when(mockMongo.save(service)).thenReturn("8");
-		when(mockMongo.getServiceById("8")).thenReturn(service);
+		accessor = mock(DatabaseAccessor.class);
+		when(accessor.save(service)).thenReturn("8");
+		when(accessor.getServiceById("8")).thenReturn(service);
 		logger = mock(PiazzaLogger.class);
 		props = mock(CoreServiceProperties.class);
 		mockElasticAccessor = mock(ElasticSearchAccessor.class);
@@ -140,7 +140,7 @@ public class HandlerLoggingTest {
 	public void TestDescribeServiceHandlerSuccessLogging() {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.setServiceID("8");
-		when(mockMongo.getServiceById("8")).thenReturn(service);
+		when(accessor.getServiceById("8")).thenReturn(service);
 		dsHandler.handle(dsmJob);
 		assertTrue(logString.contains("Describing a service"));
 	}
@@ -152,7 +152,7 @@ public class HandlerLoggingTest {
 		ArrayList<Service> services = new ArrayList<Service>();
 		services.add(service);
 		NullPointerException ex = new NullPointerException("Test Error");
-		when(mockMongo.list()).thenThrow(ex);
+		when(accessor.list()).thenThrow(ex);
 		lsHandler.handle(lsj);
 		assertTrue(logString.contains(ex.getMessage()));
 	}
@@ -163,7 +163,7 @@ public class HandlerLoggingTest {
 		ListServicesJob lsj = new ListServicesJob();
 		ArrayList<Service> services = new ArrayList<Service>();
 		services.add(service);
-		when(mockMongo.list()).thenReturn(services);
+		when(accessor.list()).thenReturn(services);
 		lsHandler.handle(lsj);
 		assertTrue(logString.contains("listing service"));
 	}
@@ -174,7 +174,7 @@ public class HandlerLoggingTest {
 		DescribeServiceMetadataJob dsmJob = new DescribeServiceMetadataJob();
 		dsmJob.setServiceID("8");
 		NullPointerException ex = new NullPointerException();
-		when(mockMongo.getServiceById("8")).thenThrow(ex);
+		when(accessor.getServiceById("8")).thenThrow(ex);
 		dsHandler.handle(dsmJob);
 		assertTrue(logString.contains("Could not retrieve resourceId"));
 	}
@@ -225,7 +225,7 @@ public class HandlerLoggingTest {
 
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.setData(service);
-		when(mockMongo.save(service)).thenReturn("8");
+		when(accessor.save(service)).thenReturn("8");
 		when(mockElasticAccessor.update(service)).thenReturn(new ServiceResponse());
 		usHandler.handle(rjob);
 		assertTrue(logString.contains("was updated"));
@@ -253,7 +253,7 @@ public class HandlerLoggingTest {
 
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.setData(service);
-		when(mockMongo.save(service)).thenReturn("");
+		when(accessor.save(service)).thenReturn("");
 		usHandler.handle(rjob);
 		assertTrue(logString.contains("something went wrong"));
 	}

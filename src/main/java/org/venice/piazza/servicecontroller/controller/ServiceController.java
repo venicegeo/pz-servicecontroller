@@ -198,7 +198,7 @@ public class ServiceController {
 			LOG.error(error, exception);
 			logger.log(error, Severity.ERROR);
 			logger.log(error, Severity.ERROR,
-					new AuditElement(SERVICE_CONTROLLER_LOWER, "gettingFullListOfRegisteredServices", "ServiceControllerMongoDB"));
+					new AuditElement(SERVICE_CONTROLLER_LOWER, "gettingFullListOfRegisteredServices", "ServiceControllerDB"));
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, SERVICE_CONTROLLER_UPPER), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -289,7 +289,7 @@ public class ServiceController {
 						String.format("Error validating updated Service Metadata. Validation Errors: %s", builder.toString()));
 			}
 
-			// Update Existing Service in mongo
+			// Update Existing Service
 			existingService.setServiceId(serviceId);
 			String result = usHandler.handle(existingService);
 			if (result.length() > 0) {

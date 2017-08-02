@@ -59,7 +59,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
     /**
-     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in MongoDB
+     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in DB
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
@@ -123,7 +123,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				/*TODO if (ErrorResponse.class.isInstance(response)) {
 					ErrorResponse errResponse = (ErrorResponse)response;
 					LOGGER.error("The result of the elasticsearch update is " + errResponse.message);
-					result = "";  // Indicates that update went wrong,  Mongo and ElasticSearch inconsistent
+					result = "";  // Indicates that update went wrong,  DB and ElasticSearch inconsistent
 				}
 				else {
 					LOGGER.debug("ElasticSearch Successfully updated service " + sMetadata.getServiceId());

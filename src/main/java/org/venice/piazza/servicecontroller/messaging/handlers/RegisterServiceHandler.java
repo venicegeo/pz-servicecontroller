@@ -46,7 +46,7 @@ import util.UUIDFactory;
 @Component
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	@Autowired
-	private DatabaseAccessor mongoAccessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private ElasticSearchAccessor elasticAccessor;
 	@Autowired
@@ -59,7 +59,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	private static final long HTTP_REQUEST_TIMEOUT = 600;
 
 	/**
-	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in MongoDB
+	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in DB
 	 * 
 	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
 	 */
@@ -94,7 +94,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
-	 * Handler for registering the new service with mongo and elastic search.
+	 * Handler for registering the new service with the database and elastic search.
 	 * 
 	 * @param service
 	 * @return resourceId of the registered service
@@ -132,7 +132,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		}
 
 		// Commit
-		resultServiceId = mongoAccessor.save(service);
+		resultServiceId = accessor.save(service);
 		coreLogger.log("The result of the save is " + resultServiceId, Severity.DEBUG);
 
 		PiazzaResponse response = elasticAccessor.save(service);

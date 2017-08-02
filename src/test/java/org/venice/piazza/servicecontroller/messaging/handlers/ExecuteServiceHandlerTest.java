@@ -258,8 +258,8 @@ public class ExecuteServiceHandlerTest {
 		when(restTemplateMock.postForEntity(Mockito.eq(uri), Mockito.any(Object.class), Mockito.eq(String.class)))
 				.thenReturn(new ResponseEntity<String>("testExecuteService", HttpStatus.FOUND));
 
-		DatabaseAccessor mockMongo = mock(DatabaseAccessor.class);
-		when(mockMongo.getServiceById("8")).thenReturn(service);
+		DatabaseAccessor mockDb = mock(DatabaseAccessor.class);
+		when(mockDb.getServiceById("8")).thenReturn(service);
 		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
 		assertTrue(retVal.getBody().contains("testExecuteService"));
 	}

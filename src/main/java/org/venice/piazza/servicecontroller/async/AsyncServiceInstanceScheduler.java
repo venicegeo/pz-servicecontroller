@@ -84,7 +84,7 @@ public class AsyncServiceInstanceScheduler {
 	 * Timer Task that will, on a schedule, poll for the Status of Stale asynchronous user services.
 	 * <p>
 	 * This component is responsible for polling the status of asynchronous user service instances. It will use the
-	 * Mongo AsyncServiceInstances collection in order to store persistence related to each running instance of an
+	 * AsyncServiceInstances collection in order to store persistence related to each running instance of an
 	 * asynchronous user service. This component will poll each instance, at a regular interval, and make a note of its
 	 * status and query time.
 	 * </p>

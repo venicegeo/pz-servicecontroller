@@ -155,7 +155,7 @@ public class RegisterServiceHandlerTest {
 	@Test
 	public void testHandleService() {
 		String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-		// Mock the response from Mongo
+		// Mock the response
 		Mockito.doReturn(testServiceId).when(accessorMock).save(service);
 		String result = rsHandler.handle(service);
         assertEquals("The responding service id should match the id", result, testServiceId);
@@ -168,7 +168,7 @@ public class RegisterServiceHandlerTest {
 	public void testBadRegistration() {
 		String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
 
-		// Mock the response from Mongo
+		// Mock the response
 		Mockito.when(uuidFactoryMock.getUUID()).thenReturn(testServiceId);
 		Mockito.doReturn("").when(accessorMock).save(service);
 		String result = rsHandler.handle(service);
@@ -184,7 +184,7 @@ public class RegisterServiceHandlerTest {
 	public void testElasticSearchSaveProblem() {
 		String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
 
-		// Mock the response from Mongo
+		// Mock the response
 		Mockito.when(uuidFactoryMock.getUUID()).thenReturn(testServiceId);
 		Mockito.doReturn(testServiceId).when(accessorMock).save(service);
 		ErrorResponse errorResponse = new ErrorResponse();

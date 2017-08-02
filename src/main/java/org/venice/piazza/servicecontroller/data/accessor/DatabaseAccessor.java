@@ -73,10 +73,7 @@ public class DatabaseAccessor {
 	private JobDao jobDao;
 
 	private static final Logger LOG = LoggerFactory.getLogger(DatabaseAccessor.class);
-	private static final String SERVICE_ID = "serviceId";
 	private static final String SERVICE_CTR = "serviceController";
-	private static final String JOB_ID = "jobId";
-	private static final String STARTED_ON = "startedOn";
 
 	/**
 	 * Deletes existing registered service from the Database

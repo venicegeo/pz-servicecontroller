@@ -16,6 +16,7 @@
 package org.venice.piazza.servicecontroller.data.accessor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,8 +30,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.common.hibernate.dao.AsyncServiceInstanceDao;
 import org.venice.piazza.common.hibernate.dao.ServiceJobDao;
+import org.venice.piazza.common.hibernate.dao.job.JobDao;
 import org.venice.piazza.common.hibernate.dao.service.ServiceDao;
 import org.venice.piazza.common.hibernate.entity.AsyncServiceInstanceEntity;
+import org.venice.piazza.common.hibernate.entity.JobEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceJobEntity;
 
@@ -66,6 +69,8 @@ public class DatabaseAccessor {
 	private ServiceJobDao serviceJobDao;
 	@Autowired
 	private AsyncServiceInstanceDao asyncServiceInstanceDao;
+	@Autowired
+	private JobDao jobDao;
 
 	private static final Logger LOG = LoggerFactory.getLogger(DatabaseAccessor.class);
 	private static final String SERVICE_ID = "serviceId";
@@ -362,8 +367,7 @@ public class DatabaseAccessor {
 	 *            The ID of the Job to remove from the queue
 	 */
 	public void removeJobFromServiceQueue(String serviceId, String jobId) {
-		// DBObject matchJob = new BasicDBObject(JOB_ID, jobId);
-		// getServiceJobCollection(serviceId).remove(matchJob);
+		serviceJobDao.deleteServiceJobByJobId(serviceId, jobId);
 	}
 
 	/**
@@ -375,23 +379,12 @@ public class DatabaseAccessor {
 	 * @throws InterruptedException
 	 */
 	public Job getJobById(String jobId) throws ResourceAccessException, InterruptedException {
-		return null;
-		// BasicDBObject query = new BasicDBObject(JOB_ID, jobId);
-		// Job job;
-		//
-		// try {
-		// if ((job = getJobCollection().findOne(query)) == null) {
-		// // In case the Job was being updated, or it doesn't exist at this point, try once more. I admit this is
-		// // not optimal, but it certainly covers a host of race conditions.
-		// Thread.sleep(100);
-		// job = getJobCollection().findOne(query);
-		// }
-		// } catch (MongoTimeoutException mte) {
-		// LOG.error(mte.getMessage(), mte);
-		// throw new ResourceAccessException(MONGO_NOT_AVAILABLE);
-		// }
-		//
-		// return job;
+		JobEntity entity = jobDao.getJobByJobId(jobId);
+		if (entity != null) {
+			return entity.getJob();
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -401,7 +394,7 @@ public class DatabaseAccessor {
 	 *            The ID of the Service whose queue to drop.
 	 */
 	public void deleteServiceQueue(String serviceId) {
-		// getServiceJobCollection(serviceId).drop();
+		serviceJobDao.deleteAllJobsByServiceId(serviceId);
 	}
 
 	/**
@@ -414,20 +407,18 @@ public class DatabaseAccessor {
 	 * @return True if able to access, false if not.
 	 */
 	public boolean canUserAccessServiceQueue(String serviceId, String username) throws InvalidInputException {
-		return false;
-		// try {
-		// Service service = getServiceById(serviceId);
-		// if (service.getTaskAdministrators() != null) {
-		// return service.getTaskAdministrators().contains(username);
-		// } else {
-		// return false;
-		// }
-		// } catch (ResourceAccessException exception) {
-		// LOG.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %s",
-		// username, serviceId),
-		// exception);
-		// throw new InvalidInputException(String.format("Service not found : %s", serviceId));
-		// }
+		try {
+			Service service = getServiceById(serviceId);
+			if (service.getTaskAdministrators() != null) {
+				return service.getTaskAdministrators().contains(username);
+			} else {
+				return false;
+			}
+		} catch (ResourceAccessException exception) {
+			LOG.info(String.format("User %s attempted to check Service Queue for non-existent service with ID %s", username, serviceId),
+					exception);
+			throw new InvalidInputException(String.format("Service not found : %s", serviceId));
+		}
 	}
 
 	/**
@@ -438,10 +429,9 @@ public class DatabaseAccessor {
 	 * @return Map containing metadata information
 	 */
 	public Map<String, Object> getServiceQueueCollectionMetadata(String serviceId) {
-		return null;
-		// Map<String, Object> map = new HashMap<>();
-		// // Get the Length
-		// map.put("totalJobCount", getServiceJobCollection(serviceId).find().count());
-		// return map;
+		Map<String, Object> map = new HashMap<>();
+		// Get the Length
+		map.put("totalJobCount", serviceJobDao.getServiceJobCountForService(serviceId));
+		return map;
 	}
 }

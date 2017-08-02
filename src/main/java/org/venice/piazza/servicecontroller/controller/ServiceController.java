@@ -16,7 +16,6 @@
 package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
@@ -60,7 +59,6 @@ import model.response.PiazzaResponse;
 import model.response.ServiceIdResponse;
 import model.response.ServiceResponse;
 import model.response.SuccessResponse;
-import model.service.async.AsyncServiceInstance;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -103,11 +101,6 @@ public class ServiceController {
 	private static final String SERVICE_CONTROLLER_UPPER = "ServiceController";
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
 
-	@RequestMapping(value = "/test", method = RequestMethod.POST)
-	public List<Service> test() {
-		return null;
-	}
-	
 	/**
 	 * Registers a service with the piazza service controller.
 	 * 
@@ -139,16 +132,13 @@ public class ServiceController {
 			logger.log(String.format(ERROR_MSG, exception.getMessage()), Severity.ERROR,
 					new AuditElement(SERVICE_CONTROLLER_LOWER, "registeringService", "jobRequest"));
 			return new ResponseEntity<PiazzaResponse>(
-					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()),
-							SERVICE_CONTROLLER_UPPER),
-					HttpStatus.BAD_REQUEST);
+					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()), SERVICE_CONTROLLER_UPPER), HttpStatus.BAD_REQUEST);
 		} catch (Exception exception) {
 			LOG.error("Error Registering Service", exception);
 			logger.log(String.format(ERROR_MSG, exception.getMessage()), Severity.ERROR,
 					new AuditElement(SERVICE_CONTROLLER_LOWER, "registeringService", "jobRequest"));
 			return new ResponseEntity<PiazzaResponse>(
-					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()),
-							SERVICE_CONTROLLER_UPPER),
+					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()), SERVICE_CONTROLLER_UPPER),
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -169,7 +159,8 @@ public class ServiceController {
 			} catch (ResourceAccessException rae) {
 				LOG.error("Service not found", rae);
 				return new ResponseEntity<PiazzaResponse>(
-						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER), HttpStatus.NOT_FOUND);
+						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER),
+						HttpStatus.NOT_FOUND);
 			}
 		} catch (Exception exception) {
 			LOG.error("Could not look up Service", exception);
@@ -231,7 +222,8 @@ public class ServiceController {
 				logger.log(String.format("Service not found %s", rae.getMessage()), Severity.ERROR,
 						new AuditElement(SERVICE_CONTROLLER_LOWER, "deletingServiceMetadata", SERVICE));
 				return new ResponseEntity<PiazzaResponse>(
-						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER), HttpStatus.NOT_FOUND);
+						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER),
+						HttpStatus.NOT_FOUND);
 			}
 			// remove from elastic search as well....
 			dlHandler.handle(serviceId, softDelete);
@@ -271,7 +263,8 @@ public class ServiceController {
 				existingService = accessor.getServiceById(serviceId);
 			} catch (ResourceAccessException rae) {
 				LOG.info(rae.getMessage(), rae);
-				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(rae.getMessage(), SERVICE_CONTROLLER_UPPER), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(rae.getMessage(), SERVICE_CONTROLLER_UPPER),
+						HttpStatus.NOT_FOUND);
 			}
 
 			// Log
@@ -300,11 +293,12 @@ public class ServiceController {
 			existingService.setServiceId(serviceId);
 			String result = usHandler.handle(existingService);
 			if (result.length() > 0) {
-				return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", SERVICE_CONTROLLER_UPPER),
-						HttpStatus.OK);
+				return new ResponseEntity<PiazzaResponse>(
+						new SuccessResponse("Service was updated successfully.", SERVICE_CONTROLLER_UPPER), HttpStatus.OK);
 			} else {
 				return new ResponseEntity<PiazzaResponse>(
-						new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", SERVICE_CONTROLLER_UPPER),
+						new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully",
+								SERVICE_CONTROLLER_UPPER),
 						HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 

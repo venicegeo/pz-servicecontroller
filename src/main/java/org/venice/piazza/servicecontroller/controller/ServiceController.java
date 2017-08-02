@@ -16,6 +16,7 @@
 package org.venice.piazza.servicecontroller.controller;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
@@ -59,6 +60,7 @@ import model.response.PiazzaResponse;
 import model.response.ServiceIdResponse;
 import model.response.ServiceResponse;
 import model.response.SuccessResponse;
+import model.service.async.AsyncServiceInstance;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -101,6 +103,11 @@ public class ServiceController {
 	private static final String SERVICE_CONTROLLER_UPPER = "ServiceController";
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
 
+	@RequestMapping(value = "/test", method = RequestMethod.POST)
+	public List<Service> test() {
+		return null;
+	}
+	
 	/**
 	 * Registers a service with the piazza service controller.
 	 * 

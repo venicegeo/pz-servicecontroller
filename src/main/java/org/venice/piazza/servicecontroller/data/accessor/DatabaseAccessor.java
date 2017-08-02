@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import org.venice.piazza.common.hibernate.dao.ServiceJobDao;
 import org.venice.piazza.common.hibernate.dao.service.ServiceDao;
 import org.venice.piazza.common.hibernate.entity.AsyncServiceInstanceEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceEntity;
+import org.venice.piazza.common.hibernate.entity.ServiceJobEntity;
 
 import exception.InvalidInputException;
 import model.job.Job;
@@ -227,13 +229,13 @@ public class DatabaseAccessor {
 	 * @return Gets all Instances that require a status check.
 	 */
 	public List<AsyncServiceInstance> getStaleServiceInstances() {
-		return null;
-		// Get the time to query. Threshold seconds ago, in epoch.
-		// long thresholdEpoch = new DateTime().minusSeconds(STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
-		// // Query for all results that are older than the threshold time
-		// DBCursor<AsyncServiceInstance> cursor = getAsyncServiceInstancesCollection()
-		// .find(DBQuery.lessThan("lastCheckedOn", thresholdEpoch));
-		// return cursor.toArray();
+		long thresholdEpoch = new DateTime().minusSeconds(STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
+		Iterable<AsyncServiceInstanceEntity> results = asyncServiceInstanceDao.getStaleServiceInstances(thresholdEpoch);
+		List<AsyncServiceInstance> instances = new ArrayList<AsyncServiceInstance>();
+		for (AsyncServiceInstanceEntity result : results) {
+			instances.add(result.getAsyncServiceInstance());
+		}
+		return instances;
 	}
 
 	/**
@@ -242,8 +244,12 @@ public class DatabaseAccessor {
 	 * @return List of Task-Managed Services
 	 */
 	public List<Service> getTaskManagedServices() {
-		return null;
-		// return getServiceCollection().find().and(DBQuery.is("isTaskManaged", true)).toArray();
+		Iterable<ServiceEntity> results = serviceDao.getAllTaskManagedServices();
+		List<Service> services = new ArrayList<Service>();
+		for (ServiceEntity result : results) {
+			services.add(result.getService());
+		}
+		return services;
 	}
 
 	/**
@@ -259,22 +265,16 @@ public class DatabaseAccessor {
 	 *         processed.
 	 */
 	public synchronized ServiceJob getNextJobInServiceQueue(String serviceId) {
-
-		return null;
-		// Query for Service Jobs, sort by Queue Time, so that we get the single most stale Job. Ignore Jobs that have
-		// already been started. Find the latest.
-		// DBCursor<ServiceJob> cursor = getServiceJobCollection(serviceId).find().sort(DBSort.asc("queuedOn"))
-		// .and(DBQuery.is(STARTED_ON, null)).limit(1);
-		// if (!cursor.hasNext()) {
-		// // No available Jobs to be processed.
-		// return null;
-		// }
-		// ServiceJob serviceJob = cursor.next();
-		// // Set the current Started Time that this Job was pulled off the queue
-		// getServiceJobCollection(serviceId).update(DBQuery.is(JOB_ID, serviceJob.getJobId()),
-		// DBUpdate.set(STARTED_ON, new DateTime().getMillis()));
-		// // Return the Job
-		// return serviceJob;
+		ServiceJobEntity serviceJobEntity = serviceJobDao.getNextJobInServiceQueue(serviceId);
+		if (serviceJobEntity == null) {
+			// No jobs to be processed
+			return null;
+		} else {
+			// A job is to be processed. Set the start time.
+			serviceJobEntity.getServiceJob().setStartedOn(new DateTime());
+			serviceJobDao.save(serviceJobEntity);
+			return serviceJobEntity.getServiceJob();
+		}
 	}
 
 	/**
@@ -286,24 +286,21 @@ public class DatabaseAccessor {
 	 * @return The list of timed out Jobs
 	 */
 	public List<ServiceJob> getTimedOutServiceJobs(String serviceId) {
-		return null;
-		// Get the Service details to find out the timeout information
-		// Service service = getServiceById(serviceId);
-		// Long timeout = service.getTimeout();
-		// if (timeout == null) {
-		// // If no timeout is specified for the Service, then we can't check for timeouts.
-		// return new ArrayList<ServiceJob>();
-		// }
-		// // The timeout is in seconds. Get the current time and subtract the number of seconds to find the timestamp
-		// of a
-		// // timed out service.
-		// long timeoutEpoch = new DateTime().minusSeconds(timeout.intValue()).getMillis();
-		// // Query the database for Jobs whose startedOn field is older than the timeout date.
-		// JacksonDBCollection<ServiceJob, String> collection = getServiceJobCollection(serviceId);
-		// DBCursor<ServiceJob> jobs = collection.find(DBQuery.exists(STARTED_ON));
-		// jobs = jobs.and(DBQuery.lessThan(STARTED_ON, timeoutEpoch));
-		// // Return the list
-		// return jobs.toArray();
+		Service service = getServiceById(serviceId);
+		Long timeout = service.getTimeout();
+		if (timeout == null) {
+			// If no timeout is specified for the Service, then we can't check for timeouts.
+			return new ArrayList<ServiceJob>();
+		}
+		// The timeout is in seconds. Get the current time and subtract the number of seconds to find the timestamp of a
+		// timed out service.
+		long timeoutEpoch = new DateTime().minusSeconds(timeout.intValue()).getMillis();
+		Iterable<ServiceJobEntity> results = serviceJobDao.getTimedOutServiceJobs(serviceId, timeoutEpoch);
+		List<ServiceJob> serviceJobs = new ArrayList<ServiceJob>();
+		for (ServiceJobEntity entity : results) {
+			serviceJobs.add(entity.getServiceJob());
+		}
+		return serviceJobs;
 	}
 
 	/**
@@ -316,19 +313,12 @@ public class DatabaseAccessor {
 	 * @return
 	 */
 	public ServiceJob getServiceJob(String serviceId, String jobId) {
-		return null;
-		// BasicDBObject query = new BasicDBObject(JOB_ID, jobId);
-		// ServiceJob serviceJob;
-		//
-		// try {
-		// serviceJob = getServiceJobCollection(serviceId).findOne(query);
-		// } catch (MongoTimeoutException mte) {
-		// String error = "Mongo Instance Not Available.";
-		// LOG.error(error, mte);
-		// throw new MongoException(error);
-		// }
-		//
-		// return serviceJob;
+		ServiceJobEntity entity = serviceJobDao.getServiceJobByServiceAndJobId(serviceId, jobId);
+		if (entity != null) {
+			return entity.getServiceJob();
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -340,12 +330,15 @@ public class DatabaseAccessor {
 	 *            The ServiceJob that has timed out
 	 */
 	public synchronized void incrementServiceJobTimeout(String serviceId, ServiceJob serviceJob) {
-		// Increment the failure count.
-		// getServiceJobCollection(serviceId).update(DBQuery.is(JOB_ID, serviceJob.getJobId()),
-		// DBUpdate.set("timeouts", serviceJob.getTimeouts() + 1));
-		// // Delete the previous Started On date, so that it can be picked up again.
-		// getServiceJobCollection(serviceId).update(DBQuery.is(JOB_ID, serviceJob.getJobId()),
-		// DBUpdate.unset(STARTED_ON));
+		ServiceJobEntity entity = serviceJobDao.getServiceJobByServiceAndJobId(serviceId, serviceJob.getJobId());
+		if (entity != null) {
+			// Increment the failure count
+			entity.getServiceJob().setTimeouts(entity.getServiceJob().getTimeouts() + 1);
+			// Delete the previous Started On date, so that it can be picked up again.
+			entity.getServiceJob().setStartedOn(null);
+			// Save
+			serviceJobDao.save(entity);
+		}
 	}
 
 	/**
@@ -357,7 +350,7 @@ public class DatabaseAccessor {
 	 *            The ServiceJob, describing the ID of the Job
 	 */
 	public void addJobToServiceQueue(String serviceId, ServiceJob serviceJob) {
-		// getServiceJobCollection(serviceId).insert(serviceJob);
+		serviceJobDao.save(new ServiceJobEntity(serviceId, serviceJob));
 	}
 
 	/**

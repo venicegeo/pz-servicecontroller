@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,13 +138,13 @@ public class DatabaseAccessor {
 		// Execute the appropriate query based on the nullable, optional parameters
 		Pagination pagination = new Pagination(null, page, perPage, sortBy, order);
 		Page<ServiceEntity> results = null;
-		if (((userName != null) && (userName.isEmpty() == false)) && ((keyword != null) && (keyword.isEmpty() == false))) {
+		if (StringUtils.isNotEmpty(userName) && StringUtils.isNotEmpty(keyword)) {
 			// Both parameters specified
 			results = serviceDao.getServiceListForUserAndKeyword(keyword, userName, pagination);
-		} else if ((userName != null) && (userName.isEmpty() == false)) {
+		} else if (StringUtils.isNotEmpty(userName)) {
 			// Query by User
 			results = serviceDao.getServiceListByUser(userName, pagination);
-		} else if ((keyword != null) && (keyword.isEmpty() == false)) {
+		} else if (StringUtils.isNotEmpty(keyword)) {
 			// Query by Keyword
 			results = serviceDao.getServiceListByKeyword(keyword, pagination);
 		} else {

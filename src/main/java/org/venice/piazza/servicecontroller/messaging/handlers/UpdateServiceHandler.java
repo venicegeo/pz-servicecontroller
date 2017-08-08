@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
 import model.job.PiazzaJobType;
@@ -48,7 +48,7 @@ import util.PiazzaLogger;
 public class UpdateServiceHandler implements PiazzaJobHandler {
 
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	
 	@Autowired
 	private ElasticSearchAccessor elasticAccessor;
@@ -59,7 +59,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
     /**
-     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in MongoDB
+     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in DB
      * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
      */
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
@@ -103,7 +103,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 	        if (sMetadata != null) {
 	        	coreLogger.log(String.format("Updating a registered service with ID %s", sMetadata.getServiceId()), Severity.INFORMATIONAL);
 
-				result = accessor.update(sMetadata);
+				result = accessor.save(sMetadata);
 				
 				if (result.length() > 0) {
 				   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, Severity.INFORMATIONAL);
@@ -123,7 +123,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				/*TODO if (ErrorResponse.class.isInstance(response)) {
 					ErrorResponse errResponse = (ErrorResponse)response;
 					LOGGER.error("The result of the elasticsearch update is " + errResponse.message);
-					result = "";  // Indicates that update went wrong,  Mongo and ElasticSearch inconsistent
+					result = "";  // Indicates that update went wrong,  DB and ElasticSearch inconsistent
 				}
 				else {
 					LOGGER.debug("ElasticSearch Successfully updated service " + sMetadata.getServiceId());

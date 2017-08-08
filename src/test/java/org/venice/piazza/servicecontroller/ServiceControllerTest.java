@@ -35,26 +35,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mongojack.JacksonDBCollection;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.controller.ServiceController;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import org.venice.piazza.servicecontroller.util.TestUtilities;
-
-import com.mongodb.MongoException;
 
 import model.data.DataType;
 import model.data.type.BodyDataType;
@@ -68,7 +64,6 @@ import model.response.ServiceIdResponse;
 import model.response.ServiceListResponse;
 import model.response.ServiceResponse;
 import model.response.SuccessResponse;
-import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -92,9 +87,7 @@ public class ServiceControllerTest {
 	@Mock
 	private DeleteServiceHandler dlHandlerMock;
 	@Mock
-	private SearchServiceHandler ssHandlerMock;
-	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 	@Mock 
 	private ElasticSearchAccessor elasticAccessorMock;
 	@Mock
@@ -103,10 +96,6 @@ public class ServiceControllerTest {
 	private PiazzaLogger loggerMock;
 	@Mock
 	private LocalValidatorFactoryBean validator;
-	@InjectMocks
-	private org.mongojack.DBCursor<Service> dbCursorMock;
-	@Mock
-	private JacksonDBCollection<Service, String> colMock;
 
 	@Before
 	/** 
@@ -208,7 +197,7 @@ public class ServiceControllerTest {
 		// Get a list of services
 		List <Service> services = getServicesList();
 		// Attach pagination information
-		Pagination pagination = new Pagination(1, 1, 1, "serviceId", "asc");
+		Pagination pagination = new Pagination(new Long(1), 1, 1, "serviceId", "asc");
 
 		ServiceListResponse serviceList = new ServiceListResponse(services, pagination);
 		// Create some temporary mocks for odd call
@@ -217,25 +206,7 @@ public class ServiceControllerTest {
 		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", "").getBody();
 		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ServiceListResponse.class));
 	}
-	
-	@Test
-	/** 
-	 * Get a list of services with Exception thrown
-	 */
-	public void testGetServicesThrowException() {
-		
-		// Get a list of services
-		List <Service> services = getServicesList();
-		// Attach pagination information
-		Pagination pagination = new Pagination(1, 1, 1, "serviceId", "asc");
 
-		// Create some temporary mocks for odd call
-		Mockito.when(accessorMock.getServices(1, 25, "asc", "serviceId", "", "")).thenThrow(new MongoException("There was an error"));
-
-		PiazzaResponse piazzaResponse = sc.getServices(1, 25, "asc", "serviceId", "", "").getBody();
-		assertThat("A list of services should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
-	}
-	
 	@Test
 	/**
 	 * Test the successful un-registration of a service
@@ -263,34 +234,6 @@ public class ServiceControllerTest {
 		PiazzaResponse piazzaResponse = sc.unregisterService(testServiceId, true).getBody();
 		assertThat("The unregistration  should be successful",piazzaResponse, instanceOf(SuccessResponse.class));
 
-	}
-	
-	@Test
-	/**
-	 * Test unsuccessful un-registration
-	 */
-	public void testUnregisterServiceServiceId() {
-		
-		// Should check to make sure each of the handlers are not null
-		Mockito.doThrow(new MongoException("Error")).when(dlHandlerMock).handle(null, false);
-
-		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(null, false).getBody();
-		
-		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
-	}
-	
-	@Test
-	/**
-	 * Test unsuccessful un-registration soft delete
-	 */
-	public void testUnregisterServiceServiceIdSD() {
-		// Should check to make sure each of the handlers are not null
-		Mockito.doThrow(new MongoException("Error")).when(dlHandlerMock).handle(null, true);
-
-		// Should check to make sure each of the handlers are not null
-		PiazzaResponse piazzaResponse = sc.unregisterService(null, true).getBody();
-		assertThat("An ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 	}
 
 	@Test
@@ -343,7 +286,7 @@ public class ServiceControllerTest {
 
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
 		service.setServiceId(testServiceId);
-		Mockito.doThrow(new MongoException("There was an error")).when(usHandlerMock).handle(service);
+		Mockito.doThrow(new ResourceAccessException("There was an error")).when(usHandlerMock).handle(service);
 		Mockito.doReturn(service).when(accessorMock).getServiceById(Mockito.eq(testServiceId));
 
 		ResponseEntity<PiazzaResponse> piazzaResponse = sc.updateServiceMetadata(testServiceId, service);
@@ -390,7 +333,7 @@ public class ServiceControllerTest {
 		dataInputs.put("Body", body);
 		edata.setDataInputs(dataInputs);
 		
-        Mockito.doThrow(new MongoException("An error occured")).when(esHandlerMock).handle(edata);
+        Mockito.doThrow(new InterruptedException("An error occured")).when(esHandlerMock).handle(edata);
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);
         assertEquals("The response should be a null", retVal, null);
@@ -432,21 +375,6 @@ public class ServiceControllerTest {
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to list", HttpStatus.OK); 
         Mockito.doReturn(responseEntity ).when(lsHandlerMock).handle();
         ResponseEntity<String> result = sc.listService();
-        assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
-	}
-	
-	@Test
-	/**
-	 * tests the search.  This is called internally for testing
-	 */
-	public void testSearch() {
-		SearchCriteria criteria = new SearchCriteria();
-		criteria.setField("name");
-		criteria.setPattern("M*");
-		
-		ResponseEntity<String> responseEntity = new ResponseEntity<String>("Just a test to search", HttpStatus.OK); 
-        Mockito.doReturn(responseEntity ).when(ssHandlerMock).handle(criteria);
-        ResponseEntity<String> result = sc.search(criteria);
         assertEquals("The response should be 200", result.getStatusCode(), responseEntity.getStatusCode());
 	}
 

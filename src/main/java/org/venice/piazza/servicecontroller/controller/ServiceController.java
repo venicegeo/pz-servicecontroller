@@ -39,13 +39,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 
 import exception.DataInspectException;
@@ -60,7 +59,6 @@ import model.response.PiazzaResponse;
 import model.response.ServiceIdResponse;
 import model.response.ServiceResponse;
 import model.response.SuccessResponse;
-import model.service.SearchCriteria;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -88,13 +86,11 @@ public class ServiceController {
 	@Autowired
 	private ListServiceHandler lsHandler;
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private PiazzaLogger logger;
 	@Autowired
 	private RegisterServiceHandler rsHandler;
-	@Autowired
-	private SearchServiceHandler ssHandler;
 
 	private static final String DEFAULT_PAGE_SIZE = "10";
 	private static final String DEFAULT_PAGE = "0";
@@ -136,16 +132,13 @@ public class ServiceController {
 			logger.log(String.format(ERROR_MSG, exception.getMessage()), Severity.ERROR,
 					new AuditElement(SERVICE_CONTROLLER_LOWER, "registeringService", "jobRequest"));
 			return new ResponseEntity<PiazzaResponse>(
-					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()),
-							SERVICE_CONTROLLER_UPPER),
-					HttpStatus.BAD_REQUEST);
+					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()), SERVICE_CONTROLLER_UPPER), HttpStatus.BAD_REQUEST);
 		} catch (Exception exception) {
 			LOG.error("Error Registering Service", exception);
 			logger.log(String.format(ERROR_MSG, exception.getMessage()), Severity.ERROR,
 					new AuditElement(SERVICE_CONTROLLER_LOWER, "registeringService", "jobRequest"));
 			return new ResponseEntity<PiazzaResponse>(
-					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()),
-							SERVICE_CONTROLLER_UPPER),
+					new ErrorResponse(String.format(ERROR_MSG, exception.getMessage()), SERVICE_CONTROLLER_UPPER),
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -166,7 +159,8 @@ public class ServiceController {
 			} catch (ResourceAccessException rae) {
 				LOG.error("Service not found", rae);
 				return new ResponseEntity<PiazzaResponse>(
-						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER), HttpStatus.NOT_FOUND);
+						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER),
+						HttpStatus.NOT_FOUND);
 			}
 		} catch (Exception exception) {
 			LOG.error("Could not look up Service", exception);
@@ -204,7 +198,7 @@ public class ServiceController {
 			LOG.error(error, exception);
 			logger.log(error, Severity.ERROR);
 			logger.log(error, Severity.ERROR,
-					new AuditElement(SERVICE_CONTROLLER_LOWER, "gettingFullListOfRegisteredServices", "ServiceControllerMongoDB"));
+					new AuditElement(SERVICE_CONTROLLER_LOWER, "gettingFullListOfRegisteredServices", "ServiceControllerDB"));
 			return new ResponseEntity<PiazzaResponse>(new ErrorResponse(error, SERVICE_CONTROLLER_UPPER), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -228,7 +222,8 @@ public class ServiceController {
 				logger.log(String.format("Service not found %s", rae.getMessage()), Severity.ERROR,
 						new AuditElement(SERVICE_CONTROLLER_LOWER, "deletingServiceMetadata", SERVICE));
 				return new ResponseEntity<PiazzaResponse>(
-						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER), HttpStatus.NOT_FOUND);
+						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER),
+						HttpStatus.NOT_FOUND);
 			}
 			// remove from elastic search as well....
 			dlHandler.handle(serviceId, softDelete);
@@ -268,7 +263,8 @@ public class ServiceController {
 				existingService = accessor.getServiceById(serviceId);
 			} catch (ResourceAccessException rae) {
 				LOG.info(rae.getMessage(), rae);
-				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(rae.getMessage(), SERVICE_CONTROLLER_UPPER), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<PiazzaResponse>(new ErrorResponse(rae.getMessage(), SERVICE_CONTROLLER_UPPER),
+						HttpStatus.NOT_FOUND);
 			}
 
 			// Log
@@ -293,15 +289,16 @@ public class ServiceController {
 						String.format("Error validating updated Service Metadata. Validation Errors: %s", builder.toString()));
 			}
 
-			// Update Existing Service in mongo
+			// Update Existing Service
 			existingService.setServiceId(serviceId);
 			String result = usHandler.handle(existingService);
 			if (result.length() > 0) {
-				return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was updated successfully.", SERVICE_CONTROLLER_UPPER),
-						HttpStatus.OK);
+				return new ResponseEntity<PiazzaResponse>(
+						new SuccessResponse("Service was updated successfully.", SERVICE_CONTROLLER_UPPER), HttpStatus.OK);
 			} else {
 				return new ResponseEntity<PiazzaResponse>(
-						new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully", SERVICE_CONTROLLER_UPPER),
+						new ErrorResponse("The update for serviceId " + serviceId + " did not happen successfully",
+								SERVICE_CONTROLLER_UPPER),
 						HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 
@@ -392,23 +389,6 @@ public class ServiceController {
 	public ResponseEntity<String> listService() {
 		logger.log("listService", Severity.INFORMATIONAL);
 		ResponseEntity<String> result = lsHandler.handle();
-		logger.log(RESULT_IS + result, Severity.DEBUG);
-		return result;
-	}
-
-	/**
-	 * Searches for registered services. This service is meant for internal Piazza use, Swiss-Army-Knife (SAK)
-	 * administration and for testing of the serviceController.
-	 * 
-	 * @param SearchCriteria
-	 *            The criteria to search with (specify field and regular expression
-	 * 
-	 * @return Json list o resourceMetadata items (Metadata about the service)
-	 */
-	@RequestMapping(value = "/search", method = RequestMethod.POST, headers = "Accept=application/json")
-	public ResponseEntity<String> search(@RequestBody SearchCriteria criteria) {
-		logger.log("search " + " " + criteria.getField() + "->" + criteria.getPattern(), Severity.INFORMATIONAL);
-		ResponseEntity<String> result = ssHandler.handle(criteria);
 		logger.log(RESULT_IS + result, Severity.DEBUG);
 		return result;
 	}

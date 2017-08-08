@@ -32,7 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,6 +44,7 @@ import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.response.JobResponse;
+import model.service.async.AsyncServiceInstance;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
@@ -59,7 +60,7 @@ import util.UUIDFactory;
  */
 public class AsyncServiceWorkerTest {
 	@Mock
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Mock
 	private PiazzaLogger logger;
 	@Mock

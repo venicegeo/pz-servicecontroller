@@ -16,7 +16,6 @@
 package org.venice.piazza.servicecontroller.async;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import javax.annotation.PostConstruct;
 
@@ -33,7 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -47,6 +46,7 @@ import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.logger.Severity;
 import model.response.JobResponse;
+import model.service.async.AsyncServiceInstance;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
@@ -74,7 +74,7 @@ public class AsynchronousServiceWorker {
 	private int STATUS_ERROR_LIMIT;
 
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private PiazzaLogger logger;
 	@Autowired

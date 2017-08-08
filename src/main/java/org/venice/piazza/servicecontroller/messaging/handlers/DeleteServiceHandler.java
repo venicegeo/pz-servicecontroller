@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
 /**
@@ -47,7 +47,7 @@ import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearch
 public class DeleteServiceHandler implements PiazzaJobHandler {
 
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private ElasticSearchAccessor elasticAccessor;
 	@Autowired
@@ -57,7 +57,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	
 	/**
 	 * Handler for the DeleteServiceJob that was submitted. Stores the metadata
-	 * in MongoDB (non-Javadoc)
+	 * in the DB (non-Javadoc)
 	 * 
 	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(
 	 *      model.job.PiazzaJobType)
@@ -94,7 +94,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
-	 * Deletes resource by removing from mongo, and sends delete request to elastic search
+	 * Deletes resource by removing from the database, and sends delete request to elastic search
 	 * 
 	 * @param rMetadata
 	 * @return resourceId of the registered service
@@ -108,7 +108,7 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 		try {
 			result = accessor.delete(resourceId, softDelete);
 		} catch (Exception e) {
-			LOG.error("Unable to delete from mongoDB", e);
+			LOG.error("Unable to delete from the database", e);
 			coreLogger.log(e.toString(), Severity.ERROR);
 		}
 

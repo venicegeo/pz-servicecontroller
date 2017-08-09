@@ -101,7 +101,10 @@ public class DatabaseAccessor {
 		} else {
 			logger.log(String.format("Deleting resource from DB %s", serviceId), Severity.INFORMATIONAL,
 					new AuditElement(SERVICE_CTR, "Deleted Service", serviceId));
-			serviceDao.deleteServiceByServiceId(serviceId);
+			ServiceEntity entity = serviceDao.getServiceById(serviceId);
+			if (entity != null) {
+				serviceDao.delete(entity);
+			}
 			// If any Service Queue exists, also delete that here.
 			deleteServiceQueue(serviceId);
 			result = " service " + serviceId + " was deleted ";
@@ -225,7 +228,10 @@ public class DatabaseAccessor {
 	 *            The Job ID of the Async Service Instance.
 	 */
 	public void deleteAsyncServiceInstance(String jobId) {
-		asyncServiceInstanceDao.deleteInstanceByJobId(jobId);
+		AsyncServiceInstanceEntity entity = asyncServiceInstanceDao.getInstanceByJobId(jobId);
+		if (entity != null) {
+			asyncServiceInstanceDao.delete(entity);
+		}
 	}
 
 	/**
@@ -365,7 +371,10 @@ public class DatabaseAccessor {
 	 *            The ID of the Job to remove from the queue
 	 */
 	public void removeJobFromServiceQueue(String serviceId, String jobId) {
-		serviceJobDao.deleteServiceJobByJobId(serviceId, jobId);
+		ServiceJobEntity entity = serviceJobDao.getServiceJobByServiceAndJobId(serviceId, jobId);
+		if (entity != null) {
+			serviceJobDao.delete(entity);
+		}
 	}
 
 	/**

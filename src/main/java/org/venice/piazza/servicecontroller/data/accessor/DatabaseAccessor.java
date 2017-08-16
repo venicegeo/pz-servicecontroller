@@ -341,11 +341,13 @@ public class DatabaseAccessor {
 	public synchronized void incrementServiceJobTimeout(String serviceId, ServiceJob serviceJob) {
 		ServiceJobEntity entity = serviceJobDao.getServiceJobByServiceAndJobId(serviceId, serviceJob.getJobId());
 		if (entity != null) {
+			ServiceJob updatedJob = new ServiceJob(entity.getServiceJob().getJobId(), entity.getServiceJob().getServiceId());
+			updatedJob.setQueuedOn(serviceJob.getQueuedOn());
 			// Increment the failure count
-			entity.getServiceJob().setTimeouts(entity.getServiceJob().getTimeouts() + 1);
+			updatedJob.setTimeouts(entity.getServiceJob().getTimeouts() + 1);
 			// Delete the previous Started On date, so that it can be picked up again.
-			entity.getServiceJob().setStartedOn(null);
-			entity.getServiceJob().setStartedOnString(null);
+			updatedJob.setStartedOn(null);
+			entity.setServiceJob(updatedJob);
 			// Save
 			serviceJobDao.save(entity);
 		}

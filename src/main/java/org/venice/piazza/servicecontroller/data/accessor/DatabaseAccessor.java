@@ -345,6 +345,7 @@ public class DatabaseAccessor {
 			entity.getServiceJob().setTimeouts(entity.getServiceJob().getTimeouts() + 1);
 			// Delete the previous Started On date, so that it can be picked up again.
 			entity.getServiceJob().setStartedOn(null);
+			entity.getServiceJob().setStartedOnString(null);
 			// Save
 			serviceJobDao.save(entity);
 		}

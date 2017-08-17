@@ -15,7 +15,6 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging.handlers;
 
-
 import java.util.ArrayList;
 
 import org.slf4j.Logger;
@@ -24,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.venice.piazza.common.hibernate.entity.ServiceEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
@@ -35,11 +35,10 @@ import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
-
 /**
- * Handler for handling registerService requests.  This handler is used 
- * when register-service kafka topics are received or when clients utilize the 
- * ServiceController registerService web service.
+ * Handler for handling registerService requests. This handler is used when register-service kafka topics are received
+ * or when clients utilize the ServiceController registerService web service.
+ * 
  * @author mlynum
  * @version 1.0
  *
@@ -49,19 +48,20 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 
 	@Autowired
 	private DatabaseAccessor accessor;
-	
+
 	@Autowired
 	private ElasticSearchAccessor elasticAccessor;
-	
+
 	@Autowired
 	private PiazzaLogger coreLogger;
-	
+
 	private static final Logger LOG = LoggerFactory.getLogger(UpdateServiceHandler.class);
 
-    /**
-     * Handler for the RegisterServiceJob  that was submitted.  Stores the metadata in DB
-     * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
-     */
+	/**
+	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in DB
+	 * 
+	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
+	 */
 	public ResponseEntity<String> handle(PiazzaJobType jobRequest) {
 
 		LOG.debug("Updating a service");
@@ -81,58 +81,59 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				resultList.add(sMetadata.getServiceId());
 
 				return new ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
-				
+
 			} else {
 				coreLogger.log("No result response from the handler, something went wrong", Severity.ERROR);
 				return new ResponseEntity<String>("UpdateServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {
-			 coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", Severity.ERROR);
-			 return new ResponseEntity<String>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
+			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", Severity.ERROR);
+			return new ResponseEntity<String>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param rMetadata
 	 * @return resourceId of the registered service
 	 */
-	public String handle (Service sMetadata) {
-        String result = "";
-        try {
-	        if (sMetadata != null) {
-	        	coreLogger.log(String.format("Updating a registered service with ID %s", sMetadata.getServiceId()), Severity.INFORMATIONAL);
+	public String handle(Service sMetadata) {
+		String result = "";
+		try {
+			if (sMetadata != null) {
+				coreLogger.log(String.format("Updating a registered service with ID %s", sMetadata.getServiceId()), Severity.INFORMATIONAL);
 
-				result = accessor.save(sMetadata);
-				
+				result = accessor.updateService(sMetadata);
+
 				if (result.length() > 0) {
-				   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result, Severity.INFORMATIONAL);
-				   
+					coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was updated with id " + result,
+							Severity.INFORMATIONAL);
+
 					coreLogger.log(String.format("Service was updated %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
 							new AuditElement("serviceController", "updatedRegisteredService", sMetadata.getServiceId()));
-				   // Only when the user service data is updated successfully then
-				   // update elastic search
-				    PiazzaResponse response = elasticAccessor.update(sMetadata);
+					// Only when the user service data is updated successfully then
+					// update elastic search
+					PiazzaResponse response = elasticAccessor.update(sMetadata);
 				} else {
-					   coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", Severity.INFORMATIONAL);
-					   coreLogger.log("The service was NOT updated", Severity.ERROR, new AuditElement("serviceController", "failedToUpdateService", sMetadata.getServiceId()));
+					coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", Severity.INFORMATIONAL);
+					coreLogger.log("The service was NOT updated", Severity.ERROR,
+							new AuditElement("serviceController", "failedToUpdateService", sMetadata.getServiceId()));
 				}
-				// If an Id was returned then send a kafka message back updating the job iD 
+				// If an Id was returned then send a kafka message back updating the job iD
 				// with the resourceId
-				
-				/*TODO if (ErrorResponse.class.isInstance(response)) {
-					ErrorResponse errResponse = (ErrorResponse)response;
-					LOGGER.error("The result of the elasticsearch update is " + errResponse.message);
-					result = "";  // Indicates that update went wrong,  DB and ElasticSearch inconsistent
-				}
-				else {
-					LOGGER.debug("ElasticSearch Successfully updated service " + sMetadata.getServiceId());
-				}*/
-	        }
-        } catch (IllegalArgumentException ex) {
-        	LOG.error("IllegalArgumentException occurred", ex);
-        	coreLogger.log(ex.getMessage(), Severity.ERROR);
-        }
+
+				/*
+				 * TODO if (ErrorResponse.class.isInstance(response)) { ErrorResponse errResponse =
+				 * (ErrorResponse)response; LOGGER.error("The result of the elasticsearch update is " +
+				 * errResponse.message); result = ""; // Indicates that update went wrong, DB and ElasticSearch
+				 * inconsistent } else { LOGGER.debug("ElasticSearch Successfully updated service " +
+				 * sMetadata.getServiceId()); }
+				 */
+			}
+		} catch (IllegalArgumentException ex) {
+			LOG.error("IllegalArgumentException occurred", ex);
+			coreLogger.log(ex.getMessage(), Severity.ERROR);
+		}
 
 		return result;
 	}

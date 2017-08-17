@@ -126,6 +126,21 @@ public class DatabaseAccessor {
 	}
 
 	/**
+	 * Updates an existing service record in the database
+	 * 
+	 * @param service
+	 *            The service to update. Must exist.
+	 */
+	public String updateService(Service service) {
+		ServiceEntity entity = serviceDao.getServiceById(service.getServiceId());
+		if (entity != null) {
+			entity.setService(service);
+			serviceDao.save(entity);
+		}
+		return service.getServiceId();
+	}
+
+	/**
 	 * List all Services. Could be large. Use the paginated version instead.
 	 */
 	public List<Service> list() {

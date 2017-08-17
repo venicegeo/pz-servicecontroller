@@ -38,6 +38,9 @@ import org.venice.piazza.common.hibernate.entity.JobEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceJobEntity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import exception.InvalidInputException;
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
@@ -341,13 +344,10 @@ public class DatabaseAccessor {
 	public synchronized void incrementServiceJobTimeout(String serviceId, ServiceJob serviceJob) {
 		ServiceJobEntity entity = serviceJobDao.getServiceJobByServiceAndJobId(serviceId, serviceJob.getJobId());
 		if (entity != null) {
-			ServiceJob updatedJob = new ServiceJob(entity.getServiceJob().getJobId(), entity.getServiceJob().getServiceId());
-			updatedJob.setQueuedOn(serviceJob.getQueuedOn());
 			// Increment the failure count
-			updatedJob.setTimeouts(entity.getServiceJob().getTimeouts() + 1);
+			entity.getServiceJob().setTimeouts(entity.getServiceJob().getTimeouts() + 1);
 			// Delete the previous Started On date, so that it can be picked up again.
-			updatedJob.setStartedOn(null);
-			entity.setServiceJob(updatedJob);
+			entity.getServiceJob().setStartedOn(null);
 			// Save
 			serviceJobDao.save(entity);
 		}

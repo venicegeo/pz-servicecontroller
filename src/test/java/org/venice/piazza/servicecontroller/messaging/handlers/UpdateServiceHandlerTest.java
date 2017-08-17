@@ -169,7 +169,7 @@ public class UpdateServiceHandlerTest {
 	@Test
 	public void testHandleService() {
 		// Mock the response
-		Mockito.doReturn(service.getServiceId()).when(accessorMock).save(service);
+		Mockito.doReturn(service.getServiceId()).when(accessorMock).updateService(service);
 		String result = usHandler.handle(service);
         assertEquals("The responding service id shoudl match the id", result, service.getServiceId());
 	}
@@ -180,7 +180,7 @@ public class UpdateServiceHandlerTest {
 	@Test
 	public void testUnsucessfulUpdateServiceInfo() {
 		// Mock the response
-		Mockito.doReturn("").when(accessorMock).save(service);
+		Mockito.doReturn("").when(accessorMock).updateService(service);
 		String result = usHandler.handle(service);
         assertEquals("The response string should be empty", result.length(), 0);
 	}

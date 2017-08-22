@@ -17,14 +17,13 @@ package org.venice.piazza.servicecontroller.async;
 
 import java.io.IOException;
 
-import javax.annotation.PostConstruct;
-
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -39,8 +38,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import exception.DataInspectException;
-import messaging.job.JobMessageFactory;
-import messaging.job.KafkaClientFactory;
 import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
@@ -66,8 +63,6 @@ public class AsynchronousServiceWorker {
 	private String RESULTS_ENDPOINT;
 	@Value("${async.delete.endpoint}")
 	private String DELETE_ENDPOINT;
-	@Value("${vcap.services.pz-kafka.credentials.host}")
-	private String KAFKA_HOSTS;
 	@Value("${SPACE}")
 	private String SPACE;
 	@Value("${async.status.error.limit}")
@@ -83,24 +78,23 @@ public class AsynchronousServiceWorker {
 	private UUIDFactory uuidFactory;
 	@Autowired
 	private RestTemplate restTemplate;
-	private Producer<String, String> producer;
-	private ObjectMapper objectMapper = new ObjectMapper();
+	@Autowired
+	private ObjectMapper objectMapper;
+	@Autowired
+	private RabbitTemplate rabbitTemplate;
+	@Autowired
+	@Qualifier("UpdateJobsQueue")
+	private Queue updateJobsQueue;
 
 	private static final String URL_FORMAT = "%s/%s/%s";
-	
 	private static final Logger LOG = LoggerFactory.getLogger(AsynchronousServiceWorker.class);
-
-	@PostConstruct
-	public void initialize() {
-		producer = KafkaClientFactory.getProducer(KAFKA_HOSTS);
-	}
 
 	/**
 	 * Executes the Piazza Job Type
 	 * 
 	 * @param jobType
 	 *            The Piazza Job Type, describing everything about the Service execution.
-	 * @throws InterruptedException 
+	 * @throws InterruptedException
 	 */
 	@Async
 	public void executeService(ExecuteServiceJob job) throws InterruptedException {
@@ -168,12 +162,10 @@ public class AsynchronousServiceWorker {
 				instance.setStatus(status);
 				instance.setLastCheckedOn(new DateTime());
 				accessor.updateAsyncServiceInstance(instance);
-				// Route the current Job Status through Kafka.
+				// Route the current Job Status through Message Bus.
 				try {
-					ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-							String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), instance.getJobId(),
-							objectMapper.writeValueAsString(status));
-					producer.send(prodRecord);
+					status.setJobId(instance.getJobId());
+					rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(status));
 				} catch (JsonProcessingException exception) {
 					// The message could not be serialized. Record this.
 					LOG.error("Json processing error occured", exception);
@@ -239,7 +231,7 @@ public class AsynchronousServiceWorker {
 			logger.log(errorMessage, Severity.ERROR);
 			// Remove this from the Collection of tracked instance Jobs.
 			accessor.deleteAsyncServiceInstance(instance.getJobId());
-			// Send a Failure message back to the Job Manager via Kafka.
+			// Send a Failure message back to the Job Manager via Message Bus.
 			processErrorStatus(instance.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
 		} else {
 			// Update the Database that this instance has failed.
@@ -265,13 +257,13 @@ public class AsynchronousServiceWorker {
 			ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 			String dataId = uuidFactory.getUUID();
 			// Get the Result of the Service
-			DataResult result = executeServiceHandler.processExecutionResult(service, instance.getOutputType(), producer,
-					StatusUpdate.STATUS_SUCCESS, response, dataId);
+			DataResult result = executeServiceHandler.processExecutionResult(service, instance.getOutputType(), StatusUpdate.STATUS_SUCCESS,
+					response, dataId);
 			// Send the Completed Status to the Job Manager, including the Result
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 			statusUpdate.setResult(result);
-			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), statusUpdate, SPACE);
-			producer.send(prodRecord);
+			statusUpdate.setJobId(instance.getJobId());
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 			// Remove this Instance from the Instance table
 			accessor.deleteAsyncServiceInstance(instance.getJobId());
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
@@ -312,12 +304,9 @@ public class AsynchronousServiceWorker {
 		// Create the Message for the Error Result of the Status
 		statusUpdate.setResult(new ErrorResult(message, null));
 
-		// Send the Job Status through Kafka.
+		// Send the Job Status through the Message Bus.
 		try {
-			ProducerRecord<String, String> prodRecord = new ProducerRecord<String, String>(
-					String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
-					objectMapper.writeValueAsString(statusUpdate));
-			producer.send(prodRecord);
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(status));
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
 			LOG.error("Could not send Error Status to Job Manager. Error serializing Status", exception);
@@ -351,10 +340,11 @@ public class AsynchronousServiceWorker {
 			}
 		}
 
-		// Send the Kafka Message for successful Cancellation status
+		// Send the Message for successful Cancellation status
 		try {
-			producer.send(
-					JobMessageFactory.getUpdateStatusMessage(instance.getJobId(), new StatusUpdate(StatusUpdate.STATUS_CANCELLED), SPACE));
+			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
+			statusUpdate.setJobId(instance.getJobId());
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException jsonException) {
 			String error = String.format(
 					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",

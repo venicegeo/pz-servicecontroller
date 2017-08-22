@@ -22,11 +22,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -43,7 +44,6 @@ import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import messaging.job.JobMessageFactory;
 import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
@@ -71,7 +71,6 @@ import util.UUIDFactory;
  */
 @Component
 public class ExecuteServiceHandler implements PiazzaJobHandler {
-
 	@Autowired
 	private DatabaseAccessor accessor;
 	@Autowired
@@ -80,6 +79,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private UUIDFactory uuidFactory;
 	@Autowired
 	private RestTemplate template;
+	@Autowired
+	@Qualifier("RequestJobQueue")
+	private Queue requestJobQueue;
+	@Autowired
+	private RabbitTemplate rabbitTemplate;
 
 	@Value("${SPACE}")
 	private String SPACE;
@@ -128,33 +132,32 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		String serviceId = data.getServiceId();
 		Service sMetadata = null;
 		ObjectMapper objectMapper = new ObjectMapper();
-		
+
 		try {
 			// Accessor throws exception if can't find service
 			sMetadata = accessor.getServiceById(serviceId);
 
 			String result = objectMapper.writeValueAsString(sMetadata);
 			logger.log(result, Severity.INFORMATIONAL);
-		} 
-		catch (ResourceAccessException | JsonProcessingException ex) {
+		} catch (ResourceAccessException | JsonProcessingException ex) {
 			LOG.error("Exception occurred", ex);
 		}
-		
+
 		if (sMetadata != null) {
 			return processServiceMetadata(sMetadata, data);
-		}
-		else {
+		} else {
 			logger.log(String.format("The service was NOT found id %s", data.getServiceId()), Severity.ERROR,
 					new AuditElement("serviceController", "notFound", data.getServiceId()));
 			return new ResponseEntity<>("Service Id " + data.getServiceId() + " not found", HttpStatus.NOT_FOUND);
-		}		
+		}
 	}
 
-	private ResponseEntity<String> processServiceMetadata(final Service sMetadata, final ExecuteServiceData data) throws InterruptedException {
+	private ResponseEntity<String> processServiceMetadata(final Service sMetadata, final ExecuteServiceData data)
+			throws InterruptedException {
 		// Default request mimeType application/json
 		ObjectMapper objectMapper = new ObjectMapper();
 		String requestMimeType = MIME_TYPE;
-		
+
 		String rawURL = sMetadata.getUrl();
 		logger.log(String.format("Executing Service with URL %s with ID %s", rawURL, data.getServiceId()), Severity.INFORMATIONAL);
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);
@@ -162,7 +165,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		Map<String, DataType> postObjects = new HashMap<>();
 		Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
 		String postString = "";
-		
+
 		while (it.hasNext()) {
 			Entry<String, DataType> entry = it.next();
 			String inputName = entry.getKey();
@@ -172,8 +175,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
 
 				builder = processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
-			} 
-			else if (entry.getValue() instanceof BodyDataType) {
+			} else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
@@ -181,8 +183,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					logger.log("Body mime type not specified", Severity.ERROR);
 					return new ResponseEntity<>("Body mime type not specified", HttpStatus.BAD_REQUEST);
 				}
-			} 
-			else {
+			} else {
 				// Default behavior for other inputs, put them in list of objects
 				// which are transformed into JSON consistent with default requestMimeType
 				logger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), Severity.INFORMATIONAL);
@@ -192,16 +193,15 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 		logger.log("Final Builder URL" + builder.toUriString(), Severity.INFORMATIONAL);
 		if (postObjects.size() > 0) {
-			
+
 			if (postString.length() > 0) {
 				logger.log("String Input not consistent with other Inputs", Severity.ERROR);
 				return new ResponseEntity<>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
 			}
-			
+
 			try {
 				postString = objectMapper.writeValueAsString(postObjects);
-			} 
-			catch (JsonProcessingException e) {
+			} catch (JsonProcessingException e) {
 				LOG.error("Json processing error occurred", e);
 				logger.log(e.getMessage(), Severity.ERROR);
 				return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
@@ -210,36 +210,36 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 		logger.log(String.format("Triggered execution of service %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
 				new AuditElement("serviceController", "executingExternalService", sMetadata.getServiceId()));
-		
+
 		return executeJob(sMetadata.getMethod(), requestMimeType, builder.toUriString(), postString);
 	}
-	
-	private UriComponentsBuilder processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, final UriComponentsBuilder builder) {
-		
+
+	private UriComponentsBuilder processURLParameterDataTypeMetadata(final String paramValue, final String inputName,
+			final Service sMetadata, final UriComponentsBuilder builder) {
+
 		UriComponentsBuilder localBuilder = builder;
-		
+
 		if (inputName.length() == 0) {
 			logger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
 			localBuilder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
 			logger.log("Builder URL is " + localBuilder.toUriString(), Severity.DEBUG);
-		} 
-		else {
+		} else {
 			localBuilder.queryParam(inputName, paramValue);
 			logger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
 		}
-		
+
 		return localBuilder;
 	}
-	
-	private ResponseEntity<String> executeJob(final String method, final String requestMimeType, final String uri, final String postString) throws InterruptedException {
+
+	private ResponseEntity<String> executeJob(final String method, final String requestMimeType, final String uri, final String postString)
+			throws InterruptedException {
 
 		URI url = URI.create(uri);
 		if ("GET".equals(method)) {
 			logger.log("GetForEntity URL=" + url, Severity.INFORMATIONAL);
 			// execute job
 			return template.getForEntity(url, String.class);
-		}
-		else if ("POST".equals(method)) {
+		} else if ("POST".equals(method)) {
 			HttpHeaders headers = new HttpHeaders();
 			// Set the mimeType of the request
 			MediaType mediaType = createMediaType(requestMimeType);
@@ -249,18 +249,16 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			logger.log("PostForEntity URL=" + url, Severity.INFORMATIONAL);
 			try {
 				return template.postForEntity(url, requestEntity, String.class);
-			} 
-			catch (HttpServerErrorException hex) {
+			} catch (HttpServerErrorException hex) {
 				LOG.info(String.format("Server Error for URL %s:  %s", url, hex.getResponseBodyAsString()), hex);
 				throw new InterruptedException(hex.getResponseBodyAsString());
 			}
-		}
-		else {
+		} else {
 			logger.log("Request method type not specified", Severity.ERROR);
 			return new ResponseEntity<>("Request method type not specified", HttpStatus.BAD_REQUEST);
 		}
 	}
-	
+
 	/**
 	 * This method creates a MediaType based on the mimetype that was provided
 	 * 
@@ -309,8 +307,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
 	 * return the Result of the data.
 	 */
-	public DataResult processExecutionResult(Service service, String outputType, Producer<String, String> producer, String status,
-			ResponseEntity<String> handleResult, String dataId) throws JsonProcessingException, IOException, InterruptedException {
+	public DataResult processExecutionResult(Service service, String outputType, String status, ResponseEntity<String> handleResult,
+			String dataId) throws JsonProcessingException, IOException, InterruptedException {
 		logger.log("Send Execute Status Kafka", Severity.DEBUG);
 		// Initialize ingest job items
 		DataResource data = new DataResource();
@@ -336,8 +334,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				// Now check to see if the conversion is actually a proper DataResource
 				// if it is not time to create a TextDataType and return
 				if ((data == null) || (data.getDataType() == null)) {
-					logger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType",
-							Severity.DEBUG);
+					logger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType", Severity.DEBUG);
 
 					data = new DataResource();
 					data.dataId = dataId;
@@ -374,8 +371,8 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			jobRequest.jobType = ingestJob;
 
 			String jobId = uuidFactory.getUUID();
-			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(jobRequest, jobId, SPACE);
-			producer.send(newProdRecord);
+			jobRequest.jobId = jobId;
+			rabbitTemplate.convertAndSend(requestJobQueue.getName(), objectMapper.writeValueAsString(jobRequest));
 
 			logger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
 					data.getDataType().getClass().getSimpleName()), Severity.INFORMATIONAL);
@@ -384,7 +381,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			DataResult textResult = new DataResult(data.dataId);
 			return textResult;
 		}
-		
+
 		return null;
 	}
 }

@@ -21,6 +21,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Queue;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -40,6 +41,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
+
+import messaging.job.JobMessageFactory;
 
 /**
  * Main class for the pz-servicecontroller. Launches the application
@@ -64,6 +67,8 @@ public class Application extends SpringBootServletInitializer {
 	private int httpMaxRoute;
 	@Value("${http.request.timeout}")
 	private int httpRequestTimeout;
+	@Value("${SPACE}")
+	private String SPACE;
 
 	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
@@ -111,6 +116,16 @@ public class Application extends SpringBootServletInitializer {
 		for (String beanName : beanNames) {
 			LOG.info(beanName);
 		}
+	}
+
+	@Bean(name = "UpdateJobsQueue")
+	public Queue updateJobsQueue() {
+		return new Queue(String.format(JobMessageFactory.KAFKA_TOPIC_TEMPLATE, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE));
+	}
+
+	@Bean(name = "RequestJobQueue")
+	public Queue requestJobQueue() {
+		return new Queue(String.format(JobMessageFactory.KAFKA_TOPIC_TEMPLATE, JobMessageFactory.REQUEST_JOB_TOPIC_NAME, SPACE));
 	}
 
 	@Bean

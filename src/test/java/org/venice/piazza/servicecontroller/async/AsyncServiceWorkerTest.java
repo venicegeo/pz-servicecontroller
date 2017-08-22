@@ -27,6 +27,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -68,9 +70,11 @@ public class AsyncServiceWorkerTest {
 	@Mock
 	private UUIDFactory uuidFactory;
 	@Mock
-	private Producer<String, String> producer;
-	@Mock
 	private RestTemplate restTemplate;
+	@Mock
+	private RabbitTemplate rabbitTemplate;
+	@Mock
+	private Queue updateJobsQueue;
 
 	@InjectMocks
 	private AsynchronousServiceWorker worker;
@@ -120,7 +124,8 @@ public class AsyncServiceWorkerTest {
 
 	/**
 	 * Test service execution with successful response
-	 * @throws InterruptedException 
+	 * 
+	 * @throws InterruptedException
 	 */
 	@Test
 	public void testExecute() throws JsonProcessingException, InterruptedException {
@@ -136,7 +141,8 @@ public class AsyncServiceWorkerTest {
 
 	/**
 	 * Test error handling for service returning a 500 error
-	 * @throws InterruptedException 
+	 * 
+	 * @throws InterruptedException
 	 */
 	@Test
 	public void testExecutionErrorResponse() throws InterruptedException {
@@ -147,12 +153,12 @@ public class AsyncServiceWorkerTest {
 		worker.executeService(mockJob);
 		// Verify that the error was processed by the worker
 		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockJob.getJobId()));
-		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
 	}
 
 	/**
 	 * Tests a Service returning an invalid payload
-	 * @throws InterruptedException 
+	 * 
+	 * @throws InterruptedException
 	 */
 	@Test
 	public void testExecutionErrorFormat() throws InterruptedException {
@@ -163,7 +169,6 @@ public class AsyncServiceWorkerTest {
 		worker.executeService(mockJob);
 		// Verify that the error was processed by the worker
 		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockJob.getJobId()));
-		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
 	}
 
 	/**
@@ -182,7 +187,6 @@ public class AsyncServiceWorkerTest {
 
 		// Verify
 		Mockito.verify(accessor, Mockito.times(1)).updateAsyncServiceInstance(Mockito.any(AsyncServiceInstance.class));
-		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
 	}
 
 	/**
@@ -202,7 +206,6 @@ public class AsyncServiceWorkerTest {
 
 		// Verify
 		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockInstance.getJobId()));
-		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
 	}
 
 	/**
@@ -226,7 +229,6 @@ public class AsyncServiceWorkerTest {
 
 		// Verify
 		Mockito.verify(accessor, Mockito.times(1)).deleteAsyncServiceInstance(Mockito.eq(mockInstance.getJobId()));
-		Mockito.verify(producer, Mockito.times(1)).send(Mockito.any());
 	}
 
 	/**

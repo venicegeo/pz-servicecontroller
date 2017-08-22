@@ -79,13 +79,12 @@ public class AsynchronousServiceWorker {
 	@Autowired
 	private RestTemplate restTemplate;
 	@Autowired
-	private ObjectMapper objectMapper;
-	@Autowired
 	private RabbitTemplate rabbitTemplate;
 	@Autowired
 	@Qualifier("UpdateJobsQueue")
 	private Queue updateJobsQueue;
 
+	private ObjectMapper objectMapper = new ObjectMapper();
 	private static final String URL_FORMAT = "%s/%s/%s";
 	private static final Logger LOG = LoggerFactory.getLogger(AsynchronousServiceWorker.class);
 

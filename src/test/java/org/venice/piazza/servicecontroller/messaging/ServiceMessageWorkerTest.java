@@ -17,16 +17,13 @@ package org.venice.piazza.servicecontroller.messaging;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,10 +31,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
@@ -74,44 +71,37 @@ import util.UUIDFactory;
 @PrepareForTest({ KafkaClientFactory.class })
 
 public class ServiceMessageWorkerTest {
-
-	@Mock
-	private PiazzaLogger loggerMock;
-
 	@InjectMocks
 	private ServiceMessageWorker smWorkerMock;
 
 	@Mock
+	private PiazzaLogger loggerMock;
+	@Mock
 	private RegisterServiceHandler rsHandlerMock;
-
 	@Mock
 	private ExecuteServiceHandler esHandlerMock;
-
 	@Mock
 	private DescribeServiceHandler dsHandlerMock;
-
 	@Mock
 	private UpdateServiceHandler usHandlerMock;
-
 	@Mock
 	private ListServiceHandler lsHandlerMock;
-
 	@Mock
 	private DeleteServiceHandler dlHandlerMock;
-
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
-
 	@Mock
 	private UUIDFactory uuidFactoryMock;
-
 	@Mock
 	private Producer<String, String> producerMock;
-
 	@Mock
 	private ObjectMapper omMock;
 	@Mock
 	private DatabaseAccessor accessorMock;
+	@Mock
+	private Queue updateJobsQueue;
+	@Mock
+	private RabbitTemplate rabbitTemplate;
 
 	private Job validJob;
 	private ExecuteServiceJob esJob;
@@ -152,20 +142,7 @@ public class ServiceMessageWorkerTest {
 		validJob.setJobId("b842aae2-ed70-5c4b-9a65-c45e8cd9060g");
 		validJob.setJobType(esJob);
 
-		// Mock the Kafka response that Producers will send. This will always
-		// return a Future that completes immediately and simply returns true.
-		Mockito.when(producerMock.send(isA(ProducerRecord.class))).thenAnswer(new Answer<Future<Boolean>>() {
-			@Override
-			public Future<Boolean> answer(InvocationOnMock invocation) throws Throwable {
-				Future<Boolean> future = Mockito.mock(FutureTask.class);
-				Mockito.when(future.isDone()).thenReturn(true);
-				Mockito.when(future.get()).thenReturn(true);
-				return future;
-			}
-		});
-
 		MockitoAnnotations.initMocks(this);
-
 	}
 
 	@Test
@@ -175,8 +152,7 @@ public class ServiceMessageWorkerTest {
 	public void testNullob() {
 		try {
 			// Test exception by sending an invalid ConsumerMessage
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "INVALID_JSON");
-			Future<String> workerFuture = smWorkerMock.run(kafkaMessage, producerMock, null, null);
+			Future<String> workerFuture = smWorkerMock.run(null, null);
 			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -190,9 +166,8 @@ public class ServiceMessageWorkerTest {
 	 */
 	public void testWorkerInvalidPayload() {
 		try {
-			// Test exception by sending an invalid ConsumerMessage
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "INVALID_JSON");
-			Future<String> workerFuture = smWorkerMock.run(kafkaMessage, producerMock, createInvalidJobWithoutOuptut(), null);
+			// Test exception by sending an invalid Job
+			Future<String> workerFuture = smWorkerMock.run(createInvalidJobWithoutOuptut(), null);
 			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -222,11 +197,10 @@ public class ServiceMessageWorkerTest {
 			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
-			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
+			// Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 
 			// Test valid Payload
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "VALID");
-			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			Future<String> workerFuture = spy.run(validJob, null);
 			assertTrue(workerFuture.get() != null);
 
 			// Now try with GeoJson
@@ -248,8 +222,7 @@ public class ServiceMessageWorkerTest {
 			om = new ObjectMapper();
 
 			// Test valid Payload for GeoJSON
-			kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "VALID");
-			workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			workerFuture = spy.run(validJob, null);
 			assertTrue(workerFuture.get() != null);
 
 		} catch (Exception ex) {
@@ -268,7 +241,7 @@ public class ServiceMessageWorkerTest {
 
 			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
-			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
+			// Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 
 			// Setup a new OFFLINE service
 			rm = new ResourceMetadata();
@@ -279,8 +252,7 @@ public class ServiceMessageWorkerTest {
 			Mockito.when(accessorMock.getServiceById("a842aae2-bd74-4c4b-9a65-c45e8cd9060f")).thenReturn(service);
 
 			// Test valid Payload
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "VALID");
-			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			Future<String> workerFuture = spy.run(validJob, null);
 			assertTrue(workerFuture.get() != null);
 
 		} catch (Exception ex) {
@@ -311,11 +283,10 @@ public class ServiceMessageWorkerTest {
 			ExecuteServiceData esData = jobItem.data;
 			// What happens if the handled executeservice returns a null
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(null);
-			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
+			// Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 
 			// Test valid Payload
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "VALID");
-			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			Future<String> workerFuture = spy.run(validJob, null);
 			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -345,18 +316,17 @@ public class ServiceMessageWorkerTest {
 			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
-			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
+			// Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 
 			// Test valid Payload
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "VALID");
-			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			Future<String> workerFuture = spy.run(validJob, null);
 			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 
 	}
-	
+
 	/**
 	 * Test creation of headers with media type
 	 */
@@ -388,12 +358,11 @@ public class ServiceMessageWorkerTest {
 			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
-			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
+			// Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 			Mockito.when(omMock.readValue(Mockito.anyString(), eq(DataResource.class))).thenReturn(null);
 
 			// Test valid Payload
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "VALID");
-			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			Future<String> workerFuture = spy.run(validJob, null);
 			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -413,11 +382,10 @@ public class ServiceMessageWorkerTest {
 			rsj.setData(service);
 			validJob.setJobType(rsj);
 
-			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
+			// Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 
 			// Test valid Payload
-			ConsumerRecord<String, String> kafkaMessage = new ConsumerRecord<String, String>("Test", 0, 0, "123456", "VALID");
-			Future<String> workerFuture = spy.run(kafkaMessage, producerMock, validJob, null);
+			Future<String> workerFuture = spy.run(validJob, null);
 			assertTrue(workerFuture.get() != null);
 		} catch (Exception ex) {
 			ex.printStackTrace();

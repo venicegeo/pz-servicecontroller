@@ -49,17 +49,16 @@ public class ServiceMessageThreadManager {
 	@Autowired
 	private PiazzaLogger coreLogger;
 	@Autowired
-	ServiceMessageWorker serviceMessageWorker;
+	private ServiceMessageWorker serviceMessageWorker;
 	@Autowired
 	private ServiceTaskManager serviceTaskManager;
 	@Autowired
 	private AsyncServiceInstanceScheduler asyncServiceInstanceManager;
-	@Autowired
-	private ObjectMapper mapper;
 
 	@Value("${SPACE}")
 	private String SPACE;
 
+	private ObjectMapper mapper = new ObjectMapper();
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
 	private Map<String, Future<?>> runningServiceRequests = new HashMap<String, Future<?>>();
 

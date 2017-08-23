@@ -54,13 +54,14 @@ public class ServiceMessageThreadManager {
 	private ServiceTaskManager serviceTaskManager;
 	@Autowired
 	private AsyncServiceInstanceScheduler asyncServiceInstanceManager;
+	@Autowired
+	private ObjectMapper mapper;
 
 	@Value("${SPACE}")
 	private String SPACE;
 
-	private ObjectMapper mapper = new ObjectMapper();
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
-	private Map<String, Future<?>> runningServiceRequests = new HashMap<String, Future<?>>();
+	private Map<String, Future<?>> runningServiceRequests = new HashMap<>();
 
 	/**
 	 * Processes a message for a request to execute a service job
@@ -94,7 +95,7 @@ public class ServiceMessageThreadManager {
 	 * @param abortJobRequest
 	 *            The information regarding the job to abort
 	 */
-	@RabbitListener(queues = "Abort-Job-${SPACE}")
+	@RabbitListener(queues = "AbortJob-${SPACE}")
 	public void processAbortJob(String abortJobRequest) {
 		// Get the Job ID
 		String jobId = null;

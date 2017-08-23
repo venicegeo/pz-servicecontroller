@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.Producer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,10 +29,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
@@ -48,7 +46,6 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import messaging.job.KafkaClientFactory;
 import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.GeoJsonDataType;
@@ -68,8 +65,6 @@ import util.UUIDFactory;
  * @author mlynum
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ KafkaClientFactory.class })
-
 public class ServiceMessageWorkerTest {
 	@InjectMocks
 	private ServiceMessageWorker smWorkerMock;
@@ -93,13 +88,15 @@ public class ServiceMessageWorkerTest {
 	@Mock
 	private UUIDFactory uuidFactoryMock;
 	@Mock
-	private Producer<String, String> producerMock;
-	@Mock
 	private ObjectMapper omMock;
 	@Mock
 	private DatabaseAccessor accessorMock;
 	@Mock
+	@Qualifier("UpdateJobsQueue")
 	private Queue updateJobsQueue;
+	@Mock
+	@Qualifier("RequestJobQueue")
+	private Queue requestJobQueue;
 	@Mock
 	private RabbitTemplate rabbitTemplate;
 
@@ -107,8 +104,6 @@ public class ServiceMessageWorkerTest {
 	private ExecuteServiceJob esJob;
 	ResourceMetadata rm = null;
 	Service service = null;
-
-	ConsumerRecord<String, String> kafkaMessage;
 
 	@Before
 	/**

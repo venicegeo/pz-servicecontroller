@@ -15,13 +15,12 @@
  **/
 package org.venice.piazza.servicecontroller.taskmanaged;
 
-import javax.annotation.PostConstruct;
-
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -31,8 +30,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import exception.InvalidInputException;
-import messaging.job.JobMessageFactory;
-import messaging.job.KafkaClientFactory;
 import model.job.Job;
 import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
@@ -63,8 +60,6 @@ import util.PiazzaLogger;
 public class ServiceTaskManager {
 	@Value("${SPACE}")
 	private String SPACE;
-	@Value("${vcap.services.pz-kafka.credentials.host}")
-	private String KAFKA_HOSTS;
 	@Value("${task.managed.error.limit}")
 	private Integer TIMEOUT_LIMIT_COUNT;
 
@@ -74,15 +69,13 @@ public class ServiceTaskManager {
 	private DatabaseAccessor accessor;
 	@Autowired
 	private PiazzaLogger piazzaLogger;
+	@Autowired
+	@Qualifier("UpdateJobsQueue")
+	private Queue updateJobsQueue;
+	@Autowired
+	private RabbitTemplate rabbitTemplate;
 
-	private Producer<String, String> producer;
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceTaskManager.class);
-	private static final String TOPIC_FORMAT = "%s-%s";
-
-	@PostConstruct
-	public void initialize() {
-		producer = KafkaClientFactory.getProducer(KAFKA_HOSTS);
-	}
 
 	/**
 	 * Creates a Service Queue for a newly registered Job.
@@ -108,12 +101,9 @@ public class ServiceTaskManager {
 		// Update the Job Status as Pending to Kafka
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
-		ProducerRecord<String, String> statusUpdateRecord;
+		statusUpdate.setJobId(job.getJobId());
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(
-					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
-					objectMapper.writeValueAsString(statusUpdate));
-			producer.send(statusUpdateRecord);
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: " + exception.getMessage();
 			LOG.error(error, exception);
@@ -164,12 +154,9 @@ public class ServiceTaskManager {
 		// Send the Kafka Message that this Job has been cancelled
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
-		ProducerRecord<String, String> statusUpdateRecord;
+		statusUpdate.setJobId(jobId);
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(
-					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
-					objectMapper.writeValueAsString(statusUpdate));
-			producer.send(statusUpdateRecord);
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId, exception.getMessage());
 			LOG.error(error, exception);
@@ -198,12 +185,9 @@ public class ServiceTaskManager {
 			throw new InvalidInputException(String.format("Cannot find the specified Job %s for this Service %s", jobId, serviceId));
 		}
 		// Send the Update to Kafka
-		ProducerRecord<String, String> statusUpdateRecord;
+		statusUpdate.setJobId(jobId);
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(
-					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
-					objectMapper.writeValueAsString(statusUpdate));
-			producer.send(statusUpdateRecord);
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Job Status from External Service to Job Manager: " + exception.getMessage();
 			LOG.error(error, exception);
@@ -251,12 +235,9 @@ public class ServiceTaskManager {
 		// Update the Job Status as Running to Kafka
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_RUNNING);
-		ProducerRecord<String, String> statusUpdateRecord;
+		statusUpdate.setJobId(jobId);
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(
-					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
-					objectMapper.writeValueAsString(statusUpdate));
-			producer.send(statusUpdateRecord);
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: ";
 			LOG.error(error, exception);
@@ -304,12 +285,9 @@ public class ServiceTaskManager {
 			StatusUpdate statusUpdate = new StatusUpdate();
 			statusUpdate.setResult(new ErrorResult("Service Timed Out", error));
 			statusUpdate.setStatus(StatusUpdate.STATUS_ERROR);
-			ProducerRecord<String, String> statusUpdateRecord;
+			statusUpdate.setJobId(serviceJob.getJobId());
 			try {
-				statusUpdateRecord = new ProducerRecord<String, String>(
-						String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), serviceJob.getJobId(),
-						objectMapper.writeValueAsString(statusUpdate));
-				producer.send(statusUpdateRecord);
+				rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 			} catch (JsonProcessingException exception) {
 				String innerError = "Error Sending Failed/Timed Out Job Status to Job Manager: ";
 				LOG.error(innerError, exception);

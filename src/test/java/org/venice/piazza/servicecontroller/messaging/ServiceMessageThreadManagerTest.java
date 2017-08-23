@@ -15,16 +15,12 @@
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
@@ -32,15 +28,12 @@ import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import messaging.job.KafkaClientFactory;
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.request.PiazzaJobRequest;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(KafkaClientFactory.class)
 public class ServiceMessageThreadManagerTest {
 	@InjectMocks
 	private ServiceMessageThreadManager smtManager;
@@ -52,15 +45,11 @@ public class ServiceMessageThreadManagerTest {
 	@Mock
 	private Service serviceMock;
 	@Mock
-	private KafkaProducer<String, String> producerMock;
-	@Mock
-	private KafkaConsumer<String, String> consumerMock;
-	@Mock
-	private KafkaClientFactory kcFactoryMock;
-	@Mock
 	private CoreServiceProperties propertiesMock;
 	@Mock
 	private ServiceMessageWorker serviceMessageWorker;
+	@Spy
+	private ObjectMapper mapper;
 
 	ResourceMetadata rm = null;
 	Service service = null;

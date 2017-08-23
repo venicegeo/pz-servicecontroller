@@ -36,12 +36,6 @@ public class CoreServiceProperties {
 
 	private String appname;
 
-	@Value("${vcap.services.pz-kafka.credentials.host}")
-	private String kafkaHost;
-	
-	@Value("${kafka.group.name}")
-	private String kafkaGroup;
-	
 	@Value("${server.port}")
 	private int serverPort;
 	@Value("${servicecontroller.host}")
@@ -113,23 +107,6 @@ public class CoreServiceProperties {
 
 	public void setPort(String port) {
 		this.port = port;
-	}
-
-
-	public String getKafkaHost() {
-		return kafkaHost;
-	}
-
-	public void setKafkaHost(String kafkaHost) {
-		this.kafkaHost = kafkaHost;
-	}
-
-	public String getKafkaGroup() {
-		return kafkaGroup;
-	}
-
-	public void setKafkaGroup(String kafkaGroup) {
-		this.kafkaGroup = kafkaGroup;
 	}
 
 	public int getServerPort() {

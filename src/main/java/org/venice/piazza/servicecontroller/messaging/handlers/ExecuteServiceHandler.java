@@ -309,7 +309,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	 */
 	public DataResult processExecutionResult(Service service, String outputType, String status, ResponseEntity<String> handleResult,
 			String dataId) throws JsonProcessingException, IOException, InterruptedException {
-		logger.log("Send Execute Status Kafka", Severity.DEBUG);
+		logger.log("Send Execute Status Message", Severity.DEBUG);
 		// Initialize ingest job items
 		DataResource data = new DataResource();
 		PiazzaJobRequest jobRequest = new PiazzaJobRequest();

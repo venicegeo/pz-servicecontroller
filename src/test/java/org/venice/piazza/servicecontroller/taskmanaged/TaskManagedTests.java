@@ -15,13 +15,15 @@
  **/
 package org.venice.piazza.servicecontroller.taskmanaged;
 
-import org.apache.kafka.clients.producer.Producer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.Assert;
 import org.springframework.web.client.ResourceAccessException;
@@ -47,14 +49,16 @@ import util.PiazzaLogger;
  *
  */
 public class TaskManagedTests {
-	@Mock
+	@Spy
 	private ObjectMapper objectMapper;
 	@Mock
 	private DatabaseAccessor accessor;
 	@Mock
 	private PiazzaLogger piazzaLogger;
 	@Mock
-	private Producer<String, String> producer;
+	private Queue updateJobsQueue;
+	@Mock
+	private RabbitTemplate rabbitTemplate;
 
 	@InjectMocks
 	private ServiceTaskManager serviceTaskManager;
@@ -66,7 +70,6 @@ public class TaskManagedTests {
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
 
-		ReflectionTestUtils.setField(serviceTaskManager, "KAFKA_HOSTS", "localhost:1234");
 		ReflectionTestUtils.setField(serviceTaskManager, "SPACE", "UnitTest");
 		ReflectionTestUtils.setField(serviceTaskManager, "TIMEOUT_LIMIT_COUNT", 5);
 	}

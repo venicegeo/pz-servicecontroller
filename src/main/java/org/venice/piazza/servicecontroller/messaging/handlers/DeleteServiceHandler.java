@@ -36,7 +36,7 @@ import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearch
 
 /**
  * Handler for handling registerService requests.  This handler is used 
- * when register-service kafka topics are received or when clients utilize the 
+ * when register-service messages are received or when clients utilize the 
  * ServiceController registerService web service.
  * @author mlynum & Sonny.Saniev
  * @version 1.0

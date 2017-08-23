@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 
-import org.apache.kafka.clients.producer.Producer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;

@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Future;
 
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Queue;
@@ -59,7 +57,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import exception.DataInspectException;
 import exception.PiazzaJobException;
-import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
 import model.data.DataResource;
 import model.data.DataType;
@@ -119,6 +116,9 @@ public class ServiceMessageWorker {
 	@Autowired
 	@Qualifier("UpdateJobsQueue")
 	private Queue updateJobsQueue;
+	@Autowired
+	@Qualifier("RequestJobQueue")
+	private Queue requestJobQueue;
 	@Autowired
 	private RabbitTemplate rabbitTemplate;
 
@@ -434,7 +434,7 @@ public class ServiceMessageWorker {
 	 * @throws JsonMappingException
 	 * @throws JsonParseException
 	 */
-	public void handleRasterType(ExecuteServiceJob executeJob, Job job, Producer<String, String> producer)
+	public void handleRasterType(ExecuteServiceJob executeJob, Job job)
 			throws InterruptedException, JsonParseException, JsonMappingException, IOException {
 
 		RestTemplate restTemplate = new RestTemplate();
@@ -538,10 +538,11 @@ public class ServiceMessageWorker {
 			ingestJob.host = true;
 			pjr.jobType = ingestJob;
 
-			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(pjr, uuidFactory.getUUID(), SPACE);
-			producer.send(newProdRecord);
+			// Send to Message Bus
+			pjr.jobId = uuidFactory.getUUID();
+			rabbitTemplate.convertAndSend(requestJobQueue.getName(), objectMapper.writeValueAsString(pjr));
 
-			logger.log("newProdRecord sent " + newProdRecord.toString(), Severity.DEBUG);
+			logger.log(String.format("newProdRecord sent with Job ID %s", pjr.jobId), Severity.DEBUG);
 
 			checkThreadInterrupted();
 
@@ -552,10 +553,10 @@ public class ServiceMessageWorker {
 			// Create a text result and update status
 			DataResult textResult = new DataResult(dataResource.dataId);
 			statusUpdate.setResult(textResult);
-			ProducerRecord<String, String> prodRecord = JobMessageFactory.getUpdateStatusMessage(job.getJobId(), statusUpdate, SPACE);
+			statusUpdate.setJobId(job.getJobId());
+			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 
-			producer.send(prodRecord);
-			logger.log("prodRecord sent " + prodRecord.toString(), Severity.DEBUG);
+			logger.log("Job Update with ID sent " + job.getJobId(), Severity.DEBUG);
 		}
 	}
 

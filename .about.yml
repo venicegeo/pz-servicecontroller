@@ -14,7 +14,7 @@ full_name: Piazza Service Controller
 # What is the problem your project solves? What is the solution? Use the
 # format shown below. The #dashboard team will gladly help you put this
 # together for your project. (required)
-description: This component manages and executes web services external to the Piazza core architecture (User Services). It provides a REST API allowing developers to perform web service management activities. The ServiceController also listens to Kafka topics dispatched from the Piazza Core Dispatcher, responds and handles web service management and execution Kafka messages. 
+description: This component manages and executes web services external to the Piazza core architecture (User Services). It provides a REST API allowing developers to perform web service management activities. The ServiceController also listens to topics dispatched from the Piazza Core Dispatcher, responds and handles web service management and execution messages. 
 
 
 # What is the measurable impact of your project? Use the format shown below.

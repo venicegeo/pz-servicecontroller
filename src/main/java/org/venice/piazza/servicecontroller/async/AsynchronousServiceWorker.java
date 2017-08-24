@@ -38,6 +38,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import exception.DataInspectException;
+import messaging.job.JobMessageFactory;
 import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
@@ -164,7 +165,7 @@ public class AsynchronousServiceWorker {
 				// Route the current Job Status through Message Bus.
 				try {
 					status.setJobId(instance.getJobId());
-					rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(status));
+					rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(), objectMapper.writeValueAsString(status));
 				} catch (JsonProcessingException exception) {
 					// The message could not be serialized. Record this.
 					LOG.error("Json processing error occured", exception);
@@ -262,7 +263,7 @@ public class AsynchronousServiceWorker {
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 			statusUpdate.setResult(result);
 			statusUpdate.setJobId(instance.getJobId());
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 			// Remove this Instance from the Instance table
 			accessor.deleteAsyncServiceInstance(instance.getJobId());
 		} catch (HttpClientErrorException | HttpServerErrorException exception) {
@@ -305,7 +306,7 @@ public class AsynchronousServiceWorker {
 
 		// Send the Job Status through the Message Bus.
 		try {
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(status));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(), objectMapper.writeValueAsString(status));
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
 			LOG.error("Could not send Error Status to Job Manager. Error serializing Status", exception);
@@ -343,7 +344,7 @@ public class AsynchronousServiceWorker {
 		try {
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 			statusUpdate.setJobId(instance.getJobId());
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException jsonException) {
 			String error = String.format(
 					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",

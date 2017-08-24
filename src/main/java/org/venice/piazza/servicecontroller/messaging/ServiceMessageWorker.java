@@ -57,6 +57,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import exception.DataInspectException;
 import exception.PiazzaJobException;
+import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
 import model.data.DataResource;
 import model.data.DataType;
@@ -152,7 +153,7 @@ public class ServiceMessageWorker {
 	}
 
 	private void validateJob(final Job job) throws PiazzaJobException, DataInspectException {
-		// Ensure a valid Job has been received through Kafka
+		// Ensure a valid Job has been received
 		if (job == null) {
 			throw new DataInspectException("A Null Job has been received by the Service Controller Worker.");
 		}
@@ -186,7 +187,8 @@ public class ServiceMessageWorker {
 		} else {
 			su.setStatus(StatusUpdate.STATUS_RUNNING);
 		}
-		rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(su));
+		rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+				objectMapper.writeValueAsString(su));
 	}
 
 	private boolean isAsynOrTaskManagedService(final Service service, final WorkerCallback callback, final String consumerRecordKey,
@@ -216,7 +218,8 @@ public class ServiceMessageWorker {
 		statusUpdate.setResult(result);
 		statusUpdate.setJobId(jobId);
 		try {
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException jsonException) {
 			LOG.error(JSON_ERR, jsonException);
 			logger.log(String.format(
@@ -237,7 +240,8 @@ public class ServiceMessageWorker {
 			StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 			statusUpdate.setResult(result);
 			statusUpdate.setJobId(jobId);
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 		}
 	}
 
@@ -362,7 +366,8 @@ public class ServiceMessageWorker {
 		statusUpdate.setJobId(jobId);
 
 		try {
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
 			LOG.error(JSON_ERR, exception);
@@ -540,7 +545,8 @@ public class ServiceMessageWorker {
 
 			// Send to Message Bus
 			pjr.jobId = uuidFactory.getUUID();
-			rabbitTemplate.convertAndSend(requestJobQueue.getName(), objectMapper.writeValueAsString(pjr));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, requestJobQueue.getName(),
+					objectMapper.writeValueAsString(pjr));
 
 			logger.log(String.format("newProdRecord sent with Job ID %s", pjr.jobId), Severity.DEBUG);
 
@@ -554,7 +560,8 @@ public class ServiceMessageWorker {
 			DataResult textResult = new DataResult(dataResource.dataId);
 			statusUpdate.setResult(textResult);
 			statusUpdate.setJobId(job.getJobId());
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 
 			logger.log("Job Update with ID sent " + job.getJobId(), Severity.DEBUG);
 		}

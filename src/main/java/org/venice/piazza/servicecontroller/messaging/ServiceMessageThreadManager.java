@@ -22,6 +22,9 @@ import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.Exchange;
+import org.springframework.amqp.rabbit.annotation.Queue;
+import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +34,7 @@ import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import messaging.job.JobMessageFactory;
 import messaging.job.WorkerCallback;
 import model.job.Job;
 import model.job.type.AbortJob;
@@ -69,7 +73,8 @@ public class ServiceMessageThreadManager {
 	 * @param serviceJobRequest
 	 *            The ExecuteServiceJob Request with the Execution information
 	 */
-	@RabbitListener(queues = "ExecuteServiceJob-${SPACE}")
+	// @RabbitListener(queues = "ExecuteServiceJob-${SPACE}")
+	@RabbitListener(bindings = @QueueBinding(key = "ExecuteServiceJob-${SPACE}", value = @Queue(value = "ServiceControllerJob", autoDelete = "true", durable = "true"), exchange = @Exchange(value = JobMessageFactory.PIAZZA_EXCHANGE_NAME, autoDelete = "false", durable = "true")))
 	public void processServiceExecutionJob(String serviceJobRequest) {
 		try {
 			// Callback that will be invoked when a Worker completes. This will
@@ -95,7 +100,8 @@ public class ServiceMessageThreadManager {
 	 * @param abortJobRequest
 	 *            The information regarding the job to abort
 	 */
-	@RabbitListener(queues = "AbortJob-${SPACE}")
+	// @RabbitListener(queues = "AbortJob-${SPACE}")
+	@RabbitListener(bindings = @QueueBinding(key = "AbortServiceJob-${SPACE}", value = @Queue(value = "ServiceControllerAbort", autoDelete = "true", durable = "true"), exchange = @Exchange(value = JobMessageFactory.PIAZZA_EXCHANGE_NAME, autoDelete = "false", durable = "true")))
 	public void processAbortJob(String abortJobRequest) {
 		// Get the Job ID
 		String jobId = null;

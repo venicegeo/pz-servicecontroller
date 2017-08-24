@@ -44,6 +44,7 @@ import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import messaging.job.JobMessageFactory;
 import model.data.DataResource;
 import model.data.DataType;
 import model.data.type.BodyDataType;
@@ -63,7 +64,7 @@ import util.PiazzaLogger;
 import util.UUIDFactory;
 
 /**
- * Handler for handling executeService requests. This handler is used when execute-service kafka topics are received or
+ * Handler for handling executeService requests. This handler is used when execute-service messages are received or
  * when clients utilize the ServiceController service.
  * 
  * @author mlynum & Sonny.Saniev
@@ -304,7 +305,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
-	 * Processes the Result of the external Service execution. This will send the Ingest job through Kafka, and will
+	 * Processes the Result of the external Service execution. This will send the Ingest job through the message bus, and will
 	 * return the Result of the data.
 	 */
 	public DataResult processExecutionResult(Service service, String outputType, String status, ResponseEntity<String> handleResult,
@@ -372,7 +373,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 			String jobId = uuidFactory.getUUID();
 			jobRequest.jobId = jobId;
-			rabbitTemplate.convertAndSend(requestJobQueue.getName(), objectMapper.writeValueAsString(jobRequest));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, requestJobQueue.getName(), objectMapper.writeValueAsString(jobRequest));
 
 			logger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
 					data.getDataType().getClass().getSimpleName()), Severity.INFORMATIONAL);

@@ -36,7 +36,7 @@ import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 /**
- * Handler for handling registerService requests. This handler is used when register-service kafka topics are received
+ * Handler for handling registerService requests. This handler is used when register-service topics are received
  * or when clients utilize the ServiceController registerService web service.
  * 
  * @author mlynum
@@ -119,7 +119,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 					coreLogger.log("The service was NOT updated", Severity.ERROR,
 							new AuditElement("serviceController", "failedToUpdateService", sMetadata.getServiceId()));
 				}
-				// If an Id was returned then send a kafka message back updating the job iD
+				// If an Id was returned then send a message back updating the job iD
 				// with the resourceId
 
 				/*

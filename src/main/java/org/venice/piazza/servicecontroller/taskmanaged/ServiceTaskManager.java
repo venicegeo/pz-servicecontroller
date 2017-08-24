@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import exception.InvalidInputException;
+import messaging.job.JobMessageFactory;
 import model.job.Job;
 import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
@@ -98,12 +99,13 @@ public class ServiceTaskManager {
 		// Add the Job to the Jobs queue
 		ServiceJob serviceJob = new ServiceJob(job.getJobId(), job.getData().getServiceId());
 		accessor.addJobToServiceQueue(job.getData().getServiceId(), serviceJob);
-		// Update the Job Status as Pending to Kafka
+		// Update the Job Status as Pending
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
 		statusUpdate.setJobId(job.getJobId());
 		try {
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: " + exception.getMessage();
 			LOG.error(error, exception);
@@ -151,12 +153,13 @@ public class ServiceTaskManager {
 	private void handleTaskManagedJob(final String serviceId, final String jobId) {
 		// If this is a Task Managed Service, then remove the Job from the Queue.
 		accessor.removeJobFromServiceQueue(serviceId, jobId);
-		// Send the Kafka Message that this Job has been cancelled
+		// Send the Message that this Job has been cancelled
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
 		statusUpdate.setJobId(jobId);
 		try {
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId, exception.getMessage());
 			LOG.error(error, exception);
@@ -184,10 +187,11 @@ public class ServiceTaskManager {
 		if (serviceJob == null) {
 			throw new InvalidInputException(String.format("Cannot find the specified Job %s for this Service %s", jobId, serviceId));
 		}
-		// Send the Update to Kafka
+		// Send the Update
 		statusUpdate.setJobId(jobId);
 		try {
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Job Status from External Service to Job Manager: " + exception.getMessage();
 			LOG.error(error, exception);
@@ -232,12 +236,13 @@ public class ServiceTaskManager {
 			throw new ResourceAccessException(error);
 		}
 
-		// Update the Job Status as Running to Kafka
+		// Update the Job Status as Running
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_RUNNING);
 		statusUpdate.setJobId(jobId);
 		try {
-			rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+					objectMapper.writeValueAsString(statusUpdate));
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: ";
 			LOG.error(error, exception);
@@ -281,13 +286,14 @@ public class ServiceTaskManager {
 					new AuditElement("serviceController", "failTimedOutJob", serviceJob.getJobId()));
 			// If the Job has too many timeouts, then fail the Job.
 			accessor.removeJobFromServiceQueue(serviceId, serviceJob.getJobId());
-			// Send the Kafka message that this Job has failed.
+			// Send the message that this Job has failed.
 			StatusUpdate statusUpdate = new StatusUpdate();
 			statusUpdate.setResult(new ErrorResult("Service Timed Out", error));
 			statusUpdate.setStatus(StatusUpdate.STATUS_ERROR);
 			statusUpdate.setJobId(serviceJob.getJobId());
 			try {
-				rabbitTemplate.convertAndSend(updateJobsQueue.getName(), objectMapper.writeValueAsString(statusUpdate));
+				rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, updateJobsQueue.getName(),
+						objectMapper.writeValueAsString(statusUpdate));
 			} catch (JsonProcessingException exception) {
 				String innerError = "Error Sending Failed/Timed Out Job Status to Job Manager: ";
 				LOG.error(innerError, exception);

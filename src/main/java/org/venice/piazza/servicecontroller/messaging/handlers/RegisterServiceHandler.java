@@ -36,7 +36,7 @@ import util.PiazzaLogger;
 import util.UUIDFactory;
 
 /**
- * Handler for handling registerService requests. This handler is used when register-service kafka topics are received
+ * Handler for handling registerService requests. This handler is used when register-service topics are received
  * or when clients utilize the ServiceController registerService web service.
  * 
  * @author mlynum

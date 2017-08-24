@@ -157,7 +157,7 @@ public class ServiceMessageWorkerTest {
 
 	@Test
 	/**
-	 * Test an invalid kafka message being received
+	 * Test an invalid message being received
 	 */
 	public void testWorkerInvalidPayload() {
 		try {
@@ -172,7 +172,7 @@ public class ServiceMessageWorkerTest {
 
 	@Test
 	/**
-	 * Test an valid kafka message being received
+	 * Test an valid message being received
 	 */
 	public void testWorkerValidPayload() {
 		try {
@@ -227,7 +227,7 @@ public class ServiceMessageWorkerTest {
 
 	@Test
 	/**
-	 * Test an valid kafka message being received
+	 * Test an valid message being received
 	 */
 	public void testOfflineService() {
 		try {
@@ -290,7 +290,7 @@ public class ServiceMessageWorkerTest {
 	}
 
 	/**
-	 * Test an invalid kafka message being received
+	 * Test an invalid message being received
 	 */
 	@Test
 	public void testBadHTTPResponseServiceResponse() {
@@ -332,7 +332,7 @@ public class ServiceMessageWorkerTest {
 	}
 
 	/**
-	 * Test an invalid kafka message being received
+	 * Test an invalid message being received
 	 */
 	@Test
 	public void testServicResponseObjectMapperError() {

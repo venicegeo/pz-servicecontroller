@@ -73,8 +73,7 @@ public class ServiceMessageThreadManager {
 	 * @param serviceJobRequest
 	 *            The ExecuteServiceJob Request with the Execution information
 	 */
-	// @RabbitListener(queues = "ExecuteServiceJob-${SPACE}")
-	@RabbitListener(bindings = @QueueBinding(key = "ExecuteServiceJob-${SPACE}", value = @Queue(value = "ServiceControllerJob", autoDelete = "true", durable = "true"), exchange = @Exchange(value = JobMessageFactory.PIAZZA_EXCHANGE_NAME, autoDelete = "false", durable = "true")))
+	@RabbitListener(bindings = @QueueBinding(key = "ExecuteServiceJob-${SPACE}", value = @Queue(value = "ServiceControllerJob-${SPACE}", autoDelete = "false", durable = "true"), exchange = @Exchange(value = JobMessageFactory.PIAZZA_EXCHANGE_NAME, autoDelete = "false", durable = "true")))
 	public void processServiceExecutionJob(String serviceJobRequest) {
 		try {
 			// Callback that will be invoked when a Worker completes. This will
@@ -100,8 +99,7 @@ public class ServiceMessageThreadManager {
 	 * @param abortJobRequest
 	 *            The information regarding the job to abort
 	 */
-	// @RabbitListener(queues = "AbortJob-${SPACE}")
-	@RabbitListener(bindings = @QueueBinding(key = "AbortServiceJob-${SPACE}", value = @Queue(value = "ServiceControllerAbort", autoDelete = "true", durable = "true"), exchange = @Exchange(value = JobMessageFactory.PIAZZA_EXCHANGE_NAME, autoDelete = "false", durable = "true")))
+	@RabbitListener(bindings = @QueueBinding(key = "AbortJob-${SPACE}", value = @Queue(autoDelete = "true", durable = "true", exclusive = "true"), exchange = @Exchange(value = JobMessageFactory.PIAZZA_EXCHANGE_NAME, autoDelete = "false", durable = "true")))
 	public void processAbortJob(String abortJobRequest) {
 		// Get the Job ID
 		String jobId = null;

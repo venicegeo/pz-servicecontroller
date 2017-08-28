@@ -109,14 +109,14 @@ public class TaskManagedTests {
 		ServiceJob mockJob = new ServiceJob("job123", "service123");
 		Mockito.when(accessor.getServiceJob(Mockito.eq("service123"), Mockito.eq("job123"))).thenReturn(mockJob);
 
-		// Test - Kafka succeeds
+		// Test - Messaging succeeds
 		serviceTaskManager.processStatusUpdate("service123", "job123", mockUpdate);
 
 		// Test - Final Status
 		mockUpdate = new StatusUpdate(StatusUpdate.STATUS_SUCCESS);
 		serviceTaskManager.processStatusUpdate("service123", "job123", mockUpdate);
 
-		// Test - Kafka fails
+		// Test - Messaging fails
 		Mockito.when(objectMapper.writeValueAsString(Mockito.any())).thenThrow(new JsonMappingException("Oops"));
 		serviceTaskManager.processStatusUpdate("service123", "job123", mockUpdate);
 	}
@@ -155,7 +155,7 @@ public class TaskManagedTests {
 		Assert.isInstanceOf(ExecuteServiceJob.class, result);
 		Assert.isTrue(result.getJobId().equals("job123"));
 
-		// Test - Handle Kafka Exception
+		// Test - Handle JSON Exception
 		Mockito.when(objectMapper.writeValueAsString(Mockito.any())).thenThrow(new JsonMappingException("Oops"));
 		result = serviceTaskManager.getNextJobFromQueue("service123");
 
@@ -173,7 +173,7 @@ public class TaskManagedTests {
 		ServiceJob mockServiceJob = new ServiceJob("job123", "service123");
 		Mockito.when(accessor.getNextJobInServiceQueue(Mockito.eq("service123"))).thenReturn(mockServiceJob);
 
-		// Test - Handle Kafka Exception, with Improper Job Type
+		// Test - Handle Message Exception, with Improper Job Type
 		Job mockJob = new Job();
 		mockJob.setJobId("job123");
 		mockJob.setJobType(new AbortJob("job321"));

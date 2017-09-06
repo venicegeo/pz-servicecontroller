@@ -216,7 +216,7 @@ public class ServiceMessageWorker {
 		return false;
 	}
 	private void interruptJob(final String consumerRecordKey, final Producer<String, String> producer, final String jobId, final String exception) {
-		logger.log(String.format("Thread for Job %s was interrupted.", jobId), Severity.INFORMATIONAL);
+		logger.log(String.format("Thread for Job %s was interrupted.", jobId), Severity.INFORMATIONAL, new AuditElement("serviceController", "cancelledServiceJob", jobId));
 		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 		TextResult result = new TextResult(exception);
 		statusUpdate.setResult(result);
@@ -228,7 +228,7 @@ public class ServiceMessageWorker {
 			LOG.error(JSON_ERR, jsonException);
 			logger.log(String.format(
 					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
-					consumerRecordKey, jsonException.getMessage()), Severity.ERROR);
+					consumerRecordKey, jsonException.getMessage()), Severity.ERROR, new AuditElement("serviceController", "errorCancellingServiceJob", jobId));
 		}
 	}
 	

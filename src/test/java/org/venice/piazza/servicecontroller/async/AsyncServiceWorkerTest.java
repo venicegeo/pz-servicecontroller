@@ -19,6 +19,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.Before;
@@ -93,8 +94,9 @@ public class AsyncServiceWorkerTest {
 		// Mocking Execute Data
 		mockJob.data = new ExecuteServiceData();
 		mockJob.data.setServiceId("serviceId");
-		mockJob.data.dataOutput = new ArrayList<DataType>();
-		mockJob.data.dataOutput.add(new TextDataType());
+		List<DataType> dataOutput = new ArrayList<DataType>();
+		dataOutput.add(new TextDataType());
+		mockJob.data.setDataOutput(dataOutput);
 
 		// Mock an Instance we can use
 		mockInstance.setInstanceId("instanceId");

@@ -280,7 +280,7 @@ public class ServiceMessageWorker {
 				// will be put into the Jobs queue.
 				sendJobStatusInfo(service, producer, job.getJobId());
 
-				if (esData.dataOutput != null) {
+				if (esData.getDataOutput() != null) {
 
 					checkThreadInterrupted();
 					
@@ -307,7 +307,7 @@ public class ServiceMessageWorker {
 
 					// Process the Response and handle any Ingest that may result
 					final String dataId = uuidFactory.getUUID();
-					final String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
+					final String outputType = jobItem.data.getDataOutput().get(0).getClass().getSimpleName();
 					final DataResult result = esHandler.processExecutionResult(service, outputType, producer, StatusUpdate.STATUS_SUCCESS,
 							externalServiceResponse, dataId);
 

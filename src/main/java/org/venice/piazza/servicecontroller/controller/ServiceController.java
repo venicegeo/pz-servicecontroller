@@ -322,7 +322,7 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers = "Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
-		for (Map.Entry<String, DataType> entry : data.dataInputs.entrySet()) {
+		for (Map.Entry<String, DataType> entry : data.getDataInputs().entrySet()) {
 			String key = entry.getKey();
 			logger.log("dataInput key:" + key, Severity.DEBUG);
 			logger.log("dataInput Type:" + entry.getValue().getClass().getSimpleName(), Severity.DEBUG);

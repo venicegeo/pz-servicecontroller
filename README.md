@@ -9,3 +9,5 @@ To build and run this project, software such as Kafka and PostgreSQL is required
 This will run the ServiceController, after initializing, the following message will be displayed:
 
     o.v.p.servicecontroller.Application : Started Application in 8.994 seconds (JVM running for 9.658)
+    
+    

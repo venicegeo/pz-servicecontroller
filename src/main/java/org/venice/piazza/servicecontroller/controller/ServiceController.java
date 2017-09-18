@@ -191,11 +191,12 @@ public class ServiceController {
 			@RequestParam(value = "userName", required = false) String userName) {
 		try {
 			// Don't allow for invalid orders
-			if (!(order.equalsIgnoreCase("asc")) && !(order.equalsIgnoreCase("desc"))) {
-				order = "asc";
+			String validatedOrder = order;
+			if (!("asc".equalsIgnoreCase(order)) && !("desc".equalsIgnoreCase(order))) {
+				validatedOrder = "asc";
 			}
 			logger.log("Returning List of Services.", Severity.INFORMATIONAL);
-			return new ResponseEntity<PiazzaResponse>(accessor.getServices(page, perPage, order, sortBy, keyword, userName), HttpStatus.OK);
+			return new ResponseEntity<PiazzaResponse>(accessor.getServices(page, perPage, validatedOrder, sortBy, keyword, userName), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			LOG.error(error, exception);

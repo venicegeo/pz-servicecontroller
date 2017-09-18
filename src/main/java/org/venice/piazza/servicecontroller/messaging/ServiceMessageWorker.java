@@ -131,9 +131,10 @@ public class ServiceMessageWorker {
 	@Async
 	public Future<String> run(ConsumerRecord<String, String> consumerRecord, Producer<String, String> producer, Job job,
 			WorkerCallback callback) {
-		
+		String jobId = null;
 		try {
 			validateJob(job);
+			jobId = job.getJobId();
 
 			// Process the Execution of the External Service
 			return processExernalServiceExecution(consumerRecord, producer, job, callback);
@@ -146,7 +147,7 @@ public class ServiceMessageWorker {
 			// Catch any General Exceptions that occur during runtime.
 			logger.log(ex.getMessage(), Severity.ERROR);
 			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),
-					HttpStatus.INTERNAL_SERVER_ERROR.value(), producer, job.getJobId());
+					HttpStatus.INTERNAL_SERVER_ERROR.value(), producer, jobId);
 		}
 
 		// Return Future
@@ -344,7 +345,7 @@ public class ServiceMessageWorker {
 
 			if (externalServiceResponse != null && externalServiceResponse.getStatusCode() != HttpStatus.OK) {
 				sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse,
-						new Integer(externalServiceResponse.getStatusCode().value()), producer, job.getJobId());
+						externalServiceResponse.getStatusCode().value(), producer, job.getJobId());
 			}
 			
 			// Return Future
@@ -578,7 +579,7 @@ public class ServiceMessageWorker {
 	public MediaType createMediaType(String mimeType) {
 		MediaType mediaType;
 		String type, subtype;
-		StringBuffer sb = new StringBuffer(mimeType);
+		StringBuilder sb = new StringBuilder(mimeType);
 		int index = sb.indexOf("/");
 		// If a slash was found then there is a type and subtype
 		if (index != -1) {

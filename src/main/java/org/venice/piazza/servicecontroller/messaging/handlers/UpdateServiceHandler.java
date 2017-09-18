@@ -31,6 +31,7 @@ import model.job.PiazzaJobType;
 import model.job.type.UpdateServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
+import model.response.ErrorResponse;
 import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -69,7 +70,7 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 		if (job != null) {
 			// Get the ResourceMetadata
 			Service sMetadata = job.getData();
-			LOG.info("serviceMetadata received is " + sMetadata);
+			LOG.info(String.format("ServiceMetadata received is %s", sMetadata.toString()));
 			coreLogger.log("serviceMetadata received is " + sMetadata, Severity.INFORMATIONAL);
 			String result = handle(sMetadata);
 
@@ -114,6 +115,11 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 					// Only when the user service data is updated successfully then
 					// update elastic search
 					PiazzaResponse response = elasticAccessor.update(sMetadata);
+					if (response instanceof ErrorResponse) {
+						coreLogger.log(
+								String.format("Error response received from Elastic Search Update: %s", ((ErrorResponse) response).message),
+								Severity.INFORMATIONAL);
+					}
 				} else {
 					coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", Severity.INFORMATIONAL);
 					coreLogger.log("The service was NOT updated", Severity.ERROR,

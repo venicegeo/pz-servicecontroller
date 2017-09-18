@@ -128,33 +128,32 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		String serviceId = data.getServiceId();
 		Service sMetadata = null;
 		ObjectMapper objectMapper = new ObjectMapper();
-		
+
 		try {
 			// Accessor throws exception if can't find service
 			sMetadata = accessor.getServiceById(serviceId);
 
 			String result = objectMapper.writeValueAsString(sMetadata);
 			logger.log(result, Severity.INFORMATIONAL);
-		} 
-		catch (ResourceAccessException | JsonProcessingException ex) {
+		} catch (ResourceAccessException | JsonProcessingException ex) {
 			LOG.error("Exception occurred", ex);
 		}
-		
+
 		if (sMetadata != null) {
 			return processServiceMetadata(sMetadata, data);
-		}
-		else {
+		} else {
 			logger.log(String.format("The service was NOT found id %s", data.getServiceId()), Severity.ERROR,
 					new AuditElement("serviceController", "notFound", data.getServiceId()));
 			return new ResponseEntity<>("Service Id " + data.getServiceId() + " not found", HttpStatus.NOT_FOUND);
-		}		
+		}
 	}
 
-	private ResponseEntity<String> processServiceMetadata(final Service sMetadata, final ExecuteServiceData data) throws InterruptedException {
+	private ResponseEntity<String> processServiceMetadata(final Service sMetadata, final ExecuteServiceData data)
+			throws InterruptedException {
 		// Default request mimeType application/json
 		ObjectMapper objectMapper = new ObjectMapper();
 		String requestMimeType = MIME_TYPE;
-		
+
 		String rawURL = sMetadata.getUrl();
 		logger.log(String.format("Executing Service with URL %s with ID %s", rawURL, data.getServiceId()), Severity.INFORMATIONAL);
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(rawURL);
@@ -162,7 +161,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 		Map<String, DataType> postObjects = new HashMap<>();
 		Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
 		String postString = "";
-		
+
 		while (it.hasNext()) {
 			Entry<String, DataType> entry = it.next();
 			String inputName = entry.getKey();
@@ -172,8 +171,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				String paramValue = ((URLParameterDataType) entry.getValue()).getContent();
 
 				builder = processURLParameterDataTypeMetadata(paramValue, inputName, sMetadata, builder);
-			} 
-			else if (entry.getValue() instanceof BodyDataType) {
+			} else if (entry.getValue() instanceof BodyDataType) {
 				BodyDataType bdt = (BodyDataType) entry.getValue();
 				postString = bdt.getContent();
 				requestMimeType = bdt.getMimeType();
@@ -181,8 +179,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					logger.log("Body mime type not specified", Severity.ERROR);
 					return new ResponseEntity<>("Body mime type not specified", HttpStatus.BAD_REQUEST);
 				}
-			} 
-			else {
+			} else {
 				// Default behavior for other inputs, put them in list of objects
 				// which are transformed into JSON consistent with default requestMimeType
 				logger.log("inputName =" + inputName + "entry Value=" + entry.getValue(), Severity.INFORMATIONAL);
@@ -192,16 +189,15 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 		logger.log("Final Builder URL" + builder.toUriString(), Severity.INFORMATIONAL);
 		if (postObjects.size() > 0) {
-			
+
 			if (postString.length() > 0) {
 				logger.log("String Input not consistent with other Inputs", Severity.ERROR);
 				return new ResponseEntity<>("String Input not consistent with other Inputs", HttpStatus.BAD_REQUEST);
 			}
-			
+
 			try {
 				postString = objectMapper.writeValueAsString(postObjects);
-			} 
-			catch (JsonProcessingException e) {
+			} catch (JsonProcessingException e) {
 				LOG.error("Json processing error occurred", e);
 				logger.log(e.getMessage(), Severity.ERROR);
 				return new ResponseEntity<>("Could not marshal post requests", HttpStatus.BAD_REQUEST);
@@ -210,36 +206,36 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 
 		logger.log(String.format("Triggered execution of service %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
 				new AuditElement("serviceController", "executingExternalService", sMetadata.getServiceId()));
-		
+
 		return executeJob(sMetadata.getMethod(), requestMimeType, builder.toUriString(), postString);
 	}
-	
-	private UriComponentsBuilder processURLParameterDataTypeMetadata(final String paramValue, final String inputName, final Service sMetadata, final UriComponentsBuilder builder) {
-		
+
+	private UriComponentsBuilder processURLParameterDataTypeMetadata(final String paramValue, final String inputName,
+			final Service sMetadata, final UriComponentsBuilder builder) {
+
 		UriComponentsBuilder localBuilder = builder;
-		
+
 		if (inputName.length() == 0) {
 			logger.log("sMetadata.getResourceMeta=" + sMetadata.getResourceMetadata(), Severity.DEBUG);
 			localBuilder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl() + "?" + paramValue);
 			logger.log("Builder URL is " + localBuilder.toUriString(), Severity.DEBUG);
-		} 
-		else {
+		} else {
 			localBuilder.queryParam(inputName, paramValue);
 			logger.log("Input Name=" + inputName + " paramValue=" + paramValue, Severity.DEBUG);
 		}
-		
+
 		return localBuilder;
 	}
-	
-	private ResponseEntity<String> executeJob(final String method, final String requestMimeType, final String uri, final String postString) throws InterruptedException {
+
+	private ResponseEntity<String> executeJob(final String method, final String requestMimeType, final String uri, final String postString)
+			throws InterruptedException {
 
 		URI url = URI.create(uri);
 		if ("GET".equals(method)) {
 			logger.log("GetForEntity URL=" + url, Severity.INFORMATIONAL);
 			// execute job
 			return template.getForEntity(url, String.class);
-		}
-		else if ("POST".equals(method)) {
+		} else if ("POST".equals(method)) {
 			HttpHeaders headers = new HttpHeaders();
 			// Set the mimeType of the request
 			MediaType mediaType = createMediaType(requestMimeType);
@@ -249,18 +245,16 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			logger.log("PostForEntity URL=" + url, Severity.INFORMATIONAL);
 			try {
 				return template.postForEntity(url, requestEntity, String.class);
-			} 
-			catch (HttpServerErrorException hex) {
+			} catch (HttpServerErrorException hex) {
 				LOG.info(String.format("Server Error for URL %s:  %s", url, hex.getResponseBodyAsString()), hex);
 				throw new InterruptedException(hex.getResponseBodyAsString());
 			}
-		}
-		else {
+		} else {
 			logger.log("Request method type not specified", Severity.ERROR);
 			return new ResponseEntity<>("Request method type not specified", HttpStatus.BAD_REQUEST);
 		}
 	}
-	
+
 	/**
 	 * This method creates a MediaType based on the mimetype that was provided
 	 * 
@@ -270,7 +264,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private MediaType createMediaType(String mimeType) {
 		MediaType mediaType;
 		String type, subtype;
-		StringBuffer sb = new StringBuffer(mimeType);
+		StringBuilder sb = new StringBuilder(mimeType);
 		int index = sb.indexOf("/");
 		// If a slash was found then there is a type and subtype
 		if (index != -1) {
@@ -322,7 +316,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			logger.log("The result provided from service is " + handleResult.getBody(), Severity.DEBUG);
 
 			// String serviceControlString = handleResult.getBody().get(0).toString();
-			String serviceControlString = handleResult.getBody().toString();
+			String serviceControlString = handleResult.getBody();
 
 			logger.log("The service controller string is " + serviceControlString, Severity.DEBUG);
 
@@ -336,8 +330,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				// Now check to see if the conversion is actually a proper DataResource
 				// if it is not time to create a TextDataType and return
 				if ((data == null) || (data.getDataType() == null)) {
-					logger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType",
-							Severity.DEBUG);
+					logger.log("The DataResource is not in a valid format, creating a new DataResource and TextDataType", Severity.DEBUG);
 
 					data = new DataResource();
 					data.dataId = dataId;
@@ -353,15 +346,17 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				LOG.error("Exception occurred", ex);
 				logger.log(ex.getMessage(), Severity.ERROR);
 
-				// Checking payload type and settings the correct type
-				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) { // NOSONAR
-					TextDataType newDataType = new TextDataType();
-					newDataType.content = serviceControlString;
-					data.dataType = newDataType;
-				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) { // NOSONAR
-					GeoJsonDataType newDataType = new GeoJsonDataType();
-					newDataType.setGeoJsonContent(serviceControlString);
-					data.dataType = newDataType;
+				if (data != null) {
+					// Checking payload type and settings the correct type
+					if (outputType.equals((new TextDataType()).getClass().getSimpleName())) { // NOSONAR
+						TextDataType newDataType = new TextDataType();
+						newDataType.content = serviceControlString;
+						data.dataType = newDataType;
+					} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) { // NOSONAR
+						GeoJsonDataType newDataType = new GeoJsonDataType();
+						newDataType.setGeoJsonContent(serviceControlString);
+						data.dataType = newDataType;
+					}
 				}
 			}
 
@@ -377,14 +372,14 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			ProducerRecord<String, String> newProdRecord = JobMessageFactory.getRequestJobMessage(jobRequest, jobId, SPACE);
 			producer.send(newProdRecord);
 
-			logger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
+			logger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, dataId,
 					data.getDataType().getClass().getSimpleName()), Severity.INFORMATIONAL);
 
 			// Return the Result of the Data.
 			DataResult textResult = new DataResult(data.dataId);
 			return textResult;
 		}
-		
+
 		return null;
 	}
 }

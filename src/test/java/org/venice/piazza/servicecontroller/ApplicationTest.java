@@ -47,7 +47,6 @@ public class ApplicationTest {
 		String[] args = new String[0];
 		PowerMockito.when(springApplicationMock.run()).thenReturn(applicationContextMock);
 		//Application.main(args);
-		
 	}
 	
 	/**

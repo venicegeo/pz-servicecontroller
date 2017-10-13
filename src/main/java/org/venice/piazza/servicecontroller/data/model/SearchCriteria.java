@@ -17,7 +17,7 @@ package org.venice.piazza.servicecontroller.data.model;
 
 public class SearchCriteria {
 	
-	public String field;
+	private String field;
 	public String getField() {
 		return field;
 	}
@@ -30,5 +30,5 @@ public class SearchCriteria {
 	public void setPattern(String pattern) {
 		this.pattern = pattern;
 	}
-	public String pattern;
+	private String pattern;
 }

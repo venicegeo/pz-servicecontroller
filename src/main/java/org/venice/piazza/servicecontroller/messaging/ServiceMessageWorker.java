@@ -212,7 +212,7 @@ public class ServiceMessageWorker {
 	}
 
 	private void interruptJob(final String jobId, final String exception) {
-		logger.log(String.format("Thread for Job %s was interrupted.", jobId), Severity.INFORMATIONAL);
+	logger.log(String.format("Thread for Job %s was interrupted.", jobId), Severity.INFORMATIONAL, new AuditElement("serviceController", "cancelledServiceJob", jobId));
 		StatusUpdate statusUpdate = new StatusUpdate(StatusUpdate.STATUS_CANCELLED);
 		TextResult result = new TextResult(exception);
 		statusUpdate.setResult(result);
@@ -224,7 +224,7 @@ public class ServiceMessageWorker {
 			LOG.error(JSON_ERR, jsonException);
 			logger.log(String.format(
 					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
-					jobId, jsonException.getMessage()), Severity.ERROR);
+					jobId, jsonException.getMessage()), Severity.ERROR, new AuditElement("serviceController", "errorCancellingServiceJob", jobId));
 		}
 	}
 
@@ -262,7 +262,7 @@ public class ServiceMessageWorker {
 				new AuditElement(job.getJobId(), "executeService", ""));
 
 		ResponseEntity<String> externalServiceResponse = null;
-
+		
 		try {
 			// Get the Job Data and Service information.
 			final PiazzaJobType jobType = job.getJobType();
@@ -276,7 +276,7 @@ public class ServiceMessageWorker {
 			// will be put into the Jobs queue.
 			sendJobStatusInfo(service, job.getJobId());
 
-			if (esData.dataOutput != null) {
+			if (esData.getDataOutput() != null) {
 
 				checkThreadInterrupted();
 
@@ -303,7 +303,7 @@ public class ServiceMessageWorker {
 
 				// Process the Response and handle any Ingest that may result
 				final String dataId = uuidFactory.getUUID();
-				final String outputType = jobItem.data.dataOutput.get(0).getClass().getSimpleName();
+				final String outputType = jobItem.data.getDataOutput().get(0).getClass().getSimpleName();
 				final DataResult result = esHandler.processExecutionResult(service, outputType, StatusUpdate.STATUS_SUCCESS,
 						externalServiceResponse, dataId);
 
@@ -570,7 +570,7 @@ public class ServiceMessageWorker {
 	public MediaType createMediaType(String mimeType) {
 		MediaType mediaType;
 		String type, subtype;
-		StringBuffer sb = new StringBuffer(mimeType);
+		StringBuilder sb = new StringBuilder(mimeType);
 		int index = sb.indexOf("/");
 		// If a slash was found then there is a type and subtype
 		if (index != -1) {

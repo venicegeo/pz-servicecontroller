@@ -133,15 +133,15 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 
 		// Commit
 		resultServiceId = accessor.save(service);
-		coreLogger.log("The result of the save is " + resultServiceId, Severity.DEBUG);
+		coreLogger.log("Registering a Service with ID " + resultServiceId, Severity.DEBUG);
 
 		PiazzaResponse response = elasticAccessor.save(service);
 
 		if (ErrorResponse.class.isInstance(response)) {
-			coreLogger.log("The result of the save is " + ((ErrorResponse) response).message, Severity.DEBUG);
+			coreLogger.log("Error Registering Service " + ((ErrorResponse) response).message, Severity.DEBUG);
 		} 
 		else {
-			coreLogger.log("Successfully stored service " + service.getServiceId(), Severity.DEBUG);
+			coreLogger.log("Successfully Registered service " + service.getServiceId(), Severity.DEBUG);
 		}
 
 		return resultServiceId;

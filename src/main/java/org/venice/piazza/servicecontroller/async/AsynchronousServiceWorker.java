@@ -115,7 +115,7 @@ public class AsynchronousServiceWorker {
 				JobResponse jobResponse = objectMapper.readValue(response.getBody(), JobResponse.class);
 				// Create an persist the Async Service Instance Object for this Instance
 				AsyncServiceInstance instance = new AsyncServiceInstance(job.getJobId(), job.data.getServiceId(),
-						jobResponse.data.getJobId(), null, job.data.dataOutput.get(0).getClass().getSimpleName());
+						jobResponse.data.getJobId(), null, job.data.getDataOutput().get(0).getClass().getSimpleName());
 				accessor.addAsyncServiceInstance(instance);
 				// Log the successful start of asynchronous service execution
 				logger.log(String.format("Successful start of Asynchronous Execution for Job ID %S with Service ID %s and Instance ID %s",

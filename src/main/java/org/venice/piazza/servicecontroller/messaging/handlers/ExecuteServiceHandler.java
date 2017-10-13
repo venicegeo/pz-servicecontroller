@@ -269,7 +269,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private MediaType createMediaType(String mimeType) {
 		MediaType mediaType;
 		String type, subtype;
-		StringBuffer sb = new StringBuffer(mimeType);
+		StringBuilder sb = new StringBuilder(mimeType);
 		int index = sb.indexOf("/");
 		// If a slash was found then there is a type and subtype
 		if (index != -1) {
@@ -321,7 +321,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			logger.log("The result provided from service is " + handleResult.getBody(), Severity.DEBUG);
 
 			// String serviceControlString = handleResult.getBody().get(0).toString();
-			String serviceControlString = handleResult.getBody().toString();
+			String serviceControlString = handleResult.getBody();
 
 			logger.log("The service controller string is " + serviceControlString, Severity.DEBUG);
 
@@ -351,15 +351,17 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				LOG.error("Exception occurred", ex);
 				logger.log(ex.getMessage(), Severity.ERROR);
 
-				// Checking payload type and settings the correct type
-				if (outputType.equals((new TextDataType()).getClass().getSimpleName())) { // NOSONAR
-					TextDataType newDataType = new TextDataType();
-					newDataType.content = serviceControlString;
-					data.dataType = newDataType;
-				} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) { // NOSONAR
-					GeoJsonDataType newDataType = new GeoJsonDataType();
-					newDataType.setGeoJsonContent(serviceControlString);
-					data.dataType = newDataType;
+				if (data != null) {
+					// Checking payload type and settings the correct type
+					if (outputType.equals((new TextDataType()).getClass().getSimpleName())) { // NOSONAR
+						TextDataType newDataType = new TextDataType();
+						newDataType.content = serviceControlString;
+						data.dataType = newDataType;
+					} else if (outputType.equals((new GeoJsonDataType()).getClass().getSimpleName())) { // NOSONAR
+						GeoJsonDataType newDataType = new GeoJsonDataType();
+						newDataType.setGeoJsonContent(serviceControlString);
+						data.dataType = newDataType;
+					}
 				}
 			}
 
@@ -375,7 +377,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 			jobRequest.jobId = jobId;
 			rabbitTemplate.convertAndSend(JobMessageFactory.PIAZZA_EXCHANGE_NAME, requestJobQueue.getName(), objectMapper.writeValueAsString(jobRequest));
 
-			logger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, data.getDataId(),
+			logger.log(String.format("Sending Ingest Job Id %s for Data Id %s for Data of Type %s", jobId, dataId,
 					data.getDataType().getClass().getSimpleName()), Severity.INFORMATIONAL);
 
 			// Return the Result of the Data.

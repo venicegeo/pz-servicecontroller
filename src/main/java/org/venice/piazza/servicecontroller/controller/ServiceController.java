@@ -153,11 +153,13 @@ public class ServiceController {
 	@RequestMapping(value = "/service/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PiazzaResponse> getServiceInfo(@PathVariable(value = "serviceId") String serviceId) {
 		try {
+			logger.log(String.format("Returning Metadata for Service %s", serviceId), Severity.INFORMATIONAL);
 			// Check if Service exists
 			try {
 				return new ResponseEntity<PiazzaResponse>(new ServiceResponse(accessor.getServiceById(serviceId)), HttpStatus.OK);
 			} catch (ResourceAccessException rae) {
 				LOG.error("Service not found", rae);
+				logger.log(String.format("Could not return Metadata for Service %s. Could not find Service with matching ID.", serviceId), Severity.INFORMATIONAL);
 				return new ResponseEntity<PiazzaResponse>(
 						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER),
 						HttpStatus.NOT_FOUND);
@@ -189,10 +191,12 @@ public class ServiceController {
 			@RequestParam(value = "userName", required = false) String userName) {
 		try {
 			// Don't allow for invalid orders
-			if (!(order.equalsIgnoreCase("asc")) && !(order.equalsIgnoreCase("desc"))) {
-				order = "asc";
+			String validatedOrder = order;
+			if (!("asc".equalsIgnoreCase(order)) && !("desc".equalsIgnoreCase(order))) {
+				validatedOrder = "asc";
 			}
-			return new ResponseEntity<PiazzaResponse>(accessor.getServices(page, perPage, order, sortBy, keyword, userName), HttpStatus.OK);
+			logger.log("Returning List of Services.", Severity.INFORMATIONAL);
+			return new ResponseEntity<PiazzaResponse>(accessor.getServices(page, perPage, validatedOrder, sortBy, keyword, userName), HttpStatus.OK);
 		} catch (Exception exception) {
 			String error = String.format("Error Listing Services: %s", exception.getMessage());
 			LOG.error(error, exception);
@@ -322,7 +326,7 @@ public class ServiceController {
 	 */
 	@RequestMapping(value = "/executeService", method = RequestMethod.POST, headers = "Accept=application/json")
 	public ResponseEntity<String> executeService(@RequestBody ExecuteServiceData data) {
-		for (Map.Entry<String, DataType> entry : data.dataInputs.entrySet()) {
+		for (Map.Entry<String, DataType> entry : data.getDataInputs().entrySet()) {
 			String key = entry.getKey();
 			logger.log("dataInput key:" + key, Severity.DEBUG);
 			logger.log("dataInput Type:" + entry.getValue().getClass().getSimpleName(), Severity.DEBUG);

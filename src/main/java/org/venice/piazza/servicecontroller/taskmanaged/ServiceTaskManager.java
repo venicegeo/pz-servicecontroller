@@ -25,11 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.MongoException;
 
 import exception.InvalidInputException;
 import messaging.job.JobMessageFactory;
@@ -72,12 +71,13 @@ public class ServiceTaskManager {
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
-	private MongoAccessor mongoAccessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private PiazzaLogger piazzaLogger;
 
 	private Producer<String, String> producer;
-	private final static Logger LOGGER = LoggerFactory.getLogger(ServiceTaskManager.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ServiceTaskManager.class);
+	private static final String TOPIC_FORMAT = "%s-%s";
 
 	@PostConstruct
 	public void initialize() {
@@ -104,18 +104,19 @@ public class ServiceTaskManager {
 	public void addJobToQueue(ExecuteServiceJob job) {
 		// Add the Job to the Jobs queue
 		ServiceJob serviceJob = new ServiceJob(job.getJobId(), job.getData().getServiceId());
-		mongoAccessor.addJobToServiceQueue(job.getData().getServiceId(), serviceJob);
+		accessor.addJobToServiceQueue(job.getData().getServiceId(), serviceJob);
 		// Update the Job Status as Pending to Kafka
 		StatusUpdate statusUpdate = new StatusUpdate();
 		statusUpdate.setStatus(StatusUpdate.STATUS_PENDING);
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
-					job.getJobId(), objectMapper.writeValueAsString(statusUpdate));
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), job.getJobId(),
+					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: " + exception.getMessage();
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 	}
@@ -130,49 +131,54 @@ public class ServiceTaskManager {
 	public void cancelJob(String jobId) {
 		try {
 			// Attempt to get the Service that executed this Job
-			Job job = mongoAccessor.getJobById(jobId);
-			if (job != null) {
-				// If this was an Execute Service Job
-				if (job.getJobType() instanceof ExecuteServiceJob) {
-					ExecuteServiceJob executeJob = (ExecuteServiceJob) job.getJobType();
-					String serviceId = executeJob.getData().getServiceId();
+			Job job = accessor.getJobById(jobId);
+			if (job == null) {
+				return;
+			}
 
-					// Log the cancellation
-					piazzaLogger.log(String.format("Removing Service Job %s from Service Queue for %s", jobId, serviceId),
-							Severity.INFORMATIONAL);
+			// If this was an Execute Service Job
+			if (job.getJobType() instanceof ExecuteServiceJob) {
+				ExecuteServiceJob executeJob = (ExecuteServiceJob) job.getJobType();
+				String serviceId = executeJob.getData().getServiceId();
 
-					// Determine if the Service ID is Task-Managed
-					Service service = mongoAccessor.getServiceById(serviceId);
-					if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
-						// If this is a Task Managed Service, then remove the Job from the Queue.
-						mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
-						// Send the Kafka Message that this Job has been cancelled
-						StatusUpdate statusUpdate = new StatusUpdate();
-						statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
-						ProducerRecord<String, String> statusUpdateRecord;
-						try {
-							statusUpdateRecord = new ProducerRecord<String, String>(
-									String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
-									objectMapper.writeValueAsString(statusUpdate));
-							producer.send(statusUpdateRecord);
-						} catch (JsonProcessingException exception) {
-							String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId,
-									exception.getMessage());
-							LOGGER.error(error, exception);
-							piazzaLogger.log(error, Severity.ERROR);
-						}
+				// Log the cancellation
+				piazzaLogger.log(String.format("Removing Service Job %s from Service Queue for %s", jobId, serviceId),
+						Severity.INFORMATIONAL);
 
-						// Log the success
-						piazzaLogger.log(String.format("Successfully removed Service Job %s from Service Queue for %s", jobId, serviceId),
-								Severity.INFORMATIONAL);
-					}
+				// Determine if the Service ID is Task-Managed
+				Service service = accessor.getServiceById(serviceId);
+				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
+					handleTaskManagedJob(serviceId, jobId);
 				}
 			}
 		} catch (Exception exception) {
 			String error = String.format("Error Removing Job %s from a Task-Managed Service Queue : %s", jobId, exception.getMessage());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
+	}
+
+	private void handleTaskManagedJob(final String serviceId, final String jobId) {
+		// If this is a Task Managed Service, then remove the Job from the Queue.
+		accessor.removeJobFromServiceQueue(serviceId, jobId);
+		// Send the Kafka Message that this Job has been cancelled
+		StatusUpdate statusUpdate = new StatusUpdate();
+		statusUpdate.setStatus(StatusUpdate.STATUS_CANCELLED);
+		ProducerRecord<String, String> statusUpdateRecord;
+		try {
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+					objectMapper.writeValueAsString(statusUpdate));
+			producer.send(statusUpdateRecord);
+		} catch (JsonProcessingException exception) {
+			String error = String.format("Error Sending Cancelled Job %s Status to Job Manager: %s", jobId, exception.getMessage());
+			LOG.error(error, exception);
+			piazzaLogger.log(error, Severity.ERROR);
+		}
+
+		// Log the success
+		piazzaLogger.log(String.format("Successfully removed Service Job %s from Service Queue for %s", jobId, serviceId),
+				Severity.INFORMATIONAL);
 	}
 
 	/**
@@ -185,22 +191,22 @@ public class ServiceTaskManager {
 	 * @param statusUpdate
 	 *            The Status of the Job
 	 */
-	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate)
-			throws MongoException, InvalidInputException {
+	public void processStatusUpdate(String serviceId, String jobId, StatusUpdate statusUpdate) throws InvalidInputException {
 		// Validate the Service ID exists, and contains the Job ID
-		ServiceJob serviceJob = mongoAccessor.getServiceJob(serviceId, jobId);
+		ServiceJob serviceJob = accessor.getServiceJob(serviceId, jobId);
 		if (serviceJob == null) {
 			throw new InvalidInputException(String.format("Cannot find the specified Job %s for this Service %s", jobId, serviceId));
 		}
 		// Send the Update to Kafka
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
-					jobId, objectMapper.writeValueAsString(statusUpdate));
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Job Status from External Service to Job Manager: " + exception.getMessage();
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 		// If done, remove the Job from the Service Queue
@@ -209,7 +215,7 @@ public class ServiceTaskManager {
 				|| (StatusUpdate.STATUS_FAIL.equals(status)) || (StatusUpdate.STATUS_SUCCESS.equals(status))) {
 			piazzaLogger.log(String.format("Job %s For Service %s has reached final state %s. Removing from Service Jobs Queue.", jobId,
 					serviceId, status), Severity.INFORMATIONAL);
-			mongoAccessor.removeJobFromServiceQueue(serviceId, jobId);
+			accessor.removeJobFromServiceQueue(serviceId, jobId);
 		}
 	}
 
@@ -223,7 +229,7 @@ public class ServiceTaskManager {
 	public ExecuteServiceJob getNextJobFromQueue(String serviceId)
 			throws ResourceAccessException, InterruptedException, InvalidInputException {
 		// Pull the Job off of the queue.
-		ServiceJob serviceJob = mongoAccessor.getNextJobInServiceQueue(serviceId);
+		ServiceJob serviceJob = accessor.getNextJobInServiceQueue(serviceId);
 
 		// If no Job exists in the Queue, then return null. No work needs to be done.
 		if (serviceJob == null) {
@@ -232,7 +238,7 @@ public class ServiceTaskManager {
 
 		// Read the Jobs collection for the full Job Details
 		String jobId = serviceJob.getJobId();
-		Job job = mongoAccessor.getJobById(jobId);
+		Job job = accessor.getJobById(jobId);
 		// Ensure the Job exists. If it does not, then throw an error.
 		if (job == null) {
 			String error = String.format(
@@ -247,12 +253,13 @@ public class ServiceTaskManager {
 		statusUpdate.setStatus(StatusUpdate.STATUS_RUNNING);
 		ProducerRecord<String, String> statusUpdateRecord;
 		try {
-			statusUpdateRecord = new ProducerRecord<String, String>(String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE),
-					jobId, objectMapper.writeValueAsString(statusUpdate));
+			statusUpdateRecord = new ProducerRecord<String, String>(
+					String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), jobId,
+					objectMapper.writeValueAsString(statusUpdate));
 			producer.send(statusUpdateRecord);
 		} catch (JsonProcessingException exception) {
 			String error = "Error Sending Pending Job Status to Job Manager: ";
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			piazzaLogger.log(error, Severity.ERROR);
 		}
 
@@ -292,7 +299,7 @@ public class ServiceTaskManager {
 			piazzaLogger.log(error, Severity.INFORMATIONAL,
 					new AuditElement("serviceController", "failTimedOutJob", serviceJob.getJobId()));
 			// If the Job has too many timeouts, then fail the Job.
-			mongoAccessor.removeJobFromServiceQueue(serviceId, serviceJob.getJobId());
+			accessor.removeJobFromServiceQueue(serviceId, serviceJob.getJobId());
 			// Send the Kafka message that this Job has failed.
 			StatusUpdate statusUpdate = new StatusUpdate();
 			statusUpdate.setResult(new ErrorResult("Service Timed Out", error));
@@ -300,12 +307,12 @@ public class ServiceTaskManager {
 			ProducerRecord<String, String> statusUpdateRecord;
 			try {
 				statusUpdateRecord = new ProducerRecord<String, String>(
-						String.format("%s-%s", JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), serviceJob.getJobId(),
+						String.format(TOPIC_FORMAT, JobMessageFactory.UPDATE_JOB_TOPIC_NAME, SPACE), serviceJob.getJobId(),
 						objectMapper.writeValueAsString(statusUpdate));
 				producer.send(statusUpdateRecord);
 			} catch (JsonProcessingException exception) {
 				String innerError = "Error Sending Failed/Timed Out Job Status to Job Manager: ";
-				LOGGER.error(innerError, exception);
+				LOG.error(innerError, exception);
 				piazzaLogger.log(innerError, Severity.ERROR);
 			}
 		} else {
@@ -313,7 +320,7 @@ public class ServiceTaskManager {
 			piazzaLogger.log(String.format("Service Job %s for Service %s has timed out for the %s time and will be retried again.",
 					serviceId, serviceJob.getJobId(), serviceJob.getTimeouts() + 1), Severity.INFORMATIONAL);
 			// Increment the failure count and tag for retry
-			mongoAccessor.incrementServiceJobTimeout(serviceId, serviceJob);
+			accessor.incrementServiceJobTimeout(serviceId, serviceJob);
 		}
 
 	}

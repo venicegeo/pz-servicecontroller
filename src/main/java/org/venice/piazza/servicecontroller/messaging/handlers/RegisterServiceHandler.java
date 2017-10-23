@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
@@ -46,7 +46,7 @@ import util.UUIDFactory;
 @Component
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	@Autowired
-	private MongoAccessor mongoAccessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private ElasticSearchAccessor elasticAccessor;
 	@Autowired
@@ -59,7 +59,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	private static final long HTTP_REQUEST_TIMEOUT = 600;
 
 	/**
-	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in MongoDB
+	 * Handler for the RegisterServiceJob that was submitted. Stores the metadata in DB
 	 * 
 	 * @see org.venice.piazza.servicecontroller.messaging.handlers.Handler#handle(model.job.PiazzaJobType)
 	 */
@@ -70,7 +70,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 
 		if (job != null) {
 			// Get the Service metadata
-			Service serviceMetadata = job.data;
+			Service serviceMetadata = job.getData();
 			coreLogger.log("serviceMetadata received is " + serviceMetadata, Severity.INFORMATIONAL);
 
 			String result = handle(serviceMetadata);
@@ -94,54 +94,54 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
-	 * Handler for registering the new service with mongo and elastic search.
+	 * Handler for registering the new service with the database and elastic search.
 	 * 
 	 * @param service
 	 * @return resourceId of the registered service
 	 */
 	public String handle(Service service) {
-		String resultServiceId = "";
-		if (service != null) {
-			resultServiceId = uuidFactory.getUUID();
-			service.setServiceId(resultServiceId);
+		
+		if( service == null ) {
+			return "";
+		}
+		
+		String resultServiceId = uuidFactory.getUUID();
+		service.setServiceId(resultServiceId);
 
-			// Set default request timeout
-			if (null == service.getTimeout()) {
-				service.setTimeout(HTTP_REQUEST_TIMEOUT);
+		// Set default request timeout
+		if (null == service.getTimeout()) {
+			service.setTimeout(HTTP_REQUEST_TIMEOUT);
+		}
+
+		// Set the Administrators of the service, if none have been specified.
+		if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
+			
+			String createdBy = service.getResourceMetadata().getCreatedBy();
+			
+			if (service.getTaskAdministrators() == null) {
+				// If no administration list has been specified, then create one by default.
+				service.setTaskAdministrators(new ArrayList<String>());
+				service.getTaskAdministrators().add(createdBy);
+			} 
+			else if (service.getTaskAdministrators().contains(createdBy) == false) {
+				service.getTaskAdministrators().add(createdBy);
 			}
 
-			// Set the Administrators of the service, if none have been specified.
-			if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {
-				String createdBy = service.getResourceMetadata().getCreatedBy();
-				if (service.getTaskAdministrators() == null) {
-					// If no administration list has been specified, then create one by default.
-					service.setTaskAdministrators(new ArrayList<String>());
-					service.getTaskAdministrators().add(createdBy);
-				} else {
-					// Ensure that the service creator is included in the list of administrators.
-					if (service.getTaskAdministrators().contains(createdBy) == false) {
-						service.getTaskAdministrators().add(createdBy);
-					}
-				}
+			// Create the Task Management Service Queue for this Service
+			serviceTaskManager.createServiceQueue(resultServiceId);
+		}
 
-				// Create the Task Management Service Queue for this Service
-				serviceTaskManager.createServiceQueue(resultServiceId);
-			}
+		// Commit
+		resultServiceId = accessor.save(service);
+		coreLogger.log("Registering a Service with ID " + resultServiceId, Severity.DEBUG);
 
-			// Commit
-			resultServiceId = mongoAccessor.save(service);
-			coreLogger.log("The result of the save is " + resultServiceId, Severity.DEBUG);
+		PiazzaResponse response = elasticAccessor.save(service);
 
-			PiazzaResponse response = elasticAccessor.save(service);
-
-			if (ErrorResponse.class.isInstance(response)) {
-				ErrorResponse errResponse = (ErrorResponse) response;
-				coreLogger.log("The result of the save is " + errResponse.message, Severity.DEBUG);
-
-			} else {
-				coreLogger.log("Successfully stored service " + service.getServiceId(), Severity.DEBUG);
-
-			}
+		if (ErrorResponse.class.isInstance(response)) {
+			coreLogger.log("Error Registering Service " + ((ErrorResponse) response).message, Severity.DEBUG);
+		} 
+		else {
+			coreLogger.log("Successfully Registered service " + service.getServiceId(), Severity.DEBUG);
 		}
 
 		return resultServiceId;

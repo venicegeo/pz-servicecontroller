@@ -50,9 +50,6 @@ public class CorePropertiesTests {
 	
 	public static String KAFKA_GROUP = "TheKafkaGroup";
 	public static String KAFKA_HOST = "kafkaHost";
-	public static String MONGO_COLLECTION_NAME = "TheServiceCollection";
-	public static String MONGO_DB = "mongoDB";
-	public static String MONGO_URI = "mongoURI";
 	public static String SC_HOST = "scgeointhost";
     public static String SC_PORT="8888";   
     public static String SEARCH_DOMAIN_PREFIX = "pz-search.io";
@@ -95,64 +92,7 @@ public class CorePropertiesTests {
 		String hostName = coreServiceProps.getHost();
 		assertEquals("The service controller host was been set correctly.", hostName, SC_HOST + "2");
 	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB Collection Name is read correctly and populated
-	 */
-	public void testMongoCollectionNameRUI() {
-		String collectionName = coreServiceProps.getMongoCollectionName();
-		assertEquals("The MongoDB host was autowired properly.", collectionName, MONGO_COLLECTION_NAME);
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB URI is read correctly and populated
-	 */
-	public void testSetMongoCollectionName() {
-		coreServiceProps.setMongoCollectionName(MONGO_COLLECTION_NAME + "2");
-		String collectionName = coreServiceProps.getMongoCollectionName();
-		assertEquals("The MongoDB host was autowired properly.", collectionName, MONGO_COLLECTION_NAME + "2");
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB URI is read correctly and populated
-	 */
-	public void testMongoDBRUI() {
-		String hostResult = coreServiceProps.getMongoHost();
-		assertEquals("The MongoDB URI was autowired properly.", hostResult, MONGO_URI);
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB URI is read correctly and populated
-	 */
-	public void testSetMongoDBRUI() {
-		coreServiceProps.setMongoHost(MONGO_URI + "2");
-		String hostResult = coreServiceProps.getMongoHost();
-		assertEquals("The MongoDB URI was autowired properly.", hostResult, MONGO_URI + "2");
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB Name is autowired properly.
-	 */
-	public void testMongoDBName() {
-		String hostResult = coreServiceProps.getMongoDBName();
-		assertEquals("The MongoDB DB Name was autowired properly.", hostResult, MONGO_DB);
-	}
-	@Ignore
-	@Test
-	/** 
-	 * Test if the MongoDB Name is set properly.
-	 */
-	public void testSetMongoDBName() {
-		coreServiceProps.setMongoDBName(MONGO_DB + "2");
-		String hostResult = coreServiceProps.getMongoDBName();
-		assertEquals("The MongoDB DB Name was autowired properly.", hostResult, MONGO_DB + "2");
-	}
-
+	
 	@Ignore
 	@Test
 	/** 
@@ -356,8 +296,6 @@ public class CorePropertiesTests {
 	        Properties properties = new Properties();
 
 	        properties.setProperty("vcap.services.pz-kafka.credentials.host", KAFKA_HOST);
-	        properties.setProperty("vcap.services.pz-mongodb.credentials.uri", MONGO_URI);
-	        properties.setProperty("vcap.services.pz-mongodb.credentials.database", MONGO_DB);
 
             properties.setProperty("logger.protocol", HTTPS_PROTOCOL);
             properties.setProperty("logger.prefix", "pz-logger");
@@ -369,7 +307,6 @@ public class CorePropertiesTests {
             properties.setProperty("SPACE", SPACE);
             properties.setProperty("kafka.group",  KAFKA_GROUP);
             properties.setProperty("server.port",  new Integer(SERVER_PORT).toString());
-            properties.setProperty("mongo.db.collection.name", MONGO_COLLECTION_NAME);
             properties.setProperty("servicecontroller.host", SC_HOST);
             properties.setProperty("servicecontroller.port", new Integer(SC_PORT).toString());
 //            properties.setProperty("search.protocol", HTTPS_PROTOCOL);

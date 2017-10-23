@@ -31,10 +31,10 @@ public class JobFactory {
 	public static Job fromJobRequest(PiazzaJobRequest jobRequest, String jobId) {
 		Job job = new Job();
 		job.setJobId(jobId);
-		job.jobType = jobRequest.jobType;
-		job.createdBy = jobRequest.createdBy;
-		job.status = "Submitted"; // TODO: Enum
-		job.createdOn = new DateTime();
+		job.setJobType(jobRequest.jobType);
+		job.setCreatedBy(jobRequest.createdBy);
+		job.setStatus("Submitted"); // TODO: Enum
+		job.setCreatedOnString(new DateTime().toString());
 		return job;
 	}
 }

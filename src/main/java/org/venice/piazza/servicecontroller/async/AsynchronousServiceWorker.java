@@ -16,7 +16,6 @@
 package org.venice.piazza.servicecontroller.async;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import javax.annotation.PostConstruct;
 
@@ -33,7 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -47,6 +46,7 @@ import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.logger.Severity;
 import model.response.JobResponse;
+import model.service.async.AsyncServiceInstance;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
 import util.PiazzaLogger;
@@ -74,7 +74,7 @@ public class AsynchronousServiceWorker {
 	private int STATUS_ERROR_LIMIT;
 
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private PiazzaLogger logger;
 	@Autowired
@@ -86,7 +86,9 @@ public class AsynchronousServiceWorker {
 	private Producer<String, String> producer;
 	private ObjectMapper objectMapper = new ObjectMapper();
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(AsynchronousServiceWorker.class);
+	private static final String URL_FORMAT = "%s/%s/%s";
+	
+	private static final Logger LOG = LoggerFactory.getLogger(AsynchronousServiceWorker.class);
 
 	@PostConstruct
 	public void initialize() {
@@ -119,7 +121,7 @@ public class AsynchronousServiceWorker {
 				JobResponse jobResponse = objectMapper.readValue(response.getBody(), JobResponse.class);
 				// Create an persist the Async Service Instance Object for this Instance
 				AsyncServiceInstance instance = new AsyncServiceInstance(job.getJobId(), job.data.getServiceId(),
-						jobResponse.data.getJobId(), null, job.data.dataOutput.get(0).getClass().getSimpleName());
+						jobResponse.data.getJobId(), null, job.data.getDataOutput().get(0).getClass().getSimpleName());
 				accessor.addAsyncServiceInstance(instance);
 				// Log the successful start of asynchronous service execution
 				logger.log(String.format("Successful start of Asynchronous Execution for Job ID %S with Service ID %s and Instance ID %s",
@@ -130,7 +132,7 @@ public class AsynchronousServiceWorker {
 				String errorMessage = String.format(
 						"Could not parse the 2xx HTTP Status response from User Service Execution for Job ID %s. It did not conform to the typical Response format. Details: %s",
 						job.getJobId(), exception.getMessage());
-				LOGGER.error(errorMessage, exception);
+				LOG.error(errorMessage, exception);
 				logger.log(errorMessage, Severity.ERROR);
 				processErrorStatus(job.getJobId(), StatusUpdate.STATUS_ERROR, errorMessage);
 			}
@@ -150,7 +152,7 @@ public class AsynchronousServiceWorker {
 			// Get the Service, so we can fetch the URL
 			Service service = accessor.getServiceById(instance.getServiceId());
 			// Build the GET URL
-			String url = String.format("%s/%s/%s", service.getUrl(), STATUS_ENDPOINT, instance.getInstanceId());
+			String url = String.format(URL_FORMAT, service.getUrl(), STATUS_ENDPOINT, instance.getInstanceId());
 
 			// Get the Status of the job.
 			StatusUpdate status = restTemplate.getForObject(url, StatusUpdate.class);
@@ -174,7 +176,7 @@ public class AsynchronousServiceWorker {
 					producer.send(prodRecord);
 				} catch (JsonProcessingException exception) {
 					// The message could not be serialized. Record this.
-					LOGGER.error("Json processing error occured", exception);
+					LOG.error("Json processing error occured", exception);
 					logger.log("Could not send Running Status Message to Job Manager. Error serializing Status: " + exception.getMessage(),
 							Severity.ERROR);
 				}
@@ -206,7 +208,7 @@ public class AsynchronousServiceWorker {
 					"HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
 					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
 					instance.getNumberErrorResponses());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			logger.log(error, Severity.WARNING);
 		} catch (Exception exception) {
 			updateFailureCount(instance);
@@ -214,7 +216,7 @@ public class AsynchronousServiceWorker {
 					"Unexpected Error %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
 					exception.getMessage(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
 					instance.getNumberErrorResponses());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			logger.log(error, Severity.WARNING);
 		}
 	}
@@ -258,7 +260,7 @@ public class AsynchronousServiceWorker {
 		logger.log(String.format("Handling Successful status of Instance %s for Service %s under Job ID %s", instance.getInstanceId(),
 				instance.getServiceId(), instance.getJobId()), Severity.INFORMATIONAL);
 		// Make a request to the results endpoint to get the results of the Service
-		String url = String.format("%s/%s/%s", service.getUrl(), RESULTS_ENDPOINT, instance.getInstanceId());
+		String url = String.format(URL_FORMAT, service.getUrl(), RESULTS_ENDPOINT, instance.getInstanceId());
 		try {
 			ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 			String dataId = uuidFactory.getUUID();
@@ -279,7 +281,7 @@ public class AsynchronousServiceWorker {
 					"Error fetching Service results: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
 					exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
 					instance.getNumberErrorResponses());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			logger.log(error, Severity.WARNING);
 		} catch (Exception exception) {
 			updateFailureCount(instance);
@@ -287,7 +289,7 @@ public class AsynchronousServiceWorker {
 					"Unexpected Error fetching Service results: %s encountered for Service ID %s Instance %s under Job ID %s. The number of Errors has been incremented (%s)",
 					exception.getMessage(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId(),
 					instance.getNumberErrorResponses());
-			LOGGER.error(error, exception);
+			LOG.error(error, exception);
 			logger.log(error, Severity.WARNING);
 		}
 	}
@@ -318,7 +320,7 @@ public class AsynchronousServiceWorker {
 			producer.send(prodRecord);
 		} catch (JsonProcessingException exception) {
 			// The message could not be serialized. Record this.
-			LOGGER.error("Could not send Error Status to Job Manager. Error serializing Status", exception);
+			LOG.error("Could not send Error Status to Job Manager. Error serializing Status", exception);
 			logger.log("Could not send Error Status to Job Manager. Error serializing Status: " + exception.getMessage(), Severity.ERROR);
 		}
 	}
@@ -337,14 +339,14 @@ public class AsynchronousServiceWorker {
 		// Send the DELETE request to the external User Service
 		Service service = accessor.getServiceById(instance.getServiceId());
 		if (service != null) {
-			String url = String.format("%s/%s/%s", service.getUrl(), DELETE_ENDPOINT, instance.getInstanceId());
+			String url = String.format(URL_FORMAT, service.getUrl(), DELETE_ENDPOINT, instance.getInstanceId());
 			try {
 				restTemplate.delete(url);
 			} catch (HttpClientErrorException | HttpServerErrorException exception) {
 				String error = String.format(
 						"Error Cancelling Service Instance on external User Service: HTTP Error Status %s encountered for Service ID %s Instance %s under Job ID %s. No subsequent calls will be made.",
 						exception.getStatusCode().toString(), instance.getServiceId(), instance.getInstanceId(), instance.getJobId());
-				LOGGER.error(error, exception);
+				LOG.error(error, exception);
 				logger.log(error, Severity.WARNING);
 			}
 		}
@@ -357,7 +359,7 @@ public class AsynchronousServiceWorker {
 			String error = String.format(
 					"Error sending Cancelled Status from Job %s: %s. The Job was cancelled, but its status will not be updated in the Job Manager.",
 					instance.getJobId(), jsonException.getMessage());
-			LOGGER.error(error, jsonException);
+			LOG.error(error, jsonException);
 			logger.log(error, Severity.ERROR);
 		}
 	}

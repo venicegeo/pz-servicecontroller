@@ -31,7 +31,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
@@ -96,8 +96,8 @@ public class RegistryServiceHandlerTest {
 	public void testHandleWithData() {
 		ElasticSearchAccessor mockElasticAccessor = mock(ElasticSearchAccessor.class);
 		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
-		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.save(service)).thenReturn("8");
+		DatabaseAccessor mockAccessor = mock(DatabaseAccessor.class);
+		when(mockAccessor.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		//when(props.getUuidservicehost().thenReturn("Nothing");
 		PiazzaLogger logger = mock(PiazzaLogger.class);
@@ -112,8 +112,8 @@ public class RegistryServiceHandlerTest {
 	public void testHandleWithoutData() {
 		ElasticSearchAccessor mockElasticAccessor = mock(ElasticSearchAccessor.class);
 		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
-		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.save(service)).thenReturn("8");
+		DatabaseAccessor mockAccessor = mock(DatabaseAccessor.class);
+		when(mockAccessor.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
 		PiazzaLogger logger = mock(PiazzaLogger.class);
 		Service nullService = null;

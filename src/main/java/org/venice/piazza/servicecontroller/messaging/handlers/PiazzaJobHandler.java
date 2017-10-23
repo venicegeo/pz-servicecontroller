@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
  * @author mlynum
  * @version 1.0
  */
+@FunctionalInterface
 public interface PiazzaJobHandler {
 	/**
 	 * Handler for every type of service.

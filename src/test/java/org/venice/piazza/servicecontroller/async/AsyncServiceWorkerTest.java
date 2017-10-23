@@ -19,6 +19,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.Before;
@@ -32,7 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,6 +45,7 @@ import model.job.result.type.DataResult;
 import model.job.result.type.ErrorResult;
 import model.job.type.ExecuteServiceJob;
 import model.response.JobResponse;
+import model.service.async.AsyncServiceInstance;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
@@ -59,7 +61,7 @@ import util.UUIDFactory;
  */
 public class AsyncServiceWorkerTest {
 	@Mock
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Mock
 	private PiazzaLogger logger;
 	@Mock
@@ -92,8 +94,9 @@ public class AsyncServiceWorkerTest {
 		// Mocking Execute Data
 		mockJob.data = new ExecuteServiceData();
 		mockJob.data.setServiceId("serviceId");
-		mockJob.data.dataOutput = new ArrayList<DataType>();
-		mockJob.data.dataOutput.add(new TextDataType());
+		List<DataType> dataOutput = new ArrayList<DataType>();
+		dataOutput.add(new TextDataType());
+		mockJob.data.setDataOutput(dataOutput);
 
 		// Mock an Instance we can use
 		mockInstance.setInstanceId("instanceId");

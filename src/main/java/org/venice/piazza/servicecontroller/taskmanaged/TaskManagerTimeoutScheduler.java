@@ -24,7 +24,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
 import model.logger.Severity;
 import model.service.metadata.Service;
@@ -40,7 +40,7 @@ import util.PiazzaLogger;
 @Component
 public class TaskManagerTimeoutScheduler {
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private ServiceTaskManager serviceTaskManager;
 	@Autowired

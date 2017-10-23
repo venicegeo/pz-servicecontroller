@@ -30,14 +30,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
@@ -53,7 +50,7 @@ public class UpdateServiceHandlerTest {
 	
 	// Create some mocks
 	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 	
 	@Mock 
 	private ElasticSearchAccessor elasticAccessorMock;
@@ -110,11 +107,11 @@ public class UpdateServiceHandlerTest {
 	@Test
 	public void testValidUpdate() {
 		UpdateServiceJob job = new UpdateServiceJob();
-		job.data = service;
-		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		job.setData(service);
+		job.setJobId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
 		
 		ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(job.jobId);
+		resultList.add(job.getJobId());
 		resultList.add(service.getServiceId());
 		
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
@@ -135,11 +132,11 @@ public class UpdateServiceHandlerTest {
 	@Test
 	public void testUnsuccessfulUpdate() {
 		UpdateServiceJob job = new UpdateServiceJob();
-		job.data = service;
-		job.jobId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
+		job.setData(service);
+		job.setJobId("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
 		
 		ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(job.jobId);
+		resultList.add(job.getJobId());
 		resultList.add(service.getServiceId());
 		
 		ResponseEntity<String> responseEntity = new  ResponseEntity<String>(resultList.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
@@ -171,8 +168,8 @@ public class UpdateServiceHandlerTest {
 	 */
 	@Test
 	public void testHandleService() {
-		// Mock the response from Mongo
-		Mockito.doReturn(service.getServiceId()).when(accessorMock).update(service);
+		// Mock the response
+		Mockito.doReturn(service.getServiceId()).when(accessorMock).updateService(service);
 		String result = usHandler.handle(service);
         assertEquals("The responding service id shoudl match the id", result, service.getServiceId());
 	}
@@ -182,8 +179,8 @@ public class UpdateServiceHandlerTest {
 	 */
 	@Test
 	public void testUnsucessfulUpdateServiceInfo() {
-		// Mock the response from Mongo
-		Mockito.doReturn("").when(accessorMock).update(service);
+		// Mock the response
+		Mockito.doReturn("").when(accessorMock).updateService(service);
 		String result = usHandler.handle(service);
         assertEquals("The response string should be empty", result.length(), 0);
 	}

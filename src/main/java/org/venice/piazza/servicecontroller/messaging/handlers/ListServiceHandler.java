@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,10 +39,10 @@ import util.PiazzaLogger;
 @Component
 public class ListServiceHandler implements PiazzaJobHandler { 
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(ListServiceHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ListServiceHandler.class);
 	
 	@Autowired
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Autowired
 	private PiazzaLogger coreLogger;
 	
@@ -69,7 +69,7 @@ public class ListServiceHandler implements PiazzaJobHandler {
 			String result = mapper.writeValueAsString(rmList);
 			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
 		} catch (Exception ex) {
-			LOGGER.error("Exception occurred", ex);
+			LOG.error("Exception occurred", ex);
 			coreLogger.log(ex.getMessage(), Severity.ERROR);
 			responseEntity = new ResponseEntity<String>("Could not retrieve a list of user services" , HttpStatus.NOT_FOUND);
 		}

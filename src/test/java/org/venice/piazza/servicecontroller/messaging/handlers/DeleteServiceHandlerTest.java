@@ -31,8 +31,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
@@ -61,7 +60,7 @@ public class DeleteServiceHandlerTest {
 	
 	// Create some mocks
 	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 	@Mock 
 	private ElasticSearchAccessor elasticAccessorMock;
 	@Mock
@@ -114,13 +113,13 @@ public class DeleteServiceHandlerTest {
 		
 		// Setup the DeleteServiceJob
 		DeleteServiceJob dsj = new DeleteServiceJob();
-		dsj.serviceID = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-        dsj.jobId = "fd88cf85-9057-440d-91f0-796d3d398970";
+		dsj.setServiceID("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
+        dsj.setJobId("fd88cf85-9057-440d-91f0-796d3d398970");
         
         // Try and build a response entity
         ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(dsj.jobId);
-		resultList.add(dsj.serviceID);
+		resultList.add(dsj.getJobId());
+		resultList.add(dsj.getServiceID());
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>(resultList.toString(), HttpStatus.OK); 
 		
 		// Create a mock and do a return instead of calling the actual handle method
@@ -139,13 +138,13 @@ public class DeleteServiceHandlerTest {
 				
 		// Setup the DeleteServiceJob
 		DeleteServiceJob dsj = new DeleteServiceJob();
-		dsj.serviceID = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-        dsj.jobId = "fd88cf85-9057-440d-91f0-796d3d398970";
+		dsj.setServiceID("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
+        dsj.setJobId("fd88cf85-9057-440d-91f0-796d3d398970");
         
         // Try and build a response entity
         ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(dsj.jobId);
-		resultList.add(dsj.serviceID);
+		resultList.add(dsj.getJobId());
+		resultList.add(dsj.getServiceID());
 		
 		// Create a mock and do a return instead of calling the actual handle method
 		final DeleteServiceHandler dshMock = Mockito.spy (dhHandler);
@@ -163,13 +162,13 @@ public class DeleteServiceHandlerTest {
 				
 		// Setup the DeleteServiceJob
 		DeleteServiceJob dsj = new DeleteServiceJob();
-		dsj.serviceID = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-        dsj.jobId = "fd88cf85-9057-440d-91f0-796d3d398970";
+		dsj.setServiceID("a842aae2-bd74-4c4b-9a65-c45e8cd9060");
+        dsj.setJobId("fd88cf85-9057-440d-91f0-796d3d398970");
         
         // Try and build a response entity
         ArrayList<String> resultList = new ArrayList<String>();
-		resultList.add(dsj.jobId);
-		resultList.add(dsj.serviceID);
+		resultList.add(dsj.getJobId());
+		resultList.add(dsj.getServiceID());
 		
 		// Create a mock and do a return instead of calling the actual handle method
 		final DeleteServiceHandler dshMock = Mockito.spy (dhHandler);
@@ -189,7 +188,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("service " + serviceId + " deleted").when(accessorMock).delete(serviceId, true);
 
@@ -208,7 +207,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("service " + serviceId + " deleted").when(accessorMock).delete(serviceId, false);
 
@@ -227,7 +226,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn(null).when(accessorMock).delete(serviceId, false);
 
@@ -245,7 +244,7 @@ public class DeleteServiceHandlerTest {
 		String serviceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
         
 		
-		// When calling delete from mongo have it return a successful string
+		// When calling delete from DB have it return a successful string
 		//DeleteServiceHandler deleteServiceHandler = new DeleteServiceHandler (accessorMock, elasticAccessorMock, coreServicePropMock, piazzaLoggerMock);
 		Mockito.doReturn("").when(accessorMock).delete(serviceId, false);
 
@@ -263,14 +262,14 @@ public class DeleteServiceHandlerTest {
 		// Setup the RegisterServiceJob and the PiazzaJobRequest
 		PiazzaJobRequest pjr= new PiazzaJobRequest();
 		RegisterServiceJob rsj = new RegisterServiceJob();
-		rsj.data = service;    
+		rsj.setData(service);    
 		
 		pjr.jobType = rsj;
 		pjr.createdBy = "mlynum";
 		service.setServiceId("");
 		
 		String testServiceId = "9a6baae2-bd74-4c4b-9a65-c45e8cd9060";
-		Mockito.doReturn(testServiceId).when(rsHandlerMock).handle(rsj.data);
+		Mockito.doReturn(testServiceId).when(rsHandlerMock).handle(rsj.getData());
 
         //Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 		// Should check to make sure each of the handlers are not null

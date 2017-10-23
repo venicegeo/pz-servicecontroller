@@ -23,20 +23,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
-
 
 /**
  * Main class for the pz-servicecontroller. Launches the application
@@ -44,13 +47,16 @@ import org.venice.piazza.servicecontroller.async.AsynchronousServiceWorker;
  * @author mlynum
  * @since 1.0
  */
-
 @SpringBootApplication
 @EnableConfigurationProperties
 @EnableAsync
-@ComponentScan({"org.venice.piazza.servicecontroller","util"})
-@EnableMongoRepositories("org.venice.piazza.serviceregistry.data.mongodb.repository")
-/* Enable Boot application and MongoRepositories */
+@Configuration
+@EnableAutoConfiguration
+@EnableScheduling
+@EnableTransactionManagement
+@EnableJpaRepositories(basePackages = { "org.venice.piazza.common.hibernate" })
+@EntityScan(basePackages = { "org.venice.piazza.common.hibernate" })
+@ComponentScan(basePackages = { "org.venice.piazza.servicecontroller", "util", "org.venice.piazza" })
 public class Application extends SpringBootServletInitializer {
 	@Value("${http.max.total}")
 	private int httpMaxTotal;
@@ -59,8 +65,8 @@ public class Application extends SpringBootServletInitializer {
 	@Value("${http.request.timeout}")
 	private int httpRequestTimeout;
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(Application.class);
-	
+	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
+
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
 
@@ -70,8 +76,7 @@ public class Application extends SpringBootServletInitializer {
 	@Bean
 	public RestTemplate restTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
-		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal)
-				.setMaxConnPerRoute(httpMaxRoute).build();
+		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal).setMaxConnPerRoute(httpMaxRoute).build();
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
 		factory.setReadTimeout(httpRequestTimeout * 1000);
 		factory.setConnectTimeout(httpRequestTimeout * 1000);
@@ -81,7 +86,7 @@ public class Application extends SpringBootServletInitializer {
 	}
 
 	public static void main(String[] args) {
-		ApplicationContext ctx = SpringApplication.run(Application.class, args); //NOSONAR
+		ApplicationContext ctx = SpringApplication.run(Application.class, args); // NOSONAR
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment
 		if (args.length == 1) {
@@ -98,13 +103,13 @@ public class Application extends SpringBootServletInitializer {
 	 */
 	public static void inspectSprintEnv(ApplicationContext ctx) {
 
-		LOGGER.info("Spring Boot Beans");
-		LOGGER.info("-----------------");
+		LOG.info("Spring Boot Beans");
+		LOG.info("-----------------");
 
 		String[] beanNames = ctx.getBeanDefinitionNames();
 		Arrays.sort(beanNames);
 		for (String beanName : beanNames) {
-			LOGGER.info(beanName);
+			LOG.info(beanName);
 		}
 	}
 

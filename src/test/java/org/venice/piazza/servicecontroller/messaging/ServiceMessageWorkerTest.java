@@ -39,15 +39,13 @@ import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -62,7 +60,6 @@ import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.job.type.ExecuteServiceJob;
 import model.job.type.RegisterServiceJob;
-import model.logger.Severity;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
@@ -103,9 +100,6 @@ public class ServiceMessageWorkerTest {
 	private DeleteServiceHandler dlHandlerMock;
 
 	@Mock
-	private SearchServiceHandler ssHandlerMock;
-
-	@Mock
 	private CoreServiceProperties coreServicePropMock;
 
 	@Mock
@@ -117,7 +111,7 @@ public class ServiceMessageWorkerTest {
 	@Mock
 	private ObjectMapper omMock;
 	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 
 	private Job validJob;
 	private ExecuteServiceJob esJob;
@@ -155,8 +149,8 @@ public class ServiceMessageWorkerTest {
 		// Now tie the data to the job
 		esJob.data = edata;
 		validJob = new Job();
-		validJob.jobId = "b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
-		validJob.jobType = esJob;
+		validJob.setJobId("b842aae2-ed70-5c4b-9a65-c45e8cd9060g");
+		validJob.setJobType(esJob);
 
 		// Mock the Kafka response that Producers will send. This will always
 		// return a Future that completes immediately and simply returns true.
@@ -225,7 +219,7 @@ public class ServiceMessageWorkerTest {
 			String executeResponse = om.writeValueAsString(data);
 			ResponseEntity<String> response = new ResponseEntity<>(executeResponse, HttpStatus.OK);
 
-			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
 			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
@@ -248,8 +242,8 @@ public class ServiceMessageWorkerTest {
 			// Now tie the data to the job
 			esJob.data = edata;
 			validJob = new Job();
-			validJob.jobId = "b842aae2-ed70-5c4b-9a65-c45e8cd9060g";
-			validJob.jobType = esJob;
+			validJob.setJobId("b842aae2-ed70-5c4b-9a65-c45e8cd9060g");
+			validJob.setJobType(esJob);
 
 			om = new ObjectMapper();
 
@@ -272,7 +266,7 @@ public class ServiceMessageWorkerTest {
 
 			ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
 
-			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 
@@ -313,7 +307,7 @@ public class ServiceMessageWorkerTest {
 			String executeResponse = om.writeValueAsString(data);
 			ResponseEntity<String> response = new ResponseEntity<>(executeResponse, HttpStatus.OK);
 
-			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			// What happens if the handled executeservice returns a null
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(null);
@@ -348,7 +342,7 @@ public class ServiceMessageWorkerTest {
 			String executeResponse = om.writeValueAsString(data);
 			ResponseEntity<String> response = new ResponseEntity<>(executeResponse, HttpStatus.BAD_REQUEST);
 
-			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
 			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
@@ -391,7 +385,7 @@ public class ServiceMessageWorkerTest {
 			String executeResponse = om.writeValueAsString(data);
 			ResponseEntity<String> response = new ResponseEntity<>(executeResponse, HttpStatus.OK);
 
-			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.jobType;
+			ExecuteServiceJob jobItem = (ExecuteServiceJob) validJob.getJobType();
 			ExecuteServiceData esData = jobItem.data;
 			Mockito.when(esHandlerMock.handle(jobItem)).thenReturn(response);
 			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
@@ -416,8 +410,8 @@ public class ServiceMessageWorkerTest {
 
 			ServiceMessageWorker spy = Mockito.spy(smWorkerMock);
 			RegisterServiceJob rsj = new RegisterServiceJob();
-			rsj.data = service;
-			validJob.jobType = rsj;
+			rsj.setData(service);
+			validJob.setJobType(rsj);
 
 			//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 
@@ -444,7 +438,7 @@ public class ServiceMessageWorkerTest {
 		// Now tie the data to the job
 		esJob.data = edata;
 		job = new Job();
-		job.jobType = esJob;
+		job.setJobType(esJob);
 
 		return job;
 	}

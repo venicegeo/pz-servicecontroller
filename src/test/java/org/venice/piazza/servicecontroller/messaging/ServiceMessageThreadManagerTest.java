@@ -14,74 +14,31 @@
  * limitations under the License.
  *******************************************************************************/
 package org.venice.piazza.servicecontroller.messaging;
-/**
- * Class of unit tests to test the deletion of services
- * @author mlynum
- */
-import static org.junit.Assert.*;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.MockProducer;
-import org.apache.kafka.clients.producer.Producer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
-import org.mongojack.JacksonDBCollection;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.ResourceAccessException;
-import org.venice.piazza.servicecontroller.controller.ServiceController;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.SearchServiceHandler;
-import org.venice.piazza.servicecontroller.messaging.handlers.UpdateServiceHandler;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-import org.venice.piazza.servicecontroller.util.TestUtilities;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.MongoException;
 
 import messaging.job.KafkaClientFactory;
-import model.data.DataType;
-import model.data.type.BodyDataType;
 import model.job.metadata.ResourceMetadata;
-import model.job.type.RegisterServiceJob;
-import model.request.PiazzaJobRequest;
-import model.response.ErrorResponse;
-import model.response.Pagination;
-import model.response.PiazzaResponse;
-import model.response.ServiceListResponse;
-import model.response.ServiceResponse;
-import model.response.ServiceIdResponse;
-import model.response.SuccessResponse;
-import model.service.SearchCriteria;
-import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 @RunWith(PowerMockRunner.class)
@@ -93,7 +50,7 @@ public class ServiceMessageThreadManagerTest {
 	@Mock 
 	private PiazzaLogger loggerMock;
 	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 	@Mock
 	private Service serviceMock;
 	@Mock

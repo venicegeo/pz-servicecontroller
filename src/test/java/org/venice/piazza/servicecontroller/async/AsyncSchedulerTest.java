@@ -25,7 +25,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
+
+import model.service.async.AsyncServiceInstance;
 
 /**
  * Tests Async Scheduler
@@ -35,7 +37,7 @@ import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
  */
 public class AsyncSchedulerTest {
 	@Mock
-	private MongoAccessor accessor;
+	private DatabaseAccessor accessor;
 	@Mock
 	private AsynchronousServiceWorker worker;
 	@InjectMocks

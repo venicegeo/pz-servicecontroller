@@ -36,7 +36,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.venice.piazza.servicecontroller.data.mongodb.accessors.MongoAccessor;
+import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -71,7 +71,7 @@ public class ExecuteServiceHandlerTest {
 	@Mock 
 	private PiazzaLogger loggerMock;
 	@Mock
-	private MongoAccessor accessorMock;
+	private DatabaseAccessor accessorMock;
 	@Mock
 	private Service serviceMock;
 	@Mock
@@ -258,8 +258,8 @@ public class ExecuteServiceHandlerTest {
 		when(restTemplateMock.postForEntity(Mockito.eq(uri), Mockito.any(Object.class), Mockito.eq(String.class)))
 				.thenReturn(new ResponseEntity<String>("testExecuteService", HttpStatus.FOUND));
 
-		MongoAccessor mockMongo = mock(MongoAccessor.class);
-		when(mockMongo.getServiceById("8")).thenReturn(service);
+		DatabaseAccessor mockDb = mock(DatabaseAccessor.class);
+		when(mockDb.getServiceById("8")).thenReturn(service);
 		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
 		assertTrue(retVal.getBody().contains("testExecuteService"));
 	}

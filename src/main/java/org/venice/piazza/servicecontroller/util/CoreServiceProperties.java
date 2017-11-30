@@ -16,10 +16,7 @@
 package org.venice.piazza.servicecontroller.util;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 /**
  * Properties for the ServiceController. Loaded in from application.properties
@@ -29,9 +26,7 @@ import org.springframework.context.annotation.Configuration;
  * @author mlynum
  * @version 1.0
  */
-@Configuration
-@EnableConfigurationProperties
-@ConfigurationProperties(locations = "classpath:application.properties", ignoreUnknownFields = false, prefix = "core")
+@Component
 public class CoreServiceProperties {
 
 	private String appname;

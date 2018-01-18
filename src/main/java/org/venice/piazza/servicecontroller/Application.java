@@ -17,8 +17,15 @@ package org.venice.piazza.servicecontroller;
 
 import java.util.Arrays;
 
+import org.apache.http.HeaderElement;
+import org.apache.http.HeaderElementIterator;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHeaderElementIterator;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Queue;
@@ -83,7 +90,22 @@ public class Application extends SpringBootServletInitializer {
 	@Bean
 	public RestTemplate restTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
-		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal).setMaxConnPerRoute(httpMaxRoute).build();
+		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal).setMaxConnPerRoute(httpMaxRoute)
+				.setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
+					@Override
+					public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
+						HeaderElementIterator it = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+						while (it.hasNext()) {
+							HeaderElement headerElement = it.nextElement();
+							String param = headerElement.getName();
+							String value = headerElement.getValue();
+							if (value != null && param.equalsIgnoreCase("timeout")) {
+								return Long.parseLong(value) * 1000;
+							}
+						}
+						return 5 * 1000;
+					}
+				}).build();
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
 		factory.setReadTimeout(httpRequestTimeout * 1000);
 		factory.setConnectTimeout(httpRequestTimeout * 1000);

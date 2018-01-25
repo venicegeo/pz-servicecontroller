@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @EnableConfigurationProperties
-@ConfigurationProperties(locations = "classpath:application.properties", ignoreUnknownFields = false, prefix = "core")
+@ConfigurationProperties(ignoreUnknownFields = false, prefix = "core")
 public class CoreServiceProperties {
 
 	private String appname;

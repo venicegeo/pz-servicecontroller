@@ -35,7 +35,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ListServiceHandler;
@@ -75,7 +74,6 @@ public class HandlerLoggingTest {
 	Service service = null;
 	RestTemplate template = null;
 	DatabaseAccessor accessor = null;
-	ElasticSearchAccessor mockElasticAccessor = null;
 	PiazzaLogger logger = null;
 	CoreServiceProperties props = null;
 
@@ -102,8 +100,6 @@ public class HandlerLoggingTest {
 		when(accessor.getServiceById("8")).thenReturn(service);
 		logger = mock(PiazzaLogger.class);
 		props = mock(CoreServiceProperties.class);
-		mockElasticAccessor = mock(ElasticSearchAccessor.class);
-		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
 	}
 
 	@Test
@@ -226,7 +222,6 @@ public class HandlerLoggingTest {
 		UpdateServiceJob rjob = new UpdateServiceJob();
 		rjob.setData(service);
 		when(accessor.save(service)).thenReturn("8");
-		when(mockElasticAccessor.update(service)).thenReturn(new ServiceResponse());
 		usHandler.handle(rjob);
 		assertTrue(logString.contains("was updated"));
 	}

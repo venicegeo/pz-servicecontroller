@@ -32,7 +32,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.RegisterServiceHandler;
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -94,8 +93,6 @@ public class RegistryServiceHandlerTest {
 	@Test
 	@Ignore
 	public void testHandleWithData() {
-		ElasticSearchAccessor mockElasticAccessor = mock(ElasticSearchAccessor.class);
-		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
 		DatabaseAccessor mockAccessor = mock(DatabaseAccessor.class);
 		when(mockAccessor.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);
@@ -110,8 +107,6 @@ public class RegistryServiceHandlerTest {
 	@PrepareForTest({RegisterServiceHandler.class})
 	@Test
 	public void testHandleWithoutData() {
-		ElasticSearchAccessor mockElasticAccessor = mock(ElasticSearchAccessor.class);
-		when(mockElasticAccessor.save(service)).thenReturn(new ServiceResponse());
 		DatabaseAccessor mockAccessor = mock(DatabaseAccessor.class);
 		when(mockAccessor.save(service)).thenReturn("8");
 		CoreServiceProperties props = mock(CoreServiceProperties.class);

@@ -42,7 +42,6 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.controller.ServiceController;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.DeleteServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.DescribeServiceHandler;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -88,8 +87,6 @@ public class ServiceControllerTest {
 	private DeleteServiceHandler dlHandlerMock;
 	@Mock
 	private DatabaseAccessor accessorMock;
-	@Mock 
-	private ElasticSearchAccessor elasticAccessorMock;
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
 	@Mock 

@@ -22,15 +22,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 import org.venice.piazza.servicecontroller.taskmanaged.ServiceTaskManager;
 
 import model.job.PiazzaJobType;
 import model.job.type.RegisterServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
-import model.response.ErrorResponse;
-import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 import util.UUIDFactory;
@@ -47,8 +44,6 @@ import util.UUIDFactory;
 public class RegisterServiceHandler implements PiazzaJobHandler {
 	@Autowired
 	private DatabaseAccessor accessor;
-	@Autowired
-	private ElasticSearchAccessor elasticAccessor;
 	@Autowired
 	private PiazzaLogger coreLogger;
 	@Autowired
@@ -94,7 +89,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
-	 * Handler for registering the new service with the database and elastic search.
+	 * Handler for registering the new service with the database.
 	 * 
 	 * @param service
 	 * @return resourceId of the registered service
@@ -134,15 +129,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 		// Commit
 		resultServiceId = accessor.save(service);
 		coreLogger.log("Registering a Service with ID " + resultServiceId, Severity.DEBUG);
-
-		PiazzaResponse response = elasticAccessor.save(service);
-
-		if (ErrorResponse.class.isInstance(response)) {
-			coreLogger.log("Error Registering Service " + ((ErrorResponse) response).message, Severity.DEBUG);
-		} 
-		else {
-			coreLogger.log("Successfully Registered service " + service.getServiceId(), Severity.DEBUG);
-		}
+		coreLogger.log("Successfully Registered service " + service.getServiceId(), Severity.DEBUG);
 
 		return resultServiceId;
 	}

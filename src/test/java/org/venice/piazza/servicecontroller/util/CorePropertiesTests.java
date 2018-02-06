@@ -47,14 +47,6 @@ public class CorePropertiesTests {
 
 	public static String SC_HOST = "scgeointhost";
 	public static String SC_PORT = "8888";
-	public static String SEARCH_DOMAIN_PREFIX = "pz-search.io";
-	public static String SEARCH_DOMAIN_PORT = "8888";
-	public static String SEARCH_DELETE_ENDPOINT = "/delete";
-	public static String SEARCH_ENDPOINT = "/search";
-	public static String SEARCH_INGEST_ENDPOINT = "/ingest";
-	public static String SEARCH_INGEST_DOMAIN_PREFIX = "pz-search-metadata-ingest.io";
-	public static String SEARCH_INGEST_PORT = "8080";
-	public static String SEARCH_UPDATE_ENDPOINT = "/update";
 	public static int SERVER_PORT = 343;
 	public static String SPACE = "The Space";
 
@@ -109,112 +101,6 @@ public class CorePropertiesTests {
 		coreServiceProps.setPort(SC_PORT);
 		String port = coreServiceProps.getPort();
 		assertEquals("The port was set properly.", SC_PORT, port);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz metadata delete URL is read correctly and populated
-	 */
-	public void testSearchMetadataDeleteUrl() {
-		String deleteMetadataURL = coreServiceProps.getPzServicemetadataDeleteUrl();
-
-		String actualURL = HTTP_PROTOCOL + "://" + SEARCH_INGEST_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_INGEST_PORT + '/'
-				+ SEARCH_DELETE_ENDPOINT;
-
-		assertEquals("The pz metadata delete URL was autowired properly.", deleteMetadataURL, actualURL);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz metadata ingest URL is set correctly.
-	 */
-	public void testSetSearchMetadataDeleteUrl() {
-		String actualURL = HTTP_PROTOCOL + "://" + SEARCH_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_INGEST_PORT + '/'
-				+ SEARCH_DELETE_ENDPOINT;
-		coreServiceProps.setPzServicemetadataDeleteUrl(actualURL);
-		String deleteMetadataURL = coreServiceProps.getPzServicemetadataDeleteUrl();
-		assertEquals("The pz metadata delete URL was set properly.", deleteMetadataURL, actualURL);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz metadata update URL is read correctly and populated
-	 */
-	public void testSearchMetadataUpdateUrl() {
-		String updateMetadataURL = coreServiceProps.getPzServicemetadataUpdateUrl();
-
-		String actualURL = HTTP_PROTOCOL + "://" + SEARCH_INGEST_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_INGEST_PORT + '/'
-				+ SEARCH_UPDATE_ENDPOINT;
-
-		assertEquals("The pz metadata update URL was autowired properly.", updateMetadataURL, actualURL);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz metadata ingest URL is set correctly.
-	 */
-	public void testSetSearchMetadataUpdateUrl() {
-		String actualURL = HTTP_PROTOCOL + "://" + SEARCH_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_INGEST_PORT + '/'
-				+ SEARCH_UPDATE_ENDPOINT;
-		coreServiceProps.setPzServicemetadataUpdateUrl(actualURL);
-		String updateMetadataURL = coreServiceProps.getPzServicemetadataUpdateUrl();
-		assertEquals("The pz metadata upate URL was set properly.", updateMetadataURL, actualURL);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz metadata ingest URL is read correctly and populated
-	 */
-	public void testSearchMetadataIngestUrl() {
-		String ingestURL = coreServiceProps.getPzServicemetadataIngestUrl();
-
-		String actualURL = HTTP_PROTOCOL + "://" + SEARCH_INGEST_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_INGEST_PORT + '/'
-				+ SEARCH_INGEST_ENDPOINT;
-
-		assertEquals("The pz metadata ingest URL was autowired properly.", ingestURL, actualURL);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz metadata ingest URL is set correctly.
-	 */
-	public void testSetSearchMetadataIngestUrl() {
-		String actualURL = HTTP_PROTOCOL + "://" + SEARCH_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_INGEST_PORT + '/'
-				+ SEARCH_INGEST_ENDPOINT;
-		coreServiceProps.setPzServicemetadataIngestUrl(actualURL);
-		String ingestURL = coreServiceProps.getPzServicemetadataIngestUrl();
-		assertEquals("The pz metadata ingest URL was set properly.", ingestURL, actualURL);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz search URL is read correctly and populated
-	 */
-	public void testPzSearchUrl() {
-		String pzsearch = coreServiceProps.getPzSearchUrl();
-
-		String actualURL = HTTPS_PROTOCOL + "://" + SEARCH_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_DOMAIN_PORT + '/' + SEARCH_ENDPOINT;
-
-		assertEquals("The pz search URL was autowired properly.", pzsearch, actualURL);
-	}
-
-	@Ignore
-	@Test
-	/**
-	 * Test if the pz search URL is set correctly.
-	 */
-	public void testSetPzSearchUrl() {
-		String actualURL = HTTPS_PROTOCOL + "://" + SEARCH_DOMAIN_PREFIX + '.' + DOMAIN + ':' + SEARCH_DOMAIN_PORT + '/' + SEARCH_ENDPOINT;
-		coreServiceProps.setPzSearchUrl(actualURL);
-		String pzsearchURL = coreServiceProps.getPzSearchUrl();
-		assertEquals("The pz search URL was set properly.", pzsearchURL, actualURL);
 	}
 
 	@Ignore
@@ -279,16 +165,6 @@ public class CorePropertiesTests {
 			properties.setProperty("server.port", new Integer(SERVER_PORT).toString());
 			properties.setProperty("servicecontroller.host", SC_HOST);
 			properties.setProperty("servicecontroller.port", new Integer(SC_PORT).toString());
-			// properties.setProperty("search.protocol", HTTPS_PROTOCOL);
-			// properties.setProperty("search.prefix", SEARCH_DOMAIN_PREFIX);
-			// properties.setProperty("search.port", SEARCH_DOMAIN_PORT);
-			// properties.setProperty("search.endpoint", SEARCH_ENDPOINT);
-			// properties.setProperty("metadata.ingest.protocol", HTTP_PROTOCOL);
-			// properties.setProperty("metadata.ingest.prefix", SEARCH_INGEST_DOMAIN_PREFIX);
-			// properties.setProperty("metadata.ingest.port", SEARCH_INGEST_PORT);
-			// properties.setProperty("metadata.ingest.endpoint", SEARCH_INGEST_ENDPOINT);
-			// properties.setProperty("metadata.update.endpoint", SEARCH_UPDATE_ENDPOINT);
-			// properties.setProperty("metadata.delete.endpoint", SEARCH_DELETE_ENDPOINT);
 
 			pspc.setProperties(properties);
 			return pspc;

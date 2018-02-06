@@ -25,7 +25,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.common.hibernate.entity.ServiceEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
 import model.job.PiazzaJobType;
 import model.job.type.UpdateServiceJob;
@@ -49,9 +48,6 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 
 	@Autowired
 	private DatabaseAccessor accessor;
-
-	@Autowired
-	private ElasticSearchAccessor elasticAccessor;
 
 	@Autowired
 	private PiazzaLogger coreLogger;
@@ -112,29 +108,11 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 
 					coreLogger.log(String.format("Service was updated %s", sMetadata.getServiceId()), Severity.INFORMATIONAL,
 							new AuditElement("serviceController", "updatedRegisteredService", sMetadata.getServiceId()));
-					// Only when the user service data is updated successfully then
-					// update elastic search
-					PiazzaResponse response = elasticAccessor.update(sMetadata);
-					if (response instanceof ErrorResponse) {
-						coreLogger.log(
-								String.format("Error response received from Elastic Search Update: %s", ((ErrorResponse) response).message),
-								Severity.INFORMATIONAL);
-					}
 				} else {
 					coreLogger.log("The service " + sMetadata.getResourceMetadata().name + " was NOT updated", Severity.INFORMATIONAL);
 					coreLogger.log("The service was NOT updated", Severity.ERROR,
 							new AuditElement("serviceController", "failedToUpdateService", sMetadata.getServiceId()));
 				}
-				// If an Id was returned then send a message back updating the job iD
-				// with the resourceId
-
-				/*
-				 * TODO if (ErrorResponse.class.isInstance(response)) { ErrorResponse errResponse =
-				 * (ErrorResponse)response; LOGGER.error("The result of the elasticsearch update is " +
-				 * errResponse.message); result = ""; // Indicates that update went wrong, DB and ElasticSearch
-				 * inconsistent } else { LOGGER.debug("ElasticSearch Successfully updated service " +
-				 * sMetadata.getServiceId()); }
-				 */
 			}
 		} catch (IllegalArgumentException ex) {
 			LOG.error("IllegalArgumentException occurred", ex);

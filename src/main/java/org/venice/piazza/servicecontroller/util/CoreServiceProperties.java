@@ -37,48 +37,8 @@ public class CoreServiceProperties {
 	private String host;
 	@Value("${servicecontroller.port}")
 	private String port;
-	@Value("${search.url}")
-	private String pzSearchUrl;
-	@Value("${metadata.ingest.url}")
-	private String pzServicemetadataIngestUrl;
-	@Value("${metadata.update.url}")
-	private String pzServicemetadataUpdateUrl;
-	@Value("${metadata.delete.url}")
-	private String pzServicemetadataDeleteUrl;
 	@Value("${SPACE}")
 	private String space;
-
-	public String getPzSearchUrl() {
-		return pzSearchUrl;
-	}
-
-	public void setPzSearchUrl(String pzSearchUrl) {
-		this.pzSearchUrl = pzSearchUrl;
-	}
-
-	public String getPzServicemetadataIngestUrl() {
-		return pzServicemetadataIngestUrl;
-	}
-
-	public void setPzServicemetadataIngestUrl(String pzServicemetadataIngestUrl) {
-		this.pzServicemetadataIngestUrl = pzServicemetadataIngestUrl;
-	}
-
-	public String getPzServicemetadataUpdateUrl() {
-		return pzServicemetadataUpdateUrl;
-	}
-
-	public void setPzServicemetadataUpdateUrl(String pzServicemetadataUpdateUrl) {
-		this.pzServicemetadataUpdateUrl = pzServicemetadataUpdateUrl;
-	}
-	
-	public String getPzServicemetadataDeleteUrl() {
-		return pzServicemetadataDeleteUrl;
-	}
-
-	public void setPzServicemetadataDeleteUrl(String pzServicemetadataDeleteUrl) {
-		this.pzServicemetadataDeleteUrl = pzServicemetadataDeleteUrl;
-	}
 
 	public String getAppname() {
 		return appname;

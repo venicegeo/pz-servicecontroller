@@ -32,7 +32,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
 /**
  * Handler for handling registerService requests.  This handler is used 
@@ -48,8 +47,6 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 
 	@Autowired
 	private DatabaseAccessor accessor;
-	@Autowired
-	private ElasticSearchAccessor elasticAccessor;
 	@Autowired
 	private PiazzaLogger coreLogger;
 
@@ -94,16 +91,13 @@ public class DeleteServiceHandler implements PiazzaJobHandler {
 	}
 
 	/**
-	 * Deletes resource by removing from the database, and sends delete request to elastic search
+	 * Deletes resource by removing from the database
 	 * 
 	 * @param rMetadata
 	 * @return resourceId of the registered service
 	 */
 	public String handle(String resourceId, boolean softDelete) {
 		coreLogger.log(String.format("Deleting Registered Service: %s with softDelete %s", resourceId, softDelete), Severity.INFORMATIONAL);
-		Service service = accessor.getServiceById(resourceId);
-		elasticAccessor.delete(service);
-
 		String result = "";
 		try {
 			result = accessor.delete(resourceId, softDelete);

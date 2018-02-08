@@ -229,7 +229,6 @@ public class ServiceController {
 						new ErrorResponse(String.format("Service not found: %s", serviceId), SERVICE_CONTROLLER_UPPER),
 						HttpStatus.NOT_FOUND);
 			}
-			// remove from elastic search as well....
 			dlHandler.handle(serviceId, softDelete);
 			return new ResponseEntity<PiazzaResponse>(new SuccessResponse("Service was deleted successfully.", SERVICE_CONTROLLER_UPPER),
 					HttpStatus.OK);

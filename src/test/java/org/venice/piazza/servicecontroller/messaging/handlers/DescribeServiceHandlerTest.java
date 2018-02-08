@@ -27,7 +27,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
 
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
 
@@ -49,10 +48,7 @@ import util.UUIDFactory;
 		// Create some mocks
 		@Mock
 		private DatabaseAccessor accessorMock;
-		
-		@Mock 
-		private ElasticSearchAccessor elasticAccessorMock;
-		
+				
 		@Mock
 		private CoreServiceProperties coreServicePropMock;
 		

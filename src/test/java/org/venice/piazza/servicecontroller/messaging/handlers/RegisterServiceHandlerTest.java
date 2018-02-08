@@ -31,10 +31,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
-import org.venice.piazza.servicecontroller.elasticsearch.accessors.ElasticSearchAccessor;
-
 import org.venice.piazza.servicecontroller.util.CoreServiceProperties;
-
 
 import model.job.PiazzaJobType;
 import model.job.metadata.ResourceMetadata;
@@ -51,9 +48,6 @@ public class RegisterServiceHandlerTest {
 	// Create some mocks
 	@Mock
 	private DatabaseAccessor accessorMock;
-	
-	@Mock 
-	private ElasticSearchAccessor elasticAccessorMock;
 	
 	@Mock
 	private CoreServiceProperties coreServicePropMock;
@@ -173,25 +167,6 @@ public class RegisterServiceHandlerTest {
 		Mockito.doReturn("").when(accessorMock).save(service);
 		String result = rsHandler.handle(service);
         assertEquals("The serviceId string returned should be empty", result.length(), 0);
-
-	}
-	
-	/**
-	 * Test what happens when there is an error with registering
-	 * with elasticsearch
-	 */
-	@Test
-	public void testElasticSearchSaveProblem() {
-		String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-
-		// Mock the response
-		Mockito.when(uuidFactoryMock.getUUID()).thenReturn(testServiceId);
-		Mockito.doReturn(testServiceId).when(accessorMock).save(service);
-		ErrorResponse errorResponse = new ErrorResponse();
-		errorResponse.message = "There was a problem";
-		Mockito.doReturn(errorResponse).when(elasticAccessorMock).save(service);
-		String result = rsHandler.handle(service);
-		assertEquals("The responding service id should match the id", result, testServiceId);
 
 	}
 }

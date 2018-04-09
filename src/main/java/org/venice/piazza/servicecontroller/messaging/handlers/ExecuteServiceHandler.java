@@ -369,6 +369,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 				throw new InterruptedException();
 			}
 
+			if (data == null)
+			{
+				return null;
+			}
+
 			ingestJob.data = data;
 			ingestJob.host = true;
 			jobRequest.jobType = ingestJob;

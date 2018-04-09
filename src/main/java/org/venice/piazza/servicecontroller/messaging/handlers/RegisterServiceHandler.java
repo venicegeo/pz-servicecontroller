@@ -118,7 +118,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				service.setTaskAdministrators(new ArrayList<>());
 				service.getTaskAdministrators().add(createdBy);
 			} 
-			else if (service.getTaskAdministrators().contains(createdBy) == false) {
+			else if (!service.getTaskAdministrators().contains(createdBy)) {
 				service.getTaskAdministrators().add(createdBy);
 			}
 

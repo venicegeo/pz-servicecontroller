@@ -162,7 +162,7 @@ ServiceMessageWorker {
 		}
 
 		// Ensure the Job Type is of Execute Service Job
-		if ((job.getJobType() == null) || (job.getJobType() instanceof ExecuteServiceJob == false)) {
+		if ((job.getJobType() == null) || (!(job.getJobType() instanceof ExecuteServiceJob))) {
 			throw new PiazzaJobException("An Invalid Job Type has been received by the Service Controller Worker.",
 					HttpStatus.BAD_REQUEST.value());
 		}
@@ -232,7 +232,7 @@ ServiceMessageWorker {
 	}
 
 	private void checkServiceResponseCode(final ResponseEntity<String> externalServiceResponse) throws PiazzaJobException {
-		if (externalServiceResponse.getStatusCode().is2xxSuccessful() == false) {
+		if (!externalServiceResponse.getStatusCode().is2xxSuccessful()) {
 			throw new PiazzaJobException(String.format("Error %s with Status Code %s", externalServiceResponse.getBody(),
 					externalServiceResponse.getStatusCode().toString()), externalServiceResponse.getStatusCode().value());
 		}

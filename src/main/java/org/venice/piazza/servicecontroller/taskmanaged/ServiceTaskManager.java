@@ -139,7 +139,7 @@ public class ServiceTaskManager {
 
 				// Determine if the Service ID is Task-Managed
 				Service service = accessor.getServiceById(serviceId);
-				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
+				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged())) {
 					handleTaskManagedJob(serviceId, jobId);
 				}
 			}

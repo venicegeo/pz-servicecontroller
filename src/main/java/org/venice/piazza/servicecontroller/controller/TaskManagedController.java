@@ -185,7 +185,7 @@ public class TaskManagedController {
 
             // Ensure this Service exists and is Task-Managed
             Service service = accessor.getServiceById(serviceId);
-            if ((service.getIsTaskManaged() == null) || (service.getIsTaskManaged() == false)) {
+            if ((service.getIsTaskManaged() == null) || (!service.getIsTaskManaged())) {
                 throw new InvalidInputException("The specified Service is not a Task-Managed Service.");
             }
             // Fill Map with Metadata

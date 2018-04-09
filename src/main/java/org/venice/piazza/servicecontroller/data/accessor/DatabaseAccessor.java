@@ -38,9 +38,6 @@ import org.venice.piazza.common.hibernate.entity.JobEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceEntity;
 import org.venice.piazza.common.hibernate.entity.ServiceJobEntity;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import exception.InvalidInputException;
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
@@ -191,8 +188,9 @@ public class DatabaseAccessor {
 	 * @param jobId
 	 *            Job Id
 	 * @return The Job with the specified Id
+     * @throws ResourceAccessException
 	 */
-	public Service getServiceById(String serviceId) throws ResourceAccessException {
+	public Service getServiceById(String serviceId) {
 		ServiceEntity serviceEntity = serviceDao.getServiceById(serviceId);
 		if (serviceEntity == null) {
 			throw new ResourceAccessException(String.format("Service not found : %s", serviceId));
@@ -402,8 +400,9 @@ public class DatabaseAccessor {
 	 *            Job Id
 	 * @return The Job with the specified Id
 	 * @throws InterruptedException
+     * @throws ResourceAccessException
 	 */
-	public Job getJobById(String jobId) throws ResourceAccessException, InterruptedException {
+	public Job getJobById(String jobId) {
 		JobEntity entity = jobDao.getJobByJobId(jobId);
 		if (entity != null) {
 			return entity.getJob();

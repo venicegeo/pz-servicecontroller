@@ -116,12 +116,11 @@ public class Application extends SpringBootServletInitializer {
 		ApplicationContext ctx = SpringApplication.run(Application.class, args); // NOSONAR
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment
-		if (args.length == 1) {
-			// Get the value of the first argument
-			// If it is true then do a health check and print it out
-			if (Boolean.valueOf(args[0]) == true) {
-				inspectSprintEnv(ctx);
-			}
+
+        // Get the value of the first argument
+        // If it is true then do a health check and print it out
+		if (args.length == 1 && Boolean.valueOf(args[0])) {
+            inspectSprintEnv(ctx);
 		}
 	}
 

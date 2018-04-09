@@ -91,9 +91,7 @@ public class Application extends SpringBootServletInitializer {
 	public RestTemplate restTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
 		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal).setMaxConnPerRoute(httpMaxRoute)
-				.setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
-					@Override
-					public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
+				.setKeepAliveStrategy((HttpResponse response, HttpContext context) -> {
 						HeaderElementIterator it = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE));
 						while (it.hasNext()) {
 							HeaderElement headerElement = it.nextElement();
@@ -105,7 +103,7 @@ public class Application extends SpringBootServletInitializer {
 						}
 						return 5 * 1000L;
 					}
-				}).build();
+				).build();
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
 		factory.setReadTimeout(httpRequestTimeout * 1000);
 		factory.setConnectTimeout(httpRequestTimeout * 1000);

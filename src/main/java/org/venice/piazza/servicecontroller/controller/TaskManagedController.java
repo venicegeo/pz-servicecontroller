@@ -92,15 +92,15 @@ public class TaskManagedController {
             }
 
         } catch (ResourceAccessException ex) {
-            return new ResponseEntity<>(getErrorResponse(serviceId, userName, ex), HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(getNextServiceErrorResponse(serviceId, userName, ex), HttpStatus.UNAUTHORIZED);
         } catch (InvalidInputException ex) {
-            return new ResponseEntity<>(getErrorResponse(serviceId, userName, ex), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(getNextServiceErrorResponse(serviceId, userName, ex), HttpStatus.NOT_FOUND);
         } catch (Exception ex) {
-            return new ResponseEntity<>(getErrorResponse(serviceId, userName, ex), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(getNextServiceErrorResponse(serviceId, userName, ex), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private ErrorResponse getErrorResponse(String serviceId, String userName, Exception exception) {
+    private ErrorResponse getNextServiceErrorResponse(String serviceId, String userName, Exception exception) {
         String error = String.format("Error Getting next Service Job for Service %s by User %s: %s", serviceId, userName,
                 exception.getMessage());
         LOG.error(error, exception);
@@ -142,21 +142,23 @@ public class TaskManagedController {
             serviceTaskManager.processStatusUpdate(serviceId, jobId, statusUpdate);
             // Return Success
             return new ResponseEntity<>(new SuccessResponse("OK", SERVICE_CONTROLLER), HttpStatus.OK);
+        } catch (ResourceAccessException ex) {
+            return new ResponseEntity<>(getUpdateServiceErrorResponse(jobId, serviceId, userName, ex), HttpStatus.UNAUTHORIZED);
+        } catch (InvalidInputException ex) {
+            return new ResponseEntity<>(getUpdateServiceErrorResponse(jobId, serviceId, userName, ex), HttpStatus.NOT_FOUND);
+        } catch (HttpServerErrorException ex) {
+            return new ResponseEntity<>(getUpdateServiceErrorResponse(jobId, serviceId, userName, ex), ex.getStatusCode());
         } catch (Exception exception) {
-            String error = String.format("Could not Update status for Job %s for Service %s : %s", jobId, serviceId,
-                    exception.getMessage());
-            LOG.error(error, exception);
-            piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToUpdateServiceJob", jobId));
-            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-            if (exception instanceof ResourceAccessException) {
-                status = HttpStatus.UNAUTHORIZED;
-            } else if (exception instanceof InvalidInputException) {
-                status = HttpStatus.NOT_FOUND;
-            } else if (exception instanceof HttpServerErrorException) {
-                status = ((HttpServerErrorException) exception).getStatusCode();
-            }
-            return new ResponseEntity<>(new ErrorResponse(error, SERVICE_CONTROLLER), status);
+            return new ResponseEntity<>(getUpdateServiceErrorResponse(jobId, serviceId, userName, exception), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private ErrorResponse getUpdateServiceErrorResponse(String jobId, String serviceId, String userName, Exception exception) {
+        String error = String.format("Could not Update status for Job %s for Service %s : %s", jobId, serviceId,
+                exception.getMessage());
+        LOG.error(error, exception);
+        piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToUpdateServiceJob", jobId));
+        return new ErrorResponse(error, SERVICE_CONTROLLER);
     }
 
     /**
@@ -190,17 +192,19 @@ public class TaskManagedController {
             Map<String, Object> response = accessor.getServiceQueueCollectionMetadata(serviceId);
             // Respond
             return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
-        } catch (Exception exception) {
-            String error = String.format("Could not retrieve Service Queue data for %s : %s", serviceId, exception.getMessage());
-            LOG.error(error, exception);
-            piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToRetrieveServiceQueueMetadata", serviceId));
-            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-            if (exception instanceof ResourceAccessException) {
-                status = HttpStatus.UNAUTHORIZED;
-            } else if (exception instanceof InvalidInputException) {
-                status = HttpStatus.NOT_FOUND;
-            }
-            return new ResponseEntity<String>(error, status);
+        } catch (ResourceAccessException ex) {
+            return new ResponseEntity(getServiceQueueError(serviceId, userName, ex), HttpStatus.UNAUTHORIZED);
+        } catch (InvalidInputException ex) {
+            return new ResponseEntity(getServiceQueueError(serviceId, userName, ex), HttpStatus.NOT_FOUND);
+        } catch (Exception ex) {
+            return new ResponseEntity(getServiceQueueError(serviceId, userName, ex), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private String getServiceQueueError(String serviceId, String userName, Exception exception) {
+        String error = String.format("Could not retrieve Service Queue data for %s : %s", serviceId, exception.getMessage());
+        LOG.error(error, exception);
+        piazzaLogger.log(error, Severity.ERROR, new AuditElement(userName, "failedToRetrieveServiceQueueMetadata", serviceId));
+        return error;
     }
 }

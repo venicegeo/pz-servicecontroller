@@ -62,7 +62,7 @@ public class ServiceMessageThreadManager {
 	private ObjectMapper mapper;
 
 	@Value("${SPACE}")
-	private String SPACE;
+	private String SPACE; //NOSONAR
 
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceMessageThreadManager.class);
 	private Map<String, Future<?>> runningServiceRequests = new HashMap<>();

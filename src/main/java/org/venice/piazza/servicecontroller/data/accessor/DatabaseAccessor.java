@@ -63,7 +63,7 @@ import util.PiazzaLogger;
 @Component
 public class DatabaseAccessor {
 	@Value("${async.stale.instance.threshold.seconds}")
-	private int STALE_INSTANCE_THRESHOLD_SECONDS;
+	private int STALE_INSTANCE_THRESHOLD_SECONDS; //NOSONAR
 	@Autowired
 	private PiazzaLogger logger;
 

@@ -95,9 +95,9 @@ import util.UUIDFactory;
 public class
 ServiceMessageWorker {
 	@Value("${SPACE}")
-	private String SPACE;
+	private String SPACE; //NOSONAR
 	@Value("${workflow.url}")
-	private String WORKFLOW_URL;
+	private String WORKFLOW_URL; //NOSONAR
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -445,7 +445,7 @@ ServiceMessageWorker {
 	public void handleRasterType(ExecuteServiceJob executeJob, Job job)
 			throws InterruptedException, JsonParseException, JsonMappingException, IOException {
 
-		RestTemplate restTemplate = new RestTemplate();
+		RestTemplate myRestTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;
 
 		// Get the id from the data
@@ -520,10 +520,10 @@ ServiceMessageWorker {
 				HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
 				factory.setReadTimeout(sMetadata.getTimeout().intValue() * 1000);
 				factory.setConnectTimeout(sMetadata.getTimeout().intValue() * 1000);
-				restTemplate = new RestTemplate(factory);
+				myRestTemplate = new RestTemplate(factory);
 			}
 
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+			ResponseEntity<String> response = myRestTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
 			checkThreadInterrupted();
 

@@ -87,7 +87,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	private RabbitTemplate rabbitTemplate;
 
 	@Value("${SPACE}")
-	private String SPACE;
+	private String SPACE; //NOSONAR
 
 	private static final Logger LOG = LoggerFactory.getLogger(ExecuteServiceHandler.class);
 	private static final String MIME_TYPE = "application/json";

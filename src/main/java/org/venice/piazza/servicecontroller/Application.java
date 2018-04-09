@@ -77,7 +77,7 @@ public class Application extends SpringBootServletInitializer {
 	@Value("${http.request.timeout}")
 	private int httpRequestTimeout;
 	@Value("${SPACE}")
-	private String SPACE;
+	private String SPACE; //NOSONAR
 
 	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 

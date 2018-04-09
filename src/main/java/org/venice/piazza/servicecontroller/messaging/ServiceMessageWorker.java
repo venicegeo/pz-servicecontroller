@@ -92,7 +92,8 @@ import util.UUIDFactory;
  *
  */
 @Component
-public class ServiceMessageWorker {
+public class
+ServiceMessageWorker {
 	@Value("${SPACE}")
 	private String SPACE;
 	@Value("${workflow.url}")
@@ -131,23 +132,25 @@ public class ServiceMessageWorker {
 	 */
 	@Async
 	public Future<String> run(Job job, WorkerCallback callback) {
+		String jobId = (job == null) ? "null" : job.getJobId();
 		try {
 			validateJob(job);
 
 			// Process the Execution of the External Service
 			return processExernalServiceExecution(job, callback);
 		} catch (InterruptedException ex) { // NOSONAR normal handling of InterruptedException
-			interruptJob(job.getJobId(), ex.toString());
+			interruptJob(jobId, ex.toString());
 		} catch (Exception ex) {
 			LOG.error("Unexpected Error in processing External Service", ex);
 			// Catch any General Exceptions that occur during runtime.
 			logger.log(ex.getMessage(), Severity.ERROR);
+
 			sendErrorStatus(StatusUpdate.STATUS_ERROR, "Unexpected Error in processing External Service: " + ex.getMessage(),
-					HttpStatus.INTERNAL_SERVER_ERROR.value(), job.getJobId());
+					HttpStatus.INTERNAL_SERVER_ERROR.value(), jobId);
 		}
 
 		// Return Future
-		callback.onComplete(job.getJobId());
+		callback.onComplete(jobId);
 
 		return new AsyncResult<String>("ServiceMessageWorker_Thread");
 	}

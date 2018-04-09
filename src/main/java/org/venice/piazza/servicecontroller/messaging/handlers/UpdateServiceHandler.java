@@ -77,15 +77,15 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				resultList.add(jobId);
 				resultList.add(sMetadata.getServiceId());
 
-				return new ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
+				return new ResponseEntity<>(resultList.toString(), HttpStatus.OK);
 
 			} else {
 				coreLogger.log("No result response from the handler, something went wrong", Severity.ERROR);
-				return new ResponseEntity<String>("UpdateServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
+				return new ResponseEntity<>("UpdateServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {
 			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", Severity.ERROR);
-			return new ResponseEntity<String>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
 		}
 	}
 

@@ -152,7 +152,7 @@ ServiceMessageWorker {
 		// Return Future
 		callback.onComplete(jobId);
 
-		return new AsyncResult<String>("ServiceMessageWorker_Thread");
+		return new AsyncResult<>("ServiceMessageWorker_Thread");
 	}
 
 	private void validateJob(final Job job) throws PiazzaJobException, DataInspectException {
@@ -345,7 +345,7 @@ ServiceMessageWorker {
 		// Return Future
 		callback.onComplete(job.getJobId());
 
-		return new AsyncResult<String>("ServiceMessageWorker_Thread");
+		return new AsyncResult<>("ServiceMessageWorker_Thread");
 	}
 
 	/**
@@ -391,7 +391,7 @@ ServiceMessageWorker {
 					.get(0);
 
 			// Construct Event object
-			Map<String, Object> data = new HashMap<String, Object>();
+			Map<String, Object> data = new HashMap<>();
 			data.put("jobId", jobId);
 			data.put("status", message);
 			data.put("dataId", dataId);
@@ -456,7 +456,7 @@ ServiceMessageWorker {
 		String requestMimeType = "application/json";
 
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(sMetadata.getUrl());
-		Map<String, DataType> postObjects = new HashMap<String, DataType>();
+		Map<String, DataType> postObjects = new HashMap<>();
 		Iterator<Entry<String, DataType>> it = data.getDataInputs().entrySet().iterator();
 		String postString = "";
 
@@ -512,7 +512,7 @@ ServiceMessageWorker {
 			theHeaders.setContentType(MediaType.APPLICATION_JSON);
 
 			// Create the Request template and execute
-			HttpEntity<String> request = new HttpEntity<String>(postString, theHeaders);
+			HttpEntity<String> request = new HttpEntity<>(postString, theHeaders);
 
 			logger.log("About to call special service " + url, Severity.DEBUG);
 

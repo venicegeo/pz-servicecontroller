@@ -75,16 +75,16 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 				coreLogger.log(String.format("Service registered %s", serviceMetadata.getServiceId()), Severity.INFORMATIONAL,
 						new AuditElement("serviceController", "registeredExternalService", serviceMetadata.getServiceId()));
 
-				return new ResponseEntity<String>(responseString, HttpStatus.OK);
+				return new ResponseEntity<>(responseString, HttpStatus.OK);
 			} else {
 				coreLogger.log("No result response from the handler, something went wrong", Severity.ERROR);
 				coreLogger.log(String.format("The service was NOT registered id %s", serviceMetadata.getServiceId()), Severity.ERROR,
 						new AuditElement("serviceController", "registerServiceError", serviceMetadata.getServiceId()));
-				return new ResponseEntity<String>("RegisterServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
+				return new ResponseEntity<>("RegisterServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {
 			coreLogger.log("No RegisterServiceJob", Severity.ERROR);
-			return new ResponseEntity<String>("No RegisterServiceJob", HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("No RegisterServiceJob", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -115,7 +115,7 @@ public class RegisterServiceHandler implements PiazzaJobHandler {
 			
 			if (service.getTaskAdministrators() == null) {
 				// If no administration list has been specified, then create one by default.
-				service.setTaskAdministrators(new ArrayList<String>());
+				service.setTaskAdministrators(new ArrayList<>());
 				service.getTaskAdministrators().add(createdBy);
 			} 
 			else if (service.getTaskAdministrators().contains(createdBy) == false) {

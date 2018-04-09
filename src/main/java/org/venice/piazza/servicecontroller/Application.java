@@ -103,7 +103,7 @@ public class Application extends SpringBootServletInitializer {
 								return Long.parseLong(value) * 1000;
 							}
 						}
-						return 5 * 1000;
+						return 5 * 1000L;
 					}
 				}).build();
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);

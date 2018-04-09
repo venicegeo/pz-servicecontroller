@@ -443,7 +443,7 @@ ServiceMessageWorker {
 	 * @throws JsonParseException
 	 */
 	public void handleRasterType(ExecuteServiceJob executeJob, Job job)
-			throws InterruptedException, JsonParseException, JsonMappingException, IOException {
+			throws InterruptedException, IOException {
 
 		RestTemplate myRestTemplate = new RestTemplate();
 		ExecuteServiceData data = executeJob.data;

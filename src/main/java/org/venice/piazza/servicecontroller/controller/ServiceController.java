@@ -410,9 +410,8 @@ public class ServiceController {
 		htmlMessage = htmlMessage + "<BODY><BR> Welcome from the Piazza Service Controller. "
 				+ "<BR>For details on running and using the ServiceController, " + "<BR>see The Piazza Developer's Guide<A> for details."
 				+ "<BODY></HTML>";
-		ResponseEntity<String> response = new ResponseEntity<>(htmlMessage, responseHeaders, HttpStatus.OK);
 
-		return response;
+		return new ResponseEntity<>(htmlMessage, responseHeaders, HttpStatus.OK);
 	}
 
 	/**

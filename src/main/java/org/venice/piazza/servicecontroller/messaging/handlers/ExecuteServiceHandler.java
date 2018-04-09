@@ -307,9 +307,11 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 	/**
 	 * Processes the Result of the external Service execution. This will send the Ingest job through the message bus, and will
 	 * return the Result of the data.
+	 *
+	 * @throws JsonProcessingException
 	 */
 	public DataResult processExecutionResult(Service service, String outputType, String status, ResponseEntity<String> handleResult,
-			String dataId) throws JsonProcessingException, IOException, InterruptedException {
+			String dataId) throws IOException, InterruptedException {
 		logger.log("Send Execute Status Message", Severity.DEBUG);
 		// Initialize ingest job items
 		DataResource data = new DataResource();
@@ -386,8 +388,7 @@ public class ExecuteServiceHandler implements PiazzaJobHandler {
 					data.getDataType().getClass().getSimpleName()), Severity.INFORMATIONAL);
 
 			// Return the Result of the Data.
-			DataResult textResult = new DataResult(data.dataId);
-			return textResult;
+			return new DataResult(data.dataId);
 		}
 
 		return null;

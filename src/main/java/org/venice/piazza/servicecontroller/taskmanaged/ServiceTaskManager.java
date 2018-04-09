@@ -214,9 +214,10 @@ public class ServiceTaskManager {
 	 *            The ID of the Service whose Queue to pull a Job from
 	 * @return The Job information
 	 * @throws ResourceAccessException
+     * @throws InterruptedException
 	 */
 	public ExecuteServiceJob getNextJobFromQueue(String serviceId)
-			throws InterruptedException, InvalidInputException {
+			throws InvalidInputException {
 		// Pull the Job off of the queue.
 		ServiceJob serviceJob = accessor.getNextJobInServiceQueue(serviceId);
 

@@ -145,7 +145,7 @@ public class DatabaseAccessor {
 	 */
 	public List<Service> list() {
 		Iterable<ServiceEntity> results = serviceDao.getAllAvailableServices();
-		List<Service> services = new ArrayList<Service>();
+		List<Service> services = new ArrayList<>();
 		for (ServiceEntity serviceEntity : results) {
 			services.add(serviceEntity.getService());
 		}
@@ -174,7 +174,7 @@ public class DatabaseAccessor {
 		}
 
 		// Collect the Jobs
-		List<Service> services = new ArrayList<Service>();
+		List<Service> services = new ArrayList<>();
 		for (ServiceEntity serviceEntity : results) {
 			services.add(serviceEntity.getService());
 		}
@@ -258,7 +258,7 @@ public class DatabaseAccessor {
 	public List<AsyncServiceInstance> getStaleServiceInstances() {
 		long thresholdEpoch = new DateTime().minusSeconds(STALE_INSTANCE_THRESHOLD_SECONDS).getMillis();
 		Iterable<AsyncServiceInstanceEntity> results = asyncServiceInstanceDao.getStaleServiceInstances(thresholdEpoch);
-		List<AsyncServiceInstance> instances = new ArrayList<AsyncServiceInstance>();
+		List<AsyncServiceInstance> instances = new ArrayList<>();
 		for (AsyncServiceInstanceEntity result : results) {
 			instances.add(result.getAsyncServiceInstance());
 		}
@@ -272,7 +272,7 @@ public class DatabaseAccessor {
 	 */
 	public List<Service> getTaskManagedServices() {
 		Iterable<ServiceEntity> results = serviceDao.getAllTaskManagedServices();
-		List<Service> services = new ArrayList<Service>();
+		List<Service> services = new ArrayList<>();
 		for (ServiceEntity result : results) {
 			services.add(result.getService());
 		}
@@ -317,13 +317,13 @@ public class DatabaseAccessor {
 		Long timeout = service.getTimeout();
 		if (timeout == null) {
 			// If no timeout is specified for the Service, then we can't check for timeouts.
-			return new ArrayList<ServiceJob>();
+			return new ArrayList<>();
 		}
 		// The timeout is in seconds. Get the current time and subtract the number of seconds to find the timestamp of a
 		// timed out service.
 		long timeoutEpoch = new DateTime().minusSeconds(timeout.intValue()).getMillis();
 		Iterable<ServiceJobEntity> results = serviceJobDao.getTimedOutServiceJobs(serviceId, timeoutEpoch);
-		List<ServiceJob> serviceJobs = new ArrayList<ServiceJob>();
+		List<ServiceJob> serviceJobs = new ArrayList<>();
 		for (ServiceJobEntity entity : results) {
 			serviceJobs.add(entity.getServiceJob());
 		}

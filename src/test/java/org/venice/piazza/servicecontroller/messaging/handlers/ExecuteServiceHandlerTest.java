@@ -148,7 +148,7 @@ public class ExecuteServiceHandlerTest {
 		ResponseEntity<String> result = esMock.handle(job);
 
 		assertEquals("The response entity was correct for this describe request", responseEntity, result);
-		assertEquals("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
+		assertEquals("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
 		assertEquals("The body of the response is correct", responseEntity.getBody(), responseServiceString);
 	}
 	
@@ -162,7 +162,7 @@ public class ExecuteServiceHandlerTest {
 		ExecuteServiceJob job = null;
 
 		ResponseEntity<String> result = executeServiceHandler.handle(job);
-		assertEquals("The response code is 404", result.getStatusCode(), HttpStatus.BAD_REQUEST);
+		assertEquals("The response code is 404", HttpStatus.BAD_REQUEST, result.getStatusCode());
 
 	}
 	
@@ -194,7 +194,7 @@ public class ExecuteServiceHandlerTest {
 		ResponseEntity<String> retVal = executeServiceHandler.handle(edata);
 		System.out.println(retVal);
 
-		assertEquals(retVal.getStatusCode(), HttpStatus.BAD_REQUEST);
+		assertEquals(HttpStatus.BAD_REQUEST, retVal.getStatusCode());
 		assertTrue("The proper message was returned", retVal.getBody().contains("Body mime type not specified"));
 
 	}
@@ -329,7 +329,7 @@ public class ExecuteServiceHandlerTest {
 			Mockito.when(omMock.writeValueAsString(postObjects)).thenThrow(new JsonMappingException("Test Exception"));
 			ResponseEntity<String> retVal = esMock.handle(edata);
 
-			assertEquals("The response code is 400 for BAD_REQUEST", retVal.getStatusCode(), HttpStatus.BAD_REQUEST);
+			assertEquals("The response code is 400 for BAD_REQUEST", HttpStatus.BAD_REQUEST, retVal.getStatusCode());
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
 		} catch (Exception ex) {

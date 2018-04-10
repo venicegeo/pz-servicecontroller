@@ -133,7 +133,7 @@ public class ListServiceHandlerTest {
 			ResponseEntity<String> result = lsMock.handle(job);
 		
 			assertEquals ("The response entity was correct for this describe request", responseEntity, result);
-			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
+			assertEquals ("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
 			assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
 
 
@@ -157,7 +157,7 @@ public class ListServiceHandlerTest {
 		Mockito.doReturn(responseEntity).when(lsMock).handle();				
 		ResponseEntity<String> result = lsMock.handle(job);
 	
-		assertEquals ("The status code should be HttpStatus.NOT_FOUND.", result.getStatusCode(), HttpStatus.NOT_FOUND);
+		assertEquals ("The status code should be HttpStatus.NOT_FOUND.", HttpStatus.NOT_FOUND, result.getStatusCode());
 
 	}
 	
@@ -176,7 +176,7 @@ public class ListServiceHandlerTest {
 			ResponseEntity<String> result = lsHandler.handle();
 		
 			assertEquals ("The response entity was correct for this list services request", responseEntity, result);
-			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
+			assertEquals ("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
 			assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
 
 
@@ -203,7 +203,7 @@ public class ListServiceHandlerTest {
 			ResponseEntity<String> result = lsHandler.handle();
 		
 			assertEquals ("The response entity was correct for this list services request", responseEntity, result);
-			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
+			assertEquals ("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
 			assertEquals ("The body of the response is correct with empty list", responseEntity.getBody(), responseServiceString);
 
 		} catch (JsonProcessingException jpe) {
@@ -230,8 +230,8 @@ public class ListServiceHandlerTest {
 
 			
 			assertEquals ("The response entity was correct for this list service request", responseEntity, result);
-			assertEquals ("The response code is 404", responseEntity.getStatusCode(), HttpStatus.NOT_FOUND);
-			assertEquals ("The body of the response is correct", responseEntity.getBody(),  "Could not retrieve a list of user services");
+			assertEquals ("The response code is 404", HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+			assertEquals ("The body of the response is correct", "Could not retrieve a list of user services", responseEntity.getBody());
 		} catch (JsonProcessingException jpe) {
 			jpe.printStackTrace();
 		} catch (Exception ex) {

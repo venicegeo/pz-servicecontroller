@@ -93,7 +93,7 @@ public class UpdateServiceHandlerTest {
 	public void testHandleJobRequestNull() {
 		PiazzaJobType jobRequest = null;
 		ResponseEntity<String> result = usHandler.handle(jobRequest);
-        assertEquals("The response to a null JobRequest update should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
+        assertEquals("The response to a null JobRequest update should be null", HttpStatus.BAD_REQUEST, result.getStatusCode());
 	}
 	
 	
@@ -155,7 +155,7 @@ public class UpdateServiceHandlerTest {
 	public void testHandleNullService() {
 		Service testService = null;
 		String result = usHandler.handle(testService);
-        assertEquals("The response string should be empty", result.length(), 0);
+        assertEquals("The response string should be empty", 0, result.length());
 	}
 	
 	

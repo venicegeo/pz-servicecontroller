@@ -82,7 +82,7 @@ public class RegisterServiceHandlerTest {
 	public void testHandleJobRequestNull() {
 		PiazzaJobType jobRequest = null;
 		ResponseEntity<String> result = rsHandler.handle(jobRequest);
-        assertEquals("The response to a null JobRequest update should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
+        assertEquals("The response to a null JobRequest update should be null", HttpStatus.BAD_REQUEST, result.getStatusCode());
 	}
 
 	/**
@@ -106,7 +106,7 @@ public class RegisterServiceHandlerTest {
 		ResponseEntity<String> result = rshMock.handle(job);
 	
 		assertEquals ("The response entity was correct for this registration", responseEntity, result);
-		assertEquals ("The status code should be 200", responseEntity.getStatusCode(), HttpStatus.OK);
+		assertEquals ("The status code should be 200", HttpStatus.OK, responseEntity.getStatusCode());
 		assertEquals ("The body of the response entity is correct", responseEntity.getBody(), responseString);
 
 
@@ -128,7 +128,7 @@ public class RegisterServiceHandlerTest {
 		
 		ResponseEntity<String> result = rsMock.handle(job);
 	
-		assertEquals ("The status code should be HttpStatus.UNPROCESSABLE_ENTITY.", result.getStatusCode(), HttpStatus.UNPROCESSABLE_ENTITY);
+		assertEquals ("The status code should be HttpStatus.UNPROCESSABLE_ENTITY.", HttpStatus.UNPROCESSABLE_ENTITY, result.getStatusCode());
 
 	}
 	
@@ -140,7 +140,7 @@ public class RegisterServiceHandlerTest {
 	public void testHandleNullService() {
 		Service testService = null;
 		String result = rsHandler.handle(testService);
-        assertEquals("The serviceId string returned should be empty", result.length(), 0);
+        assertEquals("The serviceId string returned should be empty", 0, result.length());
 	}
 	
 	/**
@@ -166,7 +166,7 @@ public class RegisterServiceHandlerTest {
 		Mockito.when(uuidFactoryMock.getUUID()).thenReturn(testServiceId);
 		Mockito.doReturn("").when(accessorMock).save(service);
 		String result = rsHandler.handle(service);
-        assertEquals("The serviceId string returned should be empty", result.length(), 0);
+        assertEquals("The serviceId string returned should be empty", 0, result.length());
 
 	}
 }

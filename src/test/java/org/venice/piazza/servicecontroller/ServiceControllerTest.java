@@ -333,7 +333,7 @@ public class ServiceControllerTest {
         Mockito.doThrow(new InterruptedException("An error occured")).when(esHandlerMock).handle(edata);
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);
-        assertEquals("The response should be a null", retVal, null);
+        assertEquals("The response should be a null", null, retVal);
 	}
 	
 	@Test
@@ -388,7 +388,7 @@ public class ServiceControllerTest {
 				+ "<BODY></HTML>";
 		
 		ResponseEntity<String> result = sc.healthCheck();
-        assertEquals("The response should be 200", result.getStatusCode(), HttpStatus.OK);
+        assertEquals("The response should be 200", HttpStatus.OK, result.getStatusCode());
         assertTrue("The response contains the appropriate message", result.getBody().contains(htmlMessage));
 	}
 

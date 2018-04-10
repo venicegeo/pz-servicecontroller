@@ -68,7 +68,7 @@ public class AsyncSchedulerTest {
 		scheduler.startPolling();
 
 		// Wait a couple of seconds on the main thread, then cancel.
-		Thread.sleep(1000);
+		Thread.sleep(1000); //NOSONAR
 		scheduler.stopPolling();
 	}
 

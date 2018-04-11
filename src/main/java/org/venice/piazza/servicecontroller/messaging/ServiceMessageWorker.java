@@ -102,9 +102,6 @@ ServiceMessageWorker {
 	@Qualifier("UpdateJobsQueue")
 	private Queue updateJobsQueue;
 	@Autowired
-	@Qualifier("RequestJobQueue")
-	private Queue requestJobQueue;
-	@Autowired
 	private RabbitTemplate rabbitTemplate;
 
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceMessageWorker.class);

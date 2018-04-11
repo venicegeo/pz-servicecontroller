@@ -22,7 +22,6 @@ import model.job.PiazzaJobType;
 import model.job.type.DeleteServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
-import model.service.metadata.Service;
 import util.PiazzaLogger;
 
 import org.slf4j.Logger;

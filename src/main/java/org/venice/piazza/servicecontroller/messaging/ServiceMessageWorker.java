@@ -338,7 +338,7 @@ ServiceMessageWorker {
 		checkThreadInterrupted();
 
 		if (externalServiceResponse != null && externalServiceResponse.getStatusCode() != HttpStatus.OK) {
-			sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse, new Integer(externalServiceResponse.getStatusCode().value()),
+			sendErrorStatus(StatusUpdate.STATUS_FAIL, externalServiceResponse, externalServiceResponse.getStatusCode().value(),
 					job.getJobId());
 		}
 

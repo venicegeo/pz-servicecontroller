@@ -29,8 +29,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class CoreServiceProperties {
 
-	private String appname;
-
 	@Value("${server.port}")
 	private int serverPort;
 	@Value("${servicecontroller.host}")
@@ -39,14 +37,6 @@ public class CoreServiceProperties {
 	private String port;
 	@Value("${SPACE}")
 	private String space;
-
-	public String getAppname() {
-		return appname;
-	}
-
-	public void setAppname(String appname) {
-		this.appname = appname;
-	}
 
 	public String getHost() {
 		return host;

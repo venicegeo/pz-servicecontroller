@@ -182,9 +182,6 @@ ServiceMessageWorker {
 		if ((service.getIsAsynchronous() != null) && (service.getIsAsynchronous().booleanValue())) {
 			// Perform Asynchronous Logic
 			asynchronousServiceWorker.executeService(jobItem);
-			// Return null. This future will not be tracked by the Service Thread Manager.
-			// TODO: Once we can simplify/isolate some of the logic, I'd like to get to a spot where
-			// we don't have to scatter return statements throughout this method.
 			callback.onComplete(consumerRecordKey);
 			return true;
 		} else if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged().booleanValue())) {

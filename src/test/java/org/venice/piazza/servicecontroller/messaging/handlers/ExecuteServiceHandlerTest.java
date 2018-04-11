@@ -21,11 +21,19 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 
+import model.data.DataResource;
+import model.data.type.GeoJsonDataType;
+import model.logger.Severity;
+import model.status.StatusUpdate;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -33,8 +41,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 import org.venice.piazza.servicecontroller.messaging.handlers.ExecuteServiceHandler;
@@ -52,6 +62,7 @@ import model.job.type.ExecuteServiceJob;
 import model.service.metadata.ExecuteServiceData;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
+import util.UUIDFactory;
 
 /**
  * Testing the ExecuteServiceHandler
@@ -71,7 +82,12 @@ public class ExecuteServiceHandlerTest {
 	@Mock
 	private Service serviceMock;
 	@Mock
-	private ObjectMapper omMock;
+	private RabbitTemplate rabbitTemplate;
+	@Mock
+	private org.springframework.amqp.core.Queue jobQueue;
+
+	private UUIDFactory uuidFactory = new UUIDFactory();
+	private ObjectMapper objectMapper = new ObjectMapper();
 	
 	ResourceMetadata rm = null;
 	Service service = null;
@@ -120,7 +136,10 @@ public class ExecuteServiceHandlerTest {
 		movieService.setResourceMetadata(rm);
 		movieService.setServiceId("a842aae2-bd74-4c4b-9a65-c45e8cd9060f");
 		movieService.setUrl("http://localhost:8087/jumpstart/moviequotewelcome");
-		MockitoAnnotations.initMocks(this);	
+		MockitoAnnotations.initMocks(this);
+
+		ReflectionTestUtils.setField(this.executeServiceHandler, "uuidFactory", this.uuidFactory);
+		ReflectionTestUtils.setField(this.executeServiceHandler, "requestJobQueue", this.jobQueue);
     }
 	
 	/**
@@ -325,15 +344,66 @@ public class ExecuteServiceHandlerTest {
 			postObjects.put("name", tdt);
 			Mockito.when(serviceMock.getUrl()).thenReturn(uri.toString());
 			Mockito.when(accessorMock.getServiceById("8")).thenReturn(service);
-			Mockito.doReturn(omMock).when(esMock).makeObjectMapper();
-			Mockito.when(omMock.writeValueAsString(postObjects)).thenThrow(new JsonMappingException("Test Exception"));
+			Mockito.doReturn(this.objectMapper).when(esMock).makeObjectMapper();
+			//Mockito.when(omMock.writeValueAsString(postObjects)).thenThrow(new JsonMappingException("Test Exception"));
 			ResponseEntity<String> retVal = esMock.handle(edata);
 
 			assertEquals("The response code is 400 for BAD_REQUEST", HttpStatus.BAD_REQUEST, retVal.getStatusCode());
-		} catch (JsonProcessingException jpe) {
-			jpe.printStackTrace();
+//		} catch (JsonProcessingException jpe) {
+//			jpe.printStackTrace();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	@Test
+	public void testProcessExecutionResult() throws InterruptedException, IOException {
+
+		DataResource da = new DataResource();
+		da.dataId = "dr_id";
+
+		String responseServiceString = this.objectMapper.writeValueAsString(da);
+		ResponseEntity<String> validResponse = new ResponseEntity<String>(responseServiceString, HttpStatus.OK);
+		ResponseEntity<String> nullResponse = new ResponseEntity<String>("null", HttpStatus.OK);
+
+
+
+		this.executeServiceHandler.processExecutionResult(
+				this.service, (new TextDataType()).getClass().getSimpleName(), StatusUpdate.STATUS_SUCCESS,
+				validResponse, "dataId"
+				);
+
+		//Null object
+		this.executeServiceHandler.processExecutionResult(
+				this.service, (new TextDataType()).getClass().getSimpleName(), StatusUpdate.STATUS_SUCCESS,
+				nullResponse, "dataId"
+		);
+
+		//Force an unlikely null pointer.
+		Mockito.doThrow(RuntimeException.class).when(this.loggerMock).log(Mockito.startsWith("The DataResource is not"), Mockito.any());
+		this.executeServiceHandler.processExecutionResult(
+				this.service, (new TextDataType()).getClass().getSimpleName(), StatusUpdate.STATUS_SUCCESS,
+				nullResponse, "dataId"
+		);
+
+		//Force an exception with a non-null data object.
+		Mockito.doThrow(RuntimeException.class).when(this.loggerMock).log(Mockito.startsWith("The data being sent"), Mockito.any());
+		this.executeServiceHandler.processExecutionResult(
+				this.service, (new TextDataType()).getClass().getSimpleName(), StatusUpdate.STATUS_SUCCESS,
+				validResponse, "dataId"
+		);
+
+		//Force an exception with a non-null data object.
+		Mockito.doThrow(RuntimeException.class).when(this.loggerMock).log(Mockito.startsWith("The data being sent"), Mockito.any());
+		this.executeServiceHandler.processExecutionResult(
+				this.service, (new GeoJsonDataType()).getClass().getSimpleName(), StatusUpdate.STATUS_SUCCESS,
+				validResponse, "dataId"
+		);
+
+		//Null response entity.
+		this.executeServiceHandler.processExecutionResult(
+				this.service, (new TextDataType()).getClass().getSimpleName(), StatusUpdate.STATUS_SUCCESS,
+				null, "dataId"
+		);
 	}
 }

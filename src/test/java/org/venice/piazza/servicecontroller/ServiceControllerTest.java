@@ -179,10 +179,12 @@ public class ServiceControllerTest {
 	 */
 	public void testGetServiceInfoWithNull() {
         Mockito.doThrow(new ResourceAccessException("Service not found.")).when(accessorMock).getServiceById(null);
+        Mockito.when(this.accessorMock.getServiceById("unknownException")).thenThrow(Exception.class);
 
 		PiazzaResponse piazzaResponse = sc.getServiceInfo(null).getBody();
-		
 		assertThat("ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
+
+		ResponseEntity<PiazzaResponse> unknownExceptionResponse = sc.getServiceInfo("unknownException");
 	}
 	
 	@Test

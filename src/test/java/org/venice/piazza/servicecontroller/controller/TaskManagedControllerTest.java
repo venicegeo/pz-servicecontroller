@@ -5,13 +5,14 @@ import model.job.type.ExecuteServiceJob;
 import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import model.status.StatusUpdate;
-import org.apache.catalina.Server;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.ResourceAccessException;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
@@ -41,7 +42,7 @@ public class TaskManagedControllerTest {
     }
 
     @Test
-    public void testGetNextServiceJobFromQueue() throws InvalidInputException{
+    public void testGetNextServiceJobFromQueue() throws InvalidInputException {
         Mockito.when(this.databaseAccessor.canUserAccessServiceQueue(Mockito.any(), Mockito.eq("my_username")))
                 .thenReturn(true);
         Mockito.when(this.serviceTaskManager.getNextJobFromQueue("my_service_id"))
@@ -52,17 +53,12 @@ public class TaskManagedControllerTest {
                 .thenThrow(InvalidInputException.class);
         Mockito.when(this.serviceTaskManager.getNextJobFromQueue("unknownException_id"))
                 .thenThrow(Exception.class);
-
-
-        ResponseEntity<PiazzaResponse> responseUnauthorized = this.controller.getNextServiceJobFromQueue("an_invalid_user", "my_service_id");
-
-        ResponseEntity<PiazzaResponse> responseValid = this.controller.getNextServiceJobFromQueue("my_username", "my_service_id");
-
-        ResponseEntity<PiazzaResponse> responseNull = this.controller.getNextServiceJobFromQueue("my_username", "null_service_id");
-
-        ResponseEntity<PiazzaResponse> responseInvalidInput = this.controller.getNextServiceJobFromQueue("my_username", "invalidInputException_id");
-
-        ResponseEntity<PiazzaResponse> responseUnknownError = this.controller.getNextServiceJobFromQueue("my_username", "unknownException_id");
+        
+        Assert.assertEquals(HttpStatus.UNAUTHORIZED, this.controller.getNextServiceJobFromQueue("an_invalid_user", "my_service_id").getStatusCode());
+        Assert.assertEquals(HttpStatus.OK, this.controller.getNextServiceJobFromQueue("my_username", "my_service_id").getStatusCode());
+        Assert.assertEquals(HttpStatus.OK, this.controller.getNextServiceJobFromQueue("my_username", "null_service_id").getStatusCode());
+        Assert.assertEquals(HttpStatus.NOT_FOUND, this.controller.getNextServiceJobFromQueue("my_username", "invalidInputException_id").getStatusCode());
+        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, this.controller.getNextServiceJobFromQueue("my_username", "unknownException_id").getStatusCode());
     }
 
     @Test
@@ -83,15 +79,11 @@ public class TaskManagedControllerTest {
         Mockito.when(this.databaseAccessor.canUserAccessServiceQueue(Mockito.eq("unknownEx"), Mockito.anyString()))
                 .thenThrow(Exception.class);
 
-        ResponseEntity<PiazzaResponse> responseUnathorized = this.controller.updateServiceJobStatus("an_invalid_user", "my_service_id", "my_job_id", statusUpdate);
-
-        ResponseEntity<PiazzaResponse> responseValid = this.controller.updateServiceJobStatus("my_username", "my_service_id", "my_job_id", statusUpdate);
-
-        ResponseEntity<PiazzaResponse> responseBadStatus = this.controller.updateServiceJobStatus("my_username", "my_service_id", "my_job_id", badStatusUpdate);
-
-        ResponseEntity<PiazzaResponse> responseInvalidInput = this.controller.updateServiceJobStatus("my_username", "invalidInputEx", "my_job_id", statusUpdate);
-
-        ResponseEntity<PiazzaResponse> responseUnknownEx = this.controller.updateServiceJobStatus("my_username", "unknownEx", "my_job_id", statusUpdate);
+        Assert.assertEquals(HttpStatus.UNAUTHORIZED, this.controller.updateServiceJobStatus("an_invalid_user", "my_service_id", "my_job_id", statusUpdate).getStatusCode());
+        Assert.assertEquals(HttpStatus.OK, this.controller.updateServiceJobStatus("my_username", "my_service_id", "my_job_id", statusUpdate).getStatusCode());
+        Assert.assertEquals(HttpStatus.BAD_REQUEST, this.controller.updateServiceJobStatus("my_username", "my_service_id", "my_job_id", badStatusUpdate).getStatusCode());
+        Assert.assertEquals(HttpStatus.NOT_FOUND, this.controller.updateServiceJobStatus("my_username", "invalidInputEx", "my_job_id", statusUpdate).getStatusCode());
+        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, this.controller.updateServiceJobStatus("my_username", "unknownEx", "my_job_id", statusUpdate).getStatusCode());
     }
 
     @Test
@@ -108,13 +100,10 @@ public class TaskManagedControllerTest {
         Mockito.when(this.databaseAccessor.getServiceById("unmanagedService")).thenReturn(unmanagedService);
         Mockito.when(this.databaseAccessor.getServiceById("unknownException")).thenThrow(Exception.class);
 
-        ResponseEntity responseNoAccess = this.controller.getServiceQueueData("an_invalid_user", "my_service_id");
-
-        ResponseEntity respUnmanaged = this.controller.getServiceQueueData("my_username", "unmanagedService");
-
-        ResponseEntity respManaged = this.controller.getServiceQueueData("my_username", "my_service_id");
-
-        ResponseEntity responseUnknownEx = this.controller.getServiceQueueData("my_username", "unknownException");
+        Assert.assertEquals(HttpStatus.UNAUTHORIZED, this.controller.getServiceQueueData("an_invalid_user", "my_service_id").getStatusCode());
+        Assert.assertEquals(HttpStatus.NOT_FOUND, this.controller.getServiceQueueData("my_username", "unmanagedService").getStatusCode());
+        Assert.assertEquals(HttpStatus.OK, this.controller.getServiceQueueData("my_username", "my_service_id").getStatusCode());
+        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, this.controller.getServiceQueueData("my_username", "unknownException").getStatusCode());
     }
 
 }

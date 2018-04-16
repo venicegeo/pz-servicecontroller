@@ -4,11 +4,11 @@ import exception.InvalidInputException;
 import model.job.Job;
 import model.job.metadata.ResourceMetadata;
 import model.response.Pagination;
-import model.response.PiazzaResponse;
 import model.service.async.AsyncServiceInstance;
 import model.service.metadata.Service;
 import model.service.taskmanaged.ServiceJob;
 import org.assertj.core.api.Fail;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -31,7 +31,6 @@ import util.PiazzaLogger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class DatabaseAccessorTest {
 
@@ -84,7 +83,6 @@ public class DatabaseAccessorTest {
     public void testDelete() {
         this.accessor.delete(this.serviceEntity.getService().getServiceId(), false);
         this.accessor.delete(this.serviceEntity.getService().getServiceId(), true);
-        System.out.println();
     }
 
     @Test
@@ -93,6 +91,7 @@ public class DatabaseAccessorTest {
         myService.setServiceId("my_service_id");
 
         this.accessor.save(myService);
+        Mockito.verify(this.serviceDao, Mockito.times(1)).save(Mockito.any(ServiceEntity.class));
     }
 
     @Test
@@ -104,6 +103,7 @@ public class DatabaseAccessorTest {
 
         String resultServiceId = this.accessor.updateService(newService);
 
+        Mockito.verify(this.serviceDao, Mockito.times(1)).save(Mockito.any(ServiceEntity.class));
     }
 
     @Test
@@ -111,6 +111,8 @@ public class DatabaseAccessorTest {
         Mockito.when(this.serviceDao.getAllAvailableServices()).thenReturn(Collections.singletonList(this.serviceEntity));
 
         List<Service> services = this.accessor.list();
+
+        Assert.assertEquals(1, services.size());
     }
 
     @Test
@@ -135,10 +137,10 @@ public class DatabaseAccessorTest {
         Mockito.when(this.serviceDao.getServiceList(Mockito.any(Pagination.class)))
                 .thenReturn(userAndKeywordPage);
 
-        PiazzaResponse responseUserAndKeyword = this.accessor.getServices(1, 25, "asc", "id", "my_keyword", "my_username");
-        PiazzaResponse responseUsername = this.accessor.getServices(1, 25, "asc", "id", "", "my_username");
-        PiazzaResponse responseKeyword = this.accessor.getServices(1, 25, "asc", "id", "my_keyword", "");
-        PiazzaResponse responseAll = this.accessor.getServices(1, 25, "asc", "id", "", "");
+        Assert.assertNotNull(this.accessor.getServices(1, 25, "asc", "id", "my_keyword", "my_username"));
+        Assert.assertNotNull(this.accessor.getServices(1, 25, "asc", "id", "", "my_username"));
+        Assert.assertNotNull(this.accessor.getServices(1, 25, "asc", "id", "my_keyword", ""));
+        Assert.assertNotNull(this.accessor.getServices(1, 25, "asc", "id", "", ""));
 
     }
 
@@ -147,22 +149,25 @@ public class DatabaseAccessorTest {
         Service resultService = this.accessor.getServiceById(this.serviceEntity.getService().getServiceId());
 
         try {
+            //Generate an exception by providing an invalid id.
             this.accessor.getServiceById("an_invalid_id");
             org.assertj.core.api.Fail.fail("Expected a runtime exception.");
         } catch (ResourceAccessException ex) {
-            System.out.println(ex);
+            //This is expected.
         }
     }
 
     @Test
     public void testAddAsyncServiceInstance() {
+
         this.accessor.addAsyncServiceInstance(new AsyncServiceInstance());
+        Mockito.verify(this.asyncServiceInstanceDao, Mockito.times(1)).save(Mockito.any(AsyncServiceInstanceEntity.class));
     }
 
     @Test
     public void testGetInstanceByJobId() {
-        this.accessor.getInstanceByJobId(this.asyncServiceInstance.getJobId());
-        this.accessor.getInstanceByJobId("an_invalid_id");
+        Assert.assertNotNull(this.accessor.getInstanceByJobId(this.asyncServiceInstance.getJobId()));
+        Assert.assertNull(this.accessor.getInstanceByJobId("an_invalid_id"));
     }
 
     @Test
@@ -171,11 +176,15 @@ public class DatabaseAccessorTest {
         newInstance.setJobId(this.asyncServiceInstance.getJobId());
 
         this.accessor.updateAsyncServiceInstance(newInstance);
+
+        Mockito.verify(this.asyncServiceInstanceDao, Mockito.times(1)).save(Mockito.any(AsyncServiceInstanceEntity.class));
     }
 
     @Test
     public void testDeleteAsyncServiceInstance() {
         this.accessor.deleteAsyncServiceInstance(this.asyncServiceInstance.getJobId());
+
+        Mockito.verify(this.asyncServiceInstanceDao, Mockito.times(1)).delete(Mockito.any(AsyncServiceInstanceEntity.class));
     }
 
     @Test
@@ -184,6 +193,8 @@ public class DatabaseAccessorTest {
                 .thenReturn(Collections.singletonList(this.asyncServiceInstanceEntity));
 
         List<AsyncServiceInstance> resultList = this.accessor.getStaleServiceInstances();
+
+        Assert.assertEquals(1, resultList.size());
     }
 
     @Test
@@ -192,6 +203,8 @@ public class DatabaseAccessorTest {
                 .thenReturn(Collections.singletonList(this.serviceEntity));
 
         List<Service> resultServices = this.accessor.getTaskManagedServices();
+
+        Assert.assertEquals(1, resultServices.size());
     }
 
     @Test
@@ -203,8 +216,8 @@ public class DatabaseAccessorTest {
         Mockito.when(this.serviceJobDao.getNextJobInServiceQueue(serviceJobEntity.getServiceId()))
                 .thenReturn(serviceJobEntity);
 
-        this.accessor.getNextJobInServiceQueue(serviceJobEntity.getServiceId());
-        this.accessor.getNextJobInServiceQueue("an_invalid_service");
+        Assert.assertEquals(serviceJobEntity.getServiceJob().getJobId(), this.accessor.getNextJobInServiceQueue(serviceJobEntity.getServiceId()).getJobId());
+        Assert.assertNull(this.accessor.getNextJobInServiceQueue("an_invalid_service"));
     }
 
     @Test
@@ -218,9 +231,11 @@ public class DatabaseAccessorTest {
 
         this.service.setTimeout(1000L);
         List<ServiceJob> results = this.accessor.getTimedOutServiceJobs("my_service_id");
+        Assert.assertEquals(1, results.size());
 
         this.service.setTimeout(null);
         List<ServiceJob> nullResults = this.accessor.getTimedOutServiceJobs("my_service_id");
+        Assert.assertEquals(0, nullResults.size());
     }
 
     @Test
@@ -232,8 +247,8 @@ public class DatabaseAccessorTest {
         Mockito.when(this.serviceJobDao.getServiceJobByServiceAndJobId("my_service_id", "my_job_id"))
                 .thenReturn(serviceJobEntity);
 
-        ServiceJob serviceJob = this.accessor.getServiceJob("my_service_id", "my_job_id");
-        ServiceJob nullJob = this.accessor.getServiceJob("an_invalid_id", "my_job_id");
+        Assert.assertNotNull(this.accessor.getServiceJob("my_service_id", "my_job_id"));
+        Assert.assertNull(this.accessor.getServiceJob("an_invalid_id", "my_job_id"));
     }
 
     @Test
@@ -251,11 +266,15 @@ public class DatabaseAccessorTest {
                 .thenReturn(serviceJobEntity);
 
         this.accessor.incrementServiceJobTimeout(serviceJobEntity.getServiceId(), otherServiceJob);
+
+        Assert.assertEquals(1L, (long)serviceJobEntity.getServiceJob().getTimeouts());
     }
 
     @Test
-    public void testAddJobToServiceQueue() {
+    public void testAddJobToServiceQueue()
+    {
         this.accessor.addJobToServiceQueue("my_service_id", new ServiceJob());
+        Mockito.verify(this.serviceJobDao, Mockito.times(1)).save(Mockito.any(ServiceJobEntity.class));
     }
 
     @Test
@@ -268,32 +287,35 @@ public class DatabaseAccessorTest {
                 .thenReturn(serviceJobEntity);
 
         this.accessor.removeJobFromServiceQueue("my_service_id", "my_job_id");
+        Mockito.verify(this.serviceJobDao, Mockito.times(1)).delete(Mockito.any(ServiceJobEntity.class));
+
         this.accessor.removeJobFromServiceQueue("invalid_service_id", "my_job_id");
+        Mockito.verify(this.serviceJobDao, Mockito.times(1)).delete(Mockito.any(ServiceJobEntity.class));
     }
 
     @Test
     public void testGetJobById() {
-        Job job = this.accessor.getJobById(this.job.getJobId());
-        Job nullJob = this.accessor.getJobById("invalid_job_id");
+        Assert.assertNotNull(this.accessor.getJobById(this.job.getJobId()));
+        Assert.assertNull(this.accessor.getJobById("invalid_job_id"));
     }
 
     @Test
     public void testCanUserAccessServiceQueue() throws InvalidInputException {
 
         this.service.setTaskAdministrators(null);
-        boolean canAccess1 = this.accessor.canUserAccessServiceQueue("my_service_id", "my_username");
+        Assert.assertFalse(this.accessor.canUserAccessServiceQueue("my_service_id", "my_username"));
         this.service.setTaskAdministrators(new ArrayList<>());
         this.service.getTaskAdministrators().add("another_user");
-        boolean canAccess2 = this.accessor.canUserAccessServiceQueue("my_service_id", "my_username");
+        Assert.assertFalse(this.accessor.canUserAccessServiceQueue("my_service_id", "my_username"));
         this.service.getTaskAdministrators().add("my_username");
-        boolean canAccess3 = this.accessor.canUserAccessServiceQueue("my_service_id", "my_username");
+        Assert.assertTrue(this.accessor.canUserAccessServiceQueue("my_service_id", "my_username"));
 
         try {
             Mockito.when(this.serviceDao.getServiceById(Mockito.anyString())).thenThrow(ResourceAccessException.class);
             this.accessor.canUserAccessServiceQueue("m_service_id", "my_username");
             Fail.fail("Expected an exception.");
         } catch (InvalidInputException ex) {
-
+            //Good
         }
     }
 
@@ -302,7 +324,7 @@ public class DatabaseAccessorTest {
         Mockito.when(this.serviceJobDao.getServiceJobCountForService("my_service_id"))
                 .thenReturn(4L);
 
-        Map<String, Object> map1 = this.accessor.getServiceQueueCollectionMetadata("invalid_service");
-        Map<String, Object> map2 = this.accessor.getServiceQueueCollectionMetadata("my_service_id");
+        Assert.assertEquals(0L, (long)this.accessor.getServiceQueueCollectionMetadata("invalid_service").get("totalJobCount"));
+        Assert.assertEquals(4L, (long)this.accessor.getServiceQueueCollectionMetadata("my_service_id").get("totalJobCount"));
     }
 }

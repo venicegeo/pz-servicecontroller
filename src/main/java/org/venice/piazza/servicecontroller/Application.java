@@ -21,7 +21,6 @@ import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.protocol.HTTP;
@@ -77,7 +76,7 @@ public class Application extends SpringBootServletInitializer {
 	@Value("${http.request.timeout}")
 	private int httpRequestTimeout;
 	@Value("${SPACE}")
-	private String SPACE;
+	private String SPACE; //NOSONAR
 
 	private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
@@ -91,9 +90,7 @@ public class Application extends SpringBootServletInitializer {
 	public RestTemplate restTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
 		HttpClient httpClient = HttpClientBuilder.create().setMaxConnTotal(httpMaxTotal).setMaxConnPerRoute(httpMaxRoute)
-				.setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
-					@Override
-					public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
+				.setKeepAliveStrategy((HttpResponse response, HttpContext context) -> {
 						HeaderElementIterator it = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE));
 						while (it.hasNext()) {
 							HeaderElement headerElement = it.nextElement();
@@ -103,9 +100,9 @@ public class Application extends SpringBootServletInitializer {
 								return Long.parseLong(value) * 1000;
 							}
 						}
-						return 5 * 1000;
+						return 5 * 1000L;
 					}
-				}).build();
+				).build();
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
 		factory.setReadTimeout(httpRequestTimeout * 1000);
 		factory.setConnectTimeout(httpRequestTimeout * 1000);
@@ -118,12 +115,11 @@ public class Application extends SpringBootServletInitializer {
 		ApplicationContext ctx = SpringApplication.run(Application.class, args); // NOSONAR
 		// now check to see if the first parameter is true, if so then test the health of the
 		// Spring environment
-		if (args.length == 1) {
-			// Get the value of the first argument
-			// If it is true then do a health check and print it out
-			if (Boolean.valueOf(args[0]) == true) {
-				inspectSprintEnv(ctx);
-			}
+
+        // Get the value of the first argument
+        // If it is true then do a health check and print it out
+		if (args.length == 1 && Boolean.valueOf(args[0])) {
+            inspectSprintEnv(ctx);
 		}
 	}
 

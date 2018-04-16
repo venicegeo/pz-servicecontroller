@@ -86,7 +86,7 @@ import util.UUIDFactory;
 		public void testHandleJobRequestNull() {
 			PiazzaJobType jobRequest = null;
 			ResponseEntity<String> result = dsHandler.handle(jobRequest);
-	        assertEquals("The response to a null JobRequest update should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
+	        assertEquals("The response to a null JobRequest update should be null", HttpStatus.BAD_REQUEST, result.getStatusCode());
 		}
 		
 		/**
@@ -109,7 +109,7 @@ import util.UUIDFactory;
 				ResponseEntity<String> result = dsMock.handle(job);
 			
 				assertEquals ("The response entity was correct for this describe request", responseEntity, result);
-				assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
+				assertEquals ("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
 				assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
 
 
@@ -133,7 +133,7 @@ import util.UUIDFactory;
 			Mockito.doReturn(responseEntity).when(dsMock).handle(testServiceId);			
 			ResponseEntity<String> result = dsMock.handle(job);
 		
-			assertEquals ("The status code should be HttpStatus.NOT_FOUND.", result.getStatusCode(), HttpStatus.NOT_FOUND);
+			assertEquals ("The status code should be HttpStatus.NOT_FOUND.", HttpStatus.NOT_FOUND, result.getStatusCode());
 
 		}
 		/**
@@ -151,7 +151,7 @@ import util.UUIDFactory;
 				ResponseEntity<String> result = dsHandler.handle(testServiceId);
 			
 				assertEquals ("The response entity was correct for this describe request", responseEntity, result);
-				assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
+				assertEquals ("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
 				assertEquals ("The body of the response is correct", responseEntity.getBody(), responseServiceString);
 
 
@@ -172,8 +172,8 @@ import util.UUIDFactory;
 			ResponseEntity<String> result = dsHandler.handle(testServiceId);
 		
 			assertEquals ("The response entity was correct for this describe request", responseEntity, result);
-			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
-			assertEquals ("The body of the response is correct", responseEntity.getBody(),  "null");
+			assertEquals ("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
+			assertEquals ("The body of the response is correct", "null", responseEntity.getBody());
 
 		}	
 		
@@ -184,7 +184,7 @@ import util.UUIDFactory;
 		@Test
 		public void testUnSuccessDescribeServiceException() {
 			String testServiceId = "a842aae2-bd74-4c4b-9a65-c45e8cd9060";
-			ResponseEntity<String> responseEntity = new  ResponseEntity<String>("null", HttpStatus.OK);
+			ResponseEntity<String> responseEntity = new ResponseEntity<>("null", HttpStatus.OK);
 			try {
 				Mockito.when(omMock.writeValueAsString(Mockito.anyString())).thenThrow( new JsonProcessingException("") {});
 			} catch (JsonProcessingException jpe) {
@@ -193,8 +193,8 @@ import util.UUIDFactory;
 			ResponseEntity<String> result = dsHandler.handle(testServiceId);
 		
 			assertEquals ("The response entity was correct for this describe request", responseEntity, result);
-			assertEquals ("The response code is 200", responseEntity.getStatusCode(), HttpStatus.OK);
-			assertEquals ("The body of the response is correct", responseEntity.getBody(),  "null");
+			assertEquals ("The response code is 200", HttpStatus.OK, responseEntity.getStatusCode());
+			assertEquals ("The body of the response is correct", "null", responseEntity.getBody());
 
 		}	
 }

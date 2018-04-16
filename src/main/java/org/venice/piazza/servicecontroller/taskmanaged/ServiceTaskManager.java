@@ -60,9 +60,9 @@ import util.PiazzaLogger;
 @Component
 public class ServiceTaskManager {
 	@Value("${SPACE}")
-	private String SPACE;
+	private String SPACE; //NOSONAR
 	@Value("${task.managed.error.limit}")
-	private Integer TIMEOUT_LIMIT_COUNT;
+	private Integer TIMEOUT_LIMIT_COUNT; //NOSONAR
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -139,7 +139,7 @@ public class ServiceTaskManager {
 
 				// Determine if the Service ID is Task-Managed
 				Service service = accessor.getServiceById(serviceId);
-				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged() == true)) {
+				if ((service.getIsTaskManaged() != null) && (service.getIsTaskManaged())) {
 					handleTaskManagedJob(serviceId, jobId);
 				}
 			}
@@ -213,9 +213,11 @@ public class ServiceTaskManager {
 	 * @param serviceId
 	 *            The ID of the Service whose Queue to pull a Job from
 	 * @return The Job information
+	 * @throws ResourceAccessException
+     * @throws InterruptedException
 	 */
 	public ExecuteServiceJob getNextJobFromQueue(String serviceId)
-			throws ResourceAccessException, InterruptedException, InvalidInputException {
+			throws InvalidInputException {
 		// Pull the Job off of the queue.
 		ServiceJob serviceJob = accessor.getNextJobInServiceQueue(serviceId);
 

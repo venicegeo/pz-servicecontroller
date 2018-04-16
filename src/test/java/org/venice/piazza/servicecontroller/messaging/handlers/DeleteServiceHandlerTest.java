@@ -96,7 +96,7 @@ public class DeleteServiceHandlerTest {
 		//Mockito.doNothing().when(loggerMock).log(Mockito.anyString(), Severity.INFORMATIONAL);
 		ResponseEntity<String> result = dhHandler.handle(jobRequest);
 
-        assertEquals("The response to a null JobRequest Deletion should be null", result.getStatusCode(), HttpStatus.BAD_REQUEST);
+        assertEquals("The response to a null JobRequest Deletion should be null", HttpStatus.BAD_REQUEST, result.getStatusCode());
 	}
 	
 	@Test
@@ -148,7 +148,7 @@ public class DeleteServiceHandlerTest {
 		Mockito.doReturn("").when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
 		ResponseEntity<String> result = dshMock.handle(dsj);
-		assertEquals ("The should not be found.", result.getStatusCode(), HttpStatus.NOT_FOUND);
+		assertEquals ("The should not be found.", HttpStatus.NOT_FOUND, result.getStatusCode());
 	}
 	
 	@Test
@@ -172,7 +172,7 @@ public class DeleteServiceHandlerTest {
 		Mockito.doReturn(null).when(dshMock).handle("a842aae2-bd74-4c4b-9a65-c45e8cd9060", false);
 		
 		ResponseEntity<String> result = dshMock.handle(dsj);
-		assertEquals ("The should not be found.", result.getStatusCode(), HttpStatus.NOT_FOUND);
+		assertEquals ("The should not be found.", HttpStatus.NOT_FOUND, result.getStatusCode());
 	}
 	
 	
@@ -229,7 +229,7 @@ public class DeleteServiceHandlerTest {
 
 		String result = dhHandler.handle(serviceId, false);
 	
-		assertEquals ("The serviceId " + serviceId + " should have failed deletion!", result, null);
+		assertEquals ("The serviceId " + serviceId + " should have failed deletion!", null, result);
 	}
 	
 	@Test
@@ -247,7 +247,7 @@ public class DeleteServiceHandlerTest {
 
 		String result = dhHandler.handle(serviceId, false);
 	
-		assertEquals ("The serviceId " + serviceId + " should have failed deletion!", result, "");
+		assertEquals ("The serviceId " + serviceId + " should have failed deletion!", "", result);
 	}
 	
 	@Test

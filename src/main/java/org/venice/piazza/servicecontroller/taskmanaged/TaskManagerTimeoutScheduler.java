@@ -47,7 +47,7 @@ public class TaskManagerTimeoutScheduler {
 	private PiazzaLogger piazzaLogger;
 
 	@Value("${task.managed.timeout.frequency.seconds}")
-	private int POLL_FREQUENCY_SECONDS;
+	private int POLL_FREQUENCY_SECONDS; //NOSONAR
 
 	private CheckTimeoutTask timeoutTask = new CheckTimeoutTask();
 	private Timer pollTimer = new Timer();

@@ -179,10 +179,13 @@ public class ServiceControllerTest {
 	 */
 	public void testGetServiceInfoWithNull() {
         Mockito.doThrow(new ResourceAccessException("Service not found.")).when(accessorMock).getServiceById(null);
+        Mockito.when(this.accessorMock.getServiceById("unknownException")).thenThrow(Exception.class);
 
 		PiazzaResponse piazzaResponse = sc.getServiceInfo(null).getBody();
-		
 		assertThat("ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
+
+		//Test the exception. It shouldn't propagate up to here.
+		ResponseEntity<PiazzaResponse> unknownExceptionResponse = sc.getServiceInfo("unknownException");
 	}
 	
 	@Test
@@ -333,7 +336,7 @@ public class ServiceControllerTest {
         Mockito.doThrow(new InterruptedException("An error occured")).when(esHandlerMock).handle(edata);
 		
 		ResponseEntity<String> retVal = sc.executeService(edata);
-        assertEquals("The response should be a null", retVal, null);
+        assertEquals("The response should be a null", null, retVal);
 	}
 	
 	@Test
@@ -388,7 +391,7 @@ public class ServiceControllerTest {
 				+ "<BODY></HTML>";
 		
 		ResponseEntity<String> result = sc.healthCheck();
-        assertEquals("The response should be 200", result.getStatusCode(), HttpStatus.OK);
+        assertEquals("The response should be 200", HttpStatus.OK, result.getStatusCode());
         assertTrue("The response contains the appropriate message", result.getBody().contains(htmlMessage));
 	}
 

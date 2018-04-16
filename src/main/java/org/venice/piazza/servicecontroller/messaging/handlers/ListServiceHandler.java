@@ -67,11 +67,11 @@ public class ListServiceHandler implements PiazzaJobHandler {
 			List<Service> rmList = accessor.list();
 			ObjectMapper mapper = makeObjectMapper();
 			String result = mapper.writeValueAsString(rmList);
-			responseEntity = new ResponseEntity<String>(result, HttpStatus.OK);
+			responseEntity = new ResponseEntity<>(result, HttpStatus.OK);
 		} catch (Exception ex) {
 			LOG.error("Exception occurred", ex);
 			coreLogger.log(ex.getMessage(), Severity.ERROR);
-			responseEntity = new ResponseEntity<String>("Could not retrieve a list of user services" , HttpStatus.NOT_FOUND);
+			responseEntity = new ResponseEntity<>("Could not retrieve a list of user services", HttpStatus.NOT_FOUND);
 		}
 
 		return responseEntity;

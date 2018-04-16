@@ -37,9 +37,9 @@ import model.service.async.AsyncServiceInstance;
 @Component
 public class AsyncServiceInstanceScheduler {
 	@Value("${async.stale.instance.threshold.seconds}")
-	private int STALE_INSTANCE_THRESHOLD_SECONDS;
+	private int STALE_INSTANCE_THRESHOLD_SECONDS; //NOSONAR
 	@Value("${async.poll.frequency.seconds}")
-	private int POLL_FREQUENCY_SECONDS;
+	private int POLL_FREQUENCY_SECONDS; //NOSONAR
 
 	@Autowired
 	private DatabaseAccessor accessor;

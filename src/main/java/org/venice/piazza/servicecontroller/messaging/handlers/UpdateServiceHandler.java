@@ -23,15 +23,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.venice.piazza.common.hibernate.entity.ServiceEntity;
 import org.venice.piazza.servicecontroller.data.accessor.DatabaseAccessor;
 
 import model.job.PiazzaJobType;
 import model.job.type.UpdateServiceJob;
 import model.logger.AuditElement;
 import model.logger.Severity;
-import model.response.ErrorResponse;
-import model.response.PiazzaResponse;
 import model.service.metadata.Service;
 import util.PiazzaLogger;
 
@@ -77,15 +74,15 @@ public class UpdateServiceHandler implements PiazzaJobHandler {
 				resultList.add(jobId);
 				resultList.add(sMetadata.getServiceId());
 
-				return new ResponseEntity<String>(resultList.toString(), HttpStatus.OK);
+				return new ResponseEntity<>(resultList.toString(), HttpStatus.OK);
 
 			} else {
 				coreLogger.log("No result response from the handler, something went wrong", Severity.ERROR);
-				return new ResponseEntity<String>("UpdateServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
+				return new ResponseEntity<>("UpdateServiceHandler handle didn't work", HttpStatus.UNPROCESSABLE_ENTITY);
 			}
 		} else {
 			coreLogger.log("A null PiazzaJobRequest was passed in. Returning null", Severity.ERROR);
-			return new ResponseEntity<String>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("A Null PiazzaJobRequest was received", HttpStatus.BAD_REQUEST);
 		}
 	}
 

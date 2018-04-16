@@ -59,15 +59,15 @@ import util.UUIDFactory;
 @Component
 public class AsynchronousServiceWorker {
 	@Value("${async.status.endpoint}")
-	private String STATUS_ENDPOINT;
+	private String STATUS_ENDPOINT; //NOSONAR
 	@Value("${async.results.endpoint}")
-	private String RESULTS_ENDPOINT;
+	private String RESULTS_ENDPOINT; //NOSONAR
 	@Value("${async.delete.endpoint}")
-	private String DELETE_ENDPOINT;
+	private String DELETE_ENDPOINT; //NOSONAR
 	@Value("${SPACE}")
-	private String SPACE;
+	private String SPACE; //NOSONAR
 	@Value("${async.status.error.limit}")
-	private int STATUS_ERROR_LIMIT;
+	private int STATUS_ERROR_LIMIT; //NOSONAR
 
 	@Autowired
 	private DatabaseAccessor accessor;

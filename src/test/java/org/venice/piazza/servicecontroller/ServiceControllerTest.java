@@ -184,6 +184,7 @@ public class ServiceControllerTest {
 		PiazzaResponse piazzaResponse = sc.getServiceInfo(null).getBody();
 		assertThat("ErrorResponse should be returned", piazzaResponse, instanceOf(ErrorResponse.class));
 
+		//Test the exception. It shouldn't propagate up to here.
 		ResponseEntity<PiazzaResponse> unknownExceptionResponse = sc.getServiceInfo("unknownException");
 	}
 	
